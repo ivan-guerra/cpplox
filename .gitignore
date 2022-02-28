@@ -1,0 +1,17 @@
+# Ignore the bin directory if it exists.
+bin
+
+# Ignore the documentation directory.
+docs/cpplox
+
+# Ignore object files.
+*.o
+
+# Ignore CMake build directories.
+/build*
+
+# Ignore the Vim Syntastic plugin's CPP config.
+.syntastic_cpp_config
+
+# Ignore the ctags tag file.
+tags
