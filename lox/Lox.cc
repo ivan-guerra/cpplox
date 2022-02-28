@@ -1,16 +1,16 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "Toy.h"
-
-int main()
+int main(int argc, char** argv)
 {
-    std::cout << "Running toy program..." << std::endl;
-    lox::Toy toy;
-    toy.PrintHelloWorld();
-    std::cout << "If you saw the text \"Hello, world.\" on your screen, "
-              << "then cpplox is installed correctly."
-              << std::endl;
-
+    if (argc > 2) {
+        std::cerr << "usage: lox [script]" << std::endl;
+        exit(EXIT_FAILURE);
+    } else if (2 == argc) {
+        /* Run user script. */
+        std::cout << "User script path: " << argv[1] << std::endl;
+    } else {
+        /* Run interactively. */
+    }
     exit(EXIT_SUCCESS);
 }

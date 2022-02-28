@@ -18,11 +18,6 @@ target_compile_features(${PROJECT_NAME}
         cxx_std_17
 )
 
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        Toy
-)
-
 set(LOX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${LOX_INSTALL_DIR}
