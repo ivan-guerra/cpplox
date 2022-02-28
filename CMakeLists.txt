@@ -13,5 +13,6 @@ project(cpplox VERSION 1.0
 set(LOX_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include"
     CACHE STRING "${PROJECT_NAME} include directory.")
 
+add_subdirectory(docs)
 add_subdirectory(lox)
 add_subdirectory(src)

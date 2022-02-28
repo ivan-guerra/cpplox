@@ -39,8 +39,8 @@ fi
 
 # Build and install the kernel.
 pushd $LOX_BUILD_DIR
-    cmake ../           && \
-    make -j$(nproc) all && \
+    cmake ../ -DBUILD_DOC=${BUILD_DOC} && \
+    make -j$(nproc) all                && \
     make install
 
     # Exit if any of the above commands fails.
