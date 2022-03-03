@@ -232,6 +232,14 @@ private:
     void Identifier();
 
     /*!
+     * \brief Consume a C-style comment block.
+     *
+     * Comment() does not emit any tokens. This method only scans over the
+     * complete comment block taking no further action.
+     */
+    void Comment();
+
+    /*!
      * \brief Implement the Lox lang scanner state machine.
      */
     void ScanToken();

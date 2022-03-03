@@ -179,6 +179,30 @@ void Scanner::Identifier()
         AddToken(kKeywords_.at(text));
 }
 
+void Scanner::Comment()
+{
+    bool     is_wellformed_comment = false;
+    uint32_t comment_start_line    = line_;
+    do {
+        /* Determine whether we are at the close of a comment block. */
+        if (('*' == Peek() && ('/' == PeekNext()))) {
+            /* Consume the two closing comment chars. */
+            Advance();
+            Advance();
+
+            /* Exit, we found a complete comment. */
+            is_wellformed_comment = true;
+            break;
+        }
+
+        if ('\n' == Advance())
+            line_++;
+    } while (!IsAtEnd());
+
+    if (!is_wellformed_comment)
+        LOG_ERROR(comment_start_line, "unterminated comment block");
+}
+
 void Scanner::ScanToken()
 {
     using tt = Token::TokenType;
@@ -231,6 +255,8 @@ void Scanner::ScanToken()
                 /* A comment goes until the end of the line. */
                 while ((Peek() != '\n') && !IsAtEnd())
                     Advance();
+            } else if (Match('*')) {
+                Comment();
             } else {
                 AddToken(tt::kSlash);
             }
