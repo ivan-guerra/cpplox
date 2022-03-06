@@ -1,0 +1,32 @@
+{
+    "base_name":"Expr",
+    "subtypes" :[
+        {
+            "name":"Binary",
+            "fields":[
+                {"type":"Expr" , "name":"left"},
+                {"type":"Token", "name":"op"},
+                {"type":"Expr" , "name":"right"}
+            ]
+        },
+        {
+            "name":"Grouping",
+            "fields":[
+                {"type":"Expr", "name":"expression"}
+            ]
+        },
+        {
+            "name":"Literal",
+            "fields":[
+                {"type":"std::string", "name":"value"}
+            ]
+        },
+        {
+            "name":"Unary",
+            "fields":[
+                {"type":"Token", "name":"op"},
+                {"type":"Expr" , "name":"right"}
+            ]
+        }
+    ]
+}
