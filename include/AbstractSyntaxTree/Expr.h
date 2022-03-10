@@ -51,10 +51,17 @@ public:
 class Binary : public Expr
 {
 public:
-    Binary(std::shared_ptr<Expr> left, Token op, std::shared_ptr<Expr> right) : 
-        left(left),
-        op(op),
-        right(right)
+    Binary() = default;
+    ~Binary() = default;
+    Binary(Binary&) = default;
+    Binary& operator=(Binary&) = default;
+    Binary(Binary&&) = default;
+    Binary& operator=(Binary&&) = default;
+
+    Binary(std::shared_ptr<Expr> left_, Token op_, std::shared_ptr<Expr> right_) : 
+        left(left_),
+        op(op_),
+        right(right_)
     {
 
     }
@@ -72,8 +79,15 @@ public:
 class Grouping : public Expr
 {
 public:
-    Grouping(std::shared_ptr<Expr> expression) : 
-        expression(expression)
+    Grouping() = default;
+    ~Grouping() = default;
+    Grouping(Grouping&) = default;
+    Grouping& operator=(Grouping&) = default;
+    Grouping(Grouping&&) = default;
+    Grouping& operator=(Grouping&&) = default;
+
+    Grouping(std::shared_ptr<Expr> expression_) : 
+        expression(expression_)
     {
 
     }
@@ -89,8 +103,15 @@ public:
 class Literal : public Expr
 {
 public:
-    Literal(std::string value) : 
-        value(value)
+    Literal() = default;
+    ~Literal() = default;
+    Literal(Literal&) = default;
+    Literal& operator=(Literal&) = default;
+    Literal(Literal&&) = default;
+    Literal& operator=(Literal&&) = default;
+
+    Literal(std::string value_) : 
+        value(value_)
     {
 
     }
@@ -106,9 +127,16 @@ public:
 class Unary : public Expr
 {
 public:
-    Unary(Token op, std::shared_ptr<Expr> right) : 
-        op(op),
-        right(right)
+    Unary() = default;
+    ~Unary() = default;
+    Unary(Unary&) = default;
+    Unary& operator=(Unary&) = default;
+    Unary(Unary&&) = default;
+    Unary& operator=(Unary&&) = default;
+
+    Unary(Token op_, std::shared_ptr<Expr> right_) : 
+        op(op_),
+        right(right_)
     {
 
     }

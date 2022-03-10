@@ -79,19 +79,32 @@ def generate_type(writer, base_name, subtype_info):
     writer.write('{\n')
     writer.write('public:\n')
 
+    # Explicitly define defaults for the special member functions.
+    writer.write(ws() + subtype_info['name'] + '() = default;\n')
+    writer.write(ws() + '~' + subtype_info['name'] + '() = default;\n')
+    writer.write(ws() + subtype_info['name'] + '(' + subtype_info['name'] +
+                 '&) = default;\n')
+    writer.write(ws() + subtype_info['name'] + '& operator=(' +
+                 subtype_info['name'] + '&) = default;\n')
+    writer.write(ws() + subtype_info['name'] + '(' + subtype_info['name'] +
+                 '&&) = default;\n')
+    writer.write(ws() + subtype_info['name'] + '& operator=(' +
+                 subtype_info['name'] + '&&) = default;\n')
+    writer.write('\n')
+
     # Constructor definition.
     writer.write(ws() + subtype_info['name'] + '(')
     fields = []
     for field in subtype_info['fields']:
         if field['type'] == base_name:
             fields.append('std::shared_ptr<' + field['type'] + '> ' +
-                          field['name'])
+                          field['name'] + '_')
         else:
-            fields.append(field['type'] + ' ' + field['name'])
+            fields.append(field['type'] + ' ' + field['name'] + '_')
     writer.write(', '.join(fields) + ') : \n')
 
     # Constructor definition: the initializer list.
-    init_list = [8 * ' ' + field['name'] + '(' + field['name'] + ')'
+    init_list = [8 * ' ' + field['name'] + '(' + field['name'] + '_' + ')'
                  for field in subtype_info['fields']]
     writer.write(',\n'.join(init_list))
     writer.write('\n' + ws() + '{\n')
