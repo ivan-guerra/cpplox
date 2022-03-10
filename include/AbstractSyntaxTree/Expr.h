@@ -2,32 +2,12 @@
 #pragma once
 
 #include <any>
-#include <string>
 #include <memory>
 
 #include "Scanner.h"
 
 namespace lox
 {
-template <typename VisitorImpl, typename VisitablePtr, typename ResultType>
-class ValueGetter
-{
-public:
-    static ResultType GetValue(VisitablePtr n)
-    {
-        VisitorImpl visitor;
-        n->Accept(visitor);
-        return visitor.value_;
-    }
-
-    void Return(ResultType value)
-    {
-        value_ = value;
-    }
-private:
-    ResultType value_;
-}; // end ValueGetter
-
 class Binary;
 class Grouping;
 class Literal;
@@ -36,17 +16,17 @@ class Unary;
 class Visitor
 {
 public:
-    virtual void VisitBinaryExpr(Binary& expr) = 0;
-    virtual void VisitGroupingExpr(Grouping& expr) = 0;
-    virtual void VisitLiteralExpr(Literal& expr) = 0;
-    virtual void VisitUnaryExpr(Unary& expr) = 0;
+    virtual std::any VisitBinaryExpr(Binary& expr) = 0;
+    virtual std::any VisitGroupingExpr(Grouping& expr) = 0;
+    virtual std::any VisitLiteralExpr(Literal& expr) = 0;
+    virtual std::any VisitUnaryExpr(Unary& expr) = 0;
 }; // end Visitor
 
 class Expr
 {
 public:
     virtual ~Expr() = default;
-    virtual void Accept(Visitor& visitor) = 0;
+    virtual std::any Accept(Visitor& visitor) = 0;
 }; // end Expr
 
 class Binary : public Expr
@@ -67,9 +47,9 @@ public:
 
     }
 
-    void Accept(Visitor& visitor) final
+    std::any Accept(Visitor& visitor) final
     {
-        visitor.VisitBinaryExpr(*this);
+        return visitor.VisitBinaryExpr(*this);
     }
 
     std::shared_ptr<Expr> left;
@@ -93,9 +73,9 @@ public:
 
     }
 
-    void Accept(Visitor& visitor) final
+    std::any Accept(Visitor& visitor) final
     {
-        visitor.VisitGroupingExpr(*this);
+        return visitor.VisitGroupingExpr(*this);
     }
 
     std::shared_ptr<Expr> expression;
@@ -117,9 +97,9 @@ public:
 
     }
 
-    void Accept(Visitor& visitor) final
+    std::any Accept(Visitor& visitor) final
     {
-        visitor.VisitLiteralExpr(*this);
+        return visitor.VisitLiteralExpr(*this);
     }
 
     std::any value;
@@ -142,9 +122,9 @@ public:
 
     }
 
-    void Accept(Visitor& visitor) final
+    std::any Accept(Visitor& visitor) final
     {
-        visitor.VisitUnaryExpr(*this);
+        return visitor.VisitUnaryExpr(*this);
     }
 
     Token op;

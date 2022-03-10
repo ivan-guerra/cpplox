@@ -7,36 +7,30 @@
 namespace lox
 {
 std::string AstPrinter::Parenthesize(const std::string& name,
-                                     ExprList expressions) const
+                                     ExprList expressions)
 {
     std::string ret("(");
     ret.append(name);
     for (const auto& expr : expressions) {
         ret.append(" ");
-        ret.append(std::any_cast<std::string>(GetValue(expr)));
+        ret.append(std::any_cast<std::string>(expr->Accept(*this)));
     }
     ret.append(")");
 
     return ret;
 }
 
-void AstPrinter::VisitLiteralExpr(Literal& expr)
+std::any AstPrinter::VisitLiteralExpr(Literal& expr)
 {
-    if (!expr.value.has_value()) {
-        Return(std::string("nil"));
-        return;
-    }
+    if (!expr.value.has_value())
+        return std::string("nil");
 
-    if (typeid(std::string) == expr.value.type()) {
-        Return(std::any_cast<std::string>(expr.value));
-        return;
-    }
+    if (typeid(std::string) == expr.value.type())
+        return std::any_cast<std::string>(expr.value);
 
-    if (typeid(double) == expr.value.type()) {
-        Return(std::to_string(std::any_cast<double>(expr.value)));
-        return;
-    }
+    if (typeid(double) == expr.value.type())
+        return std::to_string(std::any_cast<double>(expr.value));
 
-    Return(std::string("unknown"));
+    return std::string("unknown");
 }
 } // end lox
