@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cctype>
 #include <unordered_map>
+#include <any>
 
 namespace lox
 {
@@ -81,8 +82,8 @@ public:
      * \param literal Literal value if any.
      * \param line Line number at which this token appears in the source code.
      */
-    Token(TokenType type, const std::string& lexeme,
-          const std::string& literal, int line);
+    Token(TokenType type, const std::string& lexeme, const std::any& literal,
+          int line);
 
     ~Token() = default;
 
@@ -104,10 +105,8 @@ public:
 
     /*!
      * \brief Return the Token literal.
-     * \return If the token has a valid literal, that literal value is
-     *         returned, else the empty string is returned.
      */
-    std::string GetLiteral() const { return literal_; }
+    std::any GetLiteral() const { return literal_; }
 
     /*!
      * \brief Return the Token line number.
@@ -119,7 +118,7 @@ public:
 private:
     TokenType   type_;    /*!< Token type. */
     std::string lexeme_;  /*!< Token lexeme. */
-    std::string literal_; /*!< Token literal (if any). */
+    std::any    literal_; /*!< Token literal (if any). */
     int         line_;    /*!< Line number at which this token appears. */
 }; // end Token
 
@@ -194,12 +193,12 @@ private:
     /*!
      * \brief Add token with type \a type and literal \a literal.
      */
-    void AddToken(Token::TokenType type, const std::string& literal);
+    void AddToken(Token::TokenType type, const std::any& literal);
 
     /*!
      * \brief Add token with type \a type.
      */
-    void AddToken(Token::TokenType type) { AddToken(type, ""); }
+    void AddToken(Token::TokenType type);
 
     /*!
      * \brief Return \c true if the current scan char matches \a expected.

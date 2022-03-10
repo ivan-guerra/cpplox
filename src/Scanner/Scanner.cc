@@ -3,6 +3,7 @@
 #include <string>
 #include <cctype>
 #include <unordered_map>
+#include <any>
 
 #include "Scanner.h"
 #include "ErrorLogger.h"
@@ -53,7 +54,7 @@ static const std::unordered_map<Token::TokenType, std::string> kTokenToStr =
 };
 
 Token::Token(TokenType type, const std::string& lexeme,
-             const std::string& literal, int line) :
+             const std::any& literal, int line) :
     type_(type),
     lexeme_(lexeme),
     literal_(literal),
@@ -67,11 +68,16 @@ std::ostream& operator<<(std::ostream& os, const Token& token)
     os << "(type:" << kTokenToStr.at(token.GetType())
         << ", lexeme:" << token.GetLexeme()
         << ", literal:";
-    if (token.GetLiteral().empty())
+    if (!token.GetLiteral().has_value()) {
         os << "NONE)";
-    else
-        os << token.GetLiteral() << ")";
-
+    } else {
+        if (typeid(std::string) == token.GetLiteral().type())
+            os << std::any_cast<std::string>(token.GetLiteral()) << ")";
+        else if (typeid(double) == token.GetLiteral().type())
+            os << std::any_cast<double>(token.GetLiteral()) << ")";
+        else
+            os << "UNKNOWN LITERAL TYPE" << ")";
+    }
     return os;
 }
 
@@ -95,10 +101,16 @@ const std::unordered_map<std::string, Token::TokenType> Scanner::kKeywords_ =
     {"while",  Token::TokenType::kWhile}
 };
 
-void Scanner::AddToken(Token::TokenType type, const std::string& literal)
+void Scanner::AddToken(Token::TokenType type, const std::any& literal)
 {
     std::string text = SourceSubstring(start_, current_);
     tokens_.emplace_back(type, text, literal, line_);
+}
+
+void Scanner::AddToken(Token::TokenType type)
+{
+    std::any empty_literal;
+    AddToken(type, empty_literal);
 }
 
 bool Scanner::Match(char expected)
@@ -164,7 +176,8 @@ void Scanner::Number()
             Advance();
     }
 
-    AddToken(Token::TokenType::kNumber, SourceSubstring(start_, current_));
+    AddToken(Token::TokenType::kNumber,
+             std::stod(SourceSubstring(start_, current_)));
 }
 
 void Scanner::Identifier()
@@ -302,7 +315,8 @@ std::vector<Token> Scanner::ScanTokens()
         ScanToken();
     }
 
-    tokens_.emplace_back(Token::TokenType::kEof, "", "", line_);
+    std::any eof_any;
+    tokens_.emplace_back(Token::TokenType::kEof, "", eof_any, line_);
     return tokens_;
 }
 } // end lox

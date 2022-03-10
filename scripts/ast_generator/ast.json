@@ -18,7 +18,7 @@
         {
             "name":"Literal",
             "fields":[
-                {"type":"std::string", "name":"value"}
+                {"type":"std::any", "name":"value"}
             ]
         },
         {

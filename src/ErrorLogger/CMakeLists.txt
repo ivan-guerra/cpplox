@@ -16,6 +16,7 @@ target_compile_options(${PROJECT_NAME}
         -Wall
         -Werror
         -Wextra
+        -g
 )
 
 target_compile_features(${PROJECT_NAME}

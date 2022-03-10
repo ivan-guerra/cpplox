@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <string>
 #include <memory>
 #include <initializer_list>
@@ -16,7 +17,7 @@ namespace lox
  * for more details.
  */
 class AstPrinter :
-    public ValueGetter<AstPrinter, std::shared_ptr<Expr>, std::string>,
+    public ValueGetter<AstPrinter, std::shared_ptr<Expr>, std::any>,
     public Visitor
 {
 public:
@@ -35,8 +36,7 @@ public:
     /*!
      * \brief Generate a literal expression output string.
      */
-    void VisitLiteralExpr(Literal& expr) final
-        { (expr.value.empty() ? Return("nil") : Return(expr.value)); }
+    void VisitLiteralExpr(Literal& expr) final;
 
     /*!
      * \brief Generate a unary expression output string.
@@ -48,7 +48,7 @@ public:
      * \brief Return the AST string represented using Lisp like syntax.
      */
     std::string Print(std::shared_ptr<Expr> expr)
-        { return GetValue(expr); }
+        { return std::any_cast<std::string>(GetValue(expr)); }
 
 private:
     using ExprList = std::initializer_list<std::shared_ptr<Expr>>;

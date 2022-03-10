@@ -82,9 +82,9 @@ def generate_type(writer, base_name, subtype_info):
     # Explicitly define defaults for the special member functions.
     writer.write(ws() + subtype_info['name'] + '() = default;\n')
     writer.write(ws() + '~' + subtype_info['name'] + '() = default;\n')
-    writer.write(ws() + subtype_info['name'] + '(' + subtype_info['name'] +
-                 '&) = default;\n')
-    writer.write(ws() + subtype_info['name'] + '& operator=(' +
+    writer.write(ws() + subtype_info['name'] + '(const ' +
+                 subtype_info['name'] + '&) = default;\n')
+    writer.write(ws() + subtype_info['name'] + '& operator=(const ' +
                  subtype_info['name'] + '&) = default;\n')
     writer.write(ws() + subtype_info['name'] + '(' + subtype_info['name'] +
                  '&&) = default;\n')
@@ -144,6 +144,7 @@ def generate_ast(writer, data):
     writer.write('#pragma once\n\n'),
 
     # Include directives.
+    writer.write('#include <any>\n')
     writer.write('#include <string>\n')
     writer.write('#include <memory>\n\n')
     writer.write('#include "Scanner.h"\n')
