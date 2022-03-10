@@ -12,7 +12,7 @@ namespace lox
 Parser::ParserException Parser::Error(const Token& token,
                                       const std::string& message) const
 {
-    LOG_ERROR(token.GetLine(), message);
+    LOG_STATIC_ERROR(token.GetLine(), message);
     return ParserException();
 }
 

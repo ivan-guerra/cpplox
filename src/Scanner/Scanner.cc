@@ -150,7 +150,7 @@ void Scanner::String()
     }
 
     if (IsAtEnd()) {
-        LOG_ERROR(line_, "unterminated string");
+        LOG_STATIC_ERROR(line_, "unterminated string");
         return;
     }
 
@@ -213,7 +213,7 @@ void Scanner::Comment()
     } while (!IsAtEnd());
 
     if (!is_wellformed_comment)
-        LOG_ERROR(comment_start_line, "unterminated comment block");
+        LOG_STATIC_ERROR(comment_start_line, "unterminated comment block");
 }
 
 void Scanner::ScanToken()
@@ -293,7 +293,7 @@ void Scanner::ScanToken()
             } else {
                 std::string err_msg = "unexpected character: ";
                 err_msg += c;
-                LOG_ERROR(line_, err_msg);
+                LOG_STATIC_ERROR(line_, err_msg);
             }
             break;
     }

@@ -35,9 +35,12 @@ void RunPrompt()
     std::cout << kPrompt;
     while (std::getline(std::cin, line)) {
         Run(line);
-        if (err_logger.HadError())
-            /* Don't end an interactive session over a single error. */
-            err_logger.ClearError();
+
+        /* Don't end an interactive session over a single error. */
+        if (err_logger.HadStaticError())
+            err_logger.ClearStaticError();
+        if (err_logger.HadRuntimeError())
+            err_logger.ClearRuntimeError();
 
         std::cout << kPrompt;
     }
@@ -71,6 +74,9 @@ int main(int argc, char** argv)
         RunPrompt();
     }
 
-    (lox::ErrorLogger::GetInstance().HadError() ? exit(EXIT_FAILURE) :
-                                                  exit(EXIT_SUCCESS));
+    lox::ErrorLogger& err = lox::ErrorLogger::GetInstance();
+    if (err.HadStaticError() || err.HadRuntimeError())
+        exit(EXIT_FAILURE);
+
+    exit(EXIT_SUCCESS);
 }
