@@ -4,16 +4,26 @@
 #include <fstream>
 #include <sstream>
 
+#include "Expr.h"
 #include "Scanner.h"
+#include "Parser.h"
+#include "AstPrinter.h"
 #include "ErrorLogger.h"
 
 void Run(const std::string& source)
 {
+    /* Load the parser up with scanned tokens. */
     lox::Scanner scanner(source);
-    std::vector<lox::Token> tokens = scanner.ScanTokens();
+    lox::Parser parser(scanner.ScanTokens());
 
-    for (const lox::Token& token : tokens)
-        std::cout << token << std::endl;
+    /* Parse an expression. */
+    std::shared_ptr<lox::Expr> expr = parser.Parse();
+
+    /* Print that bad boy out. */
+    if (expr) {
+        lox::AstPrinter printer;
+        std::cout << printer.Print(expr) << std::endl;
+    }
 }
 
 void RunPrompt()

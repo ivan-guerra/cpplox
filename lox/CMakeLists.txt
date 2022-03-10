@@ -21,8 +21,9 @@ target_compile_features(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        Scanner
         ErrorLogger
+        Parser
+        AbstractSyntaxTree
 )
 
 set(LOX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
