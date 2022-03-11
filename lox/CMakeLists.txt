@@ -24,6 +24,7 @@ target_link_libraries(${PROJECT_NAME}
         ErrorLogger
         Parser
         AbstractSyntaxTree
+        Interpreter
 )
 
 set(LOX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
