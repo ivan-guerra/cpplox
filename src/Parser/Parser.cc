@@ -150,11 +150,11 @@ std::shared_ptr<Expr> Parser::Unary()
 std::shared_ptr<Expr> Parser::Primary()
 {
     if (Match({Token::TokenType::kFalse}))
-        return std::make_shared<Literal>(std::string("false"));
+        return std::make_shared<Literal>(false);
     if (Match({Token::TokenType::kTrue}))
-        return std::make_shared<Literal>(std::string("true"));
+        return std::make_shared<Literal>(true);
     if (Match({Token::TokenType::kNil}))
-        return std::make_shared<Literal>(std::string("nil"));
+        return std::make_shared<Literal>(nullptr);
 
     if (Match({Token::TokenType::kNumber, Token::TokenType::kString}))
         return std::make_shared<Literal>(Previous().GetLiteral());
