@@ -10,6 +10,24 @@
 
 namespace lox
 {
+void Interpreter::ExecuteBlock(const std::vector<std::shared_ptr<Stmt>>& statements,
+                               std::shared_ptr<Environment> env)
+{
+    std::shared_ptr<Environment> previous = this->environment_;
+    try {
+        this->environment_ = env;
+        for (const auto& stmt : statements)
+            Execute(stmt);
+    } catch (const std::exception& e) {
+        /* If something goes wrong when processing statements, always revert
+           the environment. */
+        this->environment_ = previous;
+    }
+
+    /* Revert the environment after processing the block. */
+    this->environment_ = previous;
+}
+
 bool Interpreter::IsTruth(const std::any& object) const
 {
     if (typeid(nullptr) == object.type())
@@ -87,7 +105,13 @@ void Interpreter::VisitVarStmt(Var& stmt)
     if (stmt.initializer)
         value = Evaluate(stmt.initializer);
 
-    environment_.Define(stmt.name.GetLexeme(), value);
+    environment_->Define(stmt.name.GetLexeme(), value);
+}
+
+void Interpreter::VisitBlockStmt(Block& stmt)
+{
+    ExecuteBlock(stmt.statements,
+                 std::make_shared<Environment>(this->environment_));
 }
 
 std::any Interpreter::VisitBinaryExpr(Binary& expr)
@@ -156,7 +180,7 @@ std::any Interpreter::VisitUnaryExpr(Unary& expr)
 std::any Interpreter::VisitAssignExpr(Assign& expr)
 {
     std::any value = Evaluate(expr.value);
-    environment_.Assign(expr.name, value);
+    environment_->Assign(expr.name, value);
 
     return value;
 }

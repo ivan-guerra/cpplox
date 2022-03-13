@@ -25,7 +25,7 @@ class Interpreter :
     public StmtVisitor
 {
 public:
-    Interpreter() = default;
+    Interpreter() : environment_(std::make_shared<Environment>()) { }
     ~Interpreter() = default;
 
     /* Default copy construction and assignment is valid. */
@@ -42,6 +42,8 @@ public:
     void VisitPrintStmt(Print& stmt) final;
 
     void VisitVarStmt(Var& stmt) final;
+
+    void VisitBlockStmt(Block& stmt) final;
 
     /*!
      * \brief Evaluate a binary expression.
@@ -66,7 +68,7 @@ public:
     std::any VisitUnaryExpr(Unary& expr) final;
 
     std::any VisitVariableExpr(Variable& expr) final
-        { return environment_.Get(expr.name); }
+        { return environment_->Get(expr.name); }
 
     std::any VisitAssignExpr(Assign& expr) final;
 
@@ -80,6 +82,9 @@ public:
 private:
     void Execute(std::shared_ptr<Stmt> stmt)
         { stmt->Accept(*this); }
+
+    void ExecuteBlock(const std::vector<std::shared_ptr<Stmt>>& statements,
+                      std::shared_ptr<Environment> env);
 
     /*!
      * \brief Return the result of the evaluating \a expr.
@@ -121,6 +126,6 @@ private:
      */
     std::string Stringify(const std::any& object) const;
 
-    Environment environment_;
+    std::shared_ptr<Environment> environment_;
 }; // end Interpreter
 } // end lox

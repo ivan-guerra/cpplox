@@ -72,6 +72,12 @@
                         {"type":"Token", "name":"name"},
                         {"type":"std::shared_ptr<Expr>", "name":"initializer"}
                     ]
+                },
+                {
+                    "name":"Block",
+                    "fields":[
+                        {"type":"std::vector<std::shared_ptr<Stmt>>", "name":"statements"}
+                    ]
                 }
             ],
             "headers":[

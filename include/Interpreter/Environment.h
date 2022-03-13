@@ -3,6 +3,7 @@
 #include <any>
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 #include "Scanner.h"
 
@@ -11,7 +12,8 @@ namespace lox
 class Environment
 {
 public:
-    Environment() = default;
+    Environment() : enclosing_(nullptr) { }
+    Environment(const std::shared_ptr<Environment>& env) : enclosing_(env) { }
     ~Environment() = default;
 
     Environment(const Environment&) = default;
@@ -29,5 +31,7 @@ public:
 
 private:
     std::unordered_map<std::string, std::any> env_;
+
+    std::shared_ptr<Environment> enclosing_;
 }; // end Environment
 } // end lox

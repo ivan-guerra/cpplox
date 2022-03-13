@@ -99,6 +99,9 @@ std::shared_ptr<Stmt> Parser::Statement()
     if (Match({Token::TokenType::kPrint}))
         return PrintStatement();
 
+    if (Match({Token::TokenType::kLeftBrace}))
+        return std::make_shared<lox::Block>(Parser::Block());
+
     return ExpressionStatement();
 }
 
@@ -116,6 +119,17 @@ std::shared_ptr<Stmt> Parser::ExpressionStatement()
     Consume(Token::TokenType::kSemicolon, "Expect ';' after expression.");
 
     return std::make_shared<lox::Expression>(expr);
+}
+
+std::vector<std::shared_ptr<Stmt>> Parser::Block()
+{
+    std::vector<StmtPtr> statements;
+
+    while (!Check(Token::TokenType::kRightBrace) && !IsAtEnd())
+        statements.push_back(Declaration());
+
+    Consume(Token::TokenType::kRightBrace, "Exprect '}' after block.");
+    return statements;
 }
 
 std::shared_ptr<Expr> Parser::Assignment()

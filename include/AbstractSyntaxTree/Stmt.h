@@ -9,6 +9,7 @@ namespace lox
 class Expression;
 class Print;
 class Var;
+class Block;
 
 class StmtVisitor
 {
@@ -16,6 +17,7 @@ public:
     virtual void VisitExpressionStmt(Expression& stmt) = 0;
     virtual void VisitPrintStmt(Print& stmt) = 0;
     virtual void VisitVarStmt(Var& stmt) = 0;
+    virtual void VisitBlockStmt(Block& stmt) = 0;
 }; // end Visitor
 
 class Stmt
@@ -98,4 +100,28 @@ public:
     Token name;
     std::shared_ptr<Expr> initializer;
 }; // end Var
+
+class Block : public Stmt
+{
+public:
+    Block() = default;
+    ~Block() = default;
+    Block(const Block&) = default;
+    Block& operator=(const Block&) = default;
+    Block(Block&&) = default;
+    Block& operator=(Block&&) = default;
+
+    Block(std::vector<std::shared_ptr<Stmt>> statements_) : 
+        statements(statements_)
+    {
+
+    }
+
+    void Accept(StmtVisitor& visitor) final
+    {
+        visitor.VisitBlockStmt(*this);
+    }
+
+    std::vector<std::shared_ptr<Stmt>> statements;
+}; // end Block
 } // end lox

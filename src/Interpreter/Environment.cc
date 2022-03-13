@@ -12,6 +12,9 @@ std::any Environment::Get(const Token& name) const
     if (env_.find(name.GetLexeme()) != env_.end())
         return env_.at(name.GetLexeme());
 
+    if (enclosing_)
+        return enclosing_->Get(name);
+
     std::string error_msg = std::string("Undefined variable '") +
                             name.GetLexeme() + std::string("'.");
     throw RuntimeError(name, error_msg);
@@ -21,6 +24,11 @@ void Environment::Assign(Token name, const std::any& value)
 {
     if (env_.find(name.GetLexeme()) != env_.end()) {
         env_[name.GetLexeme()] = value;
+        return;
+    }
+
+    if (enclosing_) {
+        enclosing_->Assign(name, value);
         return;
     }
 

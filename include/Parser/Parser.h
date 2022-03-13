@@ -135,6 +135,8 @@ private:
 
     StmtPtr ExpressionStatement();
 
+    std::vector<StmtPtr> Block();
+
     /*!
      * \brief Parse an expression rule.
      */
