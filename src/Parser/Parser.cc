@@ -118,6 +118,23 @@ std::shared_ptr<Stmt> Parser::ExpressionStatement()
     return std::make_shared<lox::Expression>(expr);
 }
 
+std::shared_ptr<Expr> Parser::Assignment()
+{
+    ExprPtr expr = Equality();
+
+    if (Match({Token::TokenType::kEqual})) {
+        Token   equals = Previous();
+        ExprPtr value  = Assignment();
+
+        if (typeid(*expr) == typeid(Variable)) {
+            Token name = std::static_pointer_cast<Variable>(expr)->name;
+            return std::make_shared<Assign>(name, value);
+        }
+        LOG_STATIC_ERROR(equals.GetLine(), "Invalid assignment target.");
+    }
+    return expr;
+}
+
 std::shared_ptr<Expr> Parser::Equality()
 {
     ExprPtr expr = Comparison();

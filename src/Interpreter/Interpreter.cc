@@ -153,6 +153,14 @@ std::any Interpreter::VisitUnaryExpr(Unary& expr)
     return nullptr;
 }
 
+std::any Interpreter::VisitAssignExpr(Assign& expr)
+{
+    std::any value = Evaluate(expr.value);
+    environment_.Assign(expr.name, value);
+
+    return value;
+}
+
 void Interpreter::Interpret(
     const std::vector<std::shared_ptr<Stmt>>& statements)
 {

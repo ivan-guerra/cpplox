@@ -35,6 +35,13 @@
                     "fields":[
                         {"type":"Token", "name":"name"}
                     ]
+                },
+                {
+                    "name":"Assign",
+                    "fields":[
+                        {"type":"Token", "name":"name"},
+                        {"type":"Expr", "name":"value"}
+                    ]
                 }
             ],
             "headers":[

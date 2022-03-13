@@ -12,6 +12,7 @@ class Grouping;
 class Literal;
 class Unary;
 class Variable;
+class Assign;
 
 class ExprVisitor
 {
@@ -21,6 +22,7 @@ public:
     virtual std::any VisitLiteralExpr(Literal& expr) = 0;
     virtual std::any VisitUnaryExpr(Unary& expr) = 0;
     virtual std::any VisitVariableExpr(Variable& expr) = 0;
+    virtual std::any VisitAssignExpr(Assign& expr) = 0;
 }; // end Visitor
 
 class Expr
@@ -155,4 +157,30 @@ public:
 
     Token name;
 }; // end Variable
+
+class Assign : public Expr
+{
+public:
+    Assign() = default;
+    ~Assign() = default;
+    Assign(const Assign&) = default;
+    Assign& operator=(const Assign&) = default;
+    Assign(Assign&&) = default;
+    Assign& operator=(Assign&&) = default;
+
+    Assign(Token name_, std::shared_ptr<Expr> value_) : 
+        name(name_),
+        value(value_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitAssignExpr(*this);
+    }
+
+    Token name;
+    std::shared_ptr<Expr> value;
+}; // end Assign
 } // end lox

@@ -68,6 +68,8 @@ public:
     std::any VisitVariableExpr(Variable& expr) final
         { return environment_.Get(expr.name); }
 
+    std::any VisitAssignExpr(Assign& expr) final;
+
     /*!
      * \brief Evaluate \a expression.
      *

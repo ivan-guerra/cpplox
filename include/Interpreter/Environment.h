@@ -25,6 +25,8 @@ public:
 
     std::any Get(const Token& name) const;
 
+    void Assign(Token name, const std::any& value);
+
 private:
     std::unordered_map<std::string, std::any> env_;
 }; // end Environment

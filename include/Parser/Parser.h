@@ -139,7 +139,9 @@ private:
      * \brief Parse an expression rule.
      */
     ExprPtr Expression()
-        { return Equality(); }
+        { return Assignment(); }
+
+    ExprPtr Assignment();
 
     /*!
      * \brief Parse a comparison rule.
