@@ -4,7 +4,7 @@ project(Interpreter DESCRIPTION "Lox lang interpreter"
                     LANGUAGES   CXX
 )
 
-add_library(${PROJECT_NAME} STATIC Interpreter.cc)
+add_library(${PROJECT_NAME} STATIC Interpreter.cc Environment.cc)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
