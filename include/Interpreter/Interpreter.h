@@ -15,10 +15,6 @@ namespace lox
 /*!
  * \class Interpreter
  * \brief The Interpreter class implements the Lox lang interpreter.
- *
- * The current state of the Interpreter allows us to evaluate Expressions.
- * Future revisions will implement the logic to evaluate additional lox code
- * at runtime.
  */
 class Interpreter :
     public ast::ExprVisitor,
@@ -26,6 +22,7 @@ class Interpreter :
 {
 public:
     Interpreter() : environment_(std::make_shared<Environment>()) { }
+
     ~Interpreter() = default;
 
     /* Default copy construction and assignment is valid. */
@@ -36,13 +33,25 @@ public:
     Interpreter(Interpreter&&) = default;
     Interpreter& operator=(Interpreter&&) = default;
 
+    /*!
+     * \brief Evaluate a statement.
+     */
     void VisitExpressionStmt(ast::Expression& stmt) final
         { Evaluate(stmt.expression); }
 
+    /*!
+     * \brief Evaluate a print statement.
+     */
     void VisitPrintStmt(ast::Print& stmt) final;
 
+    /*!
+     * \brief Evaluate a variable statement.
+     */
     void VisitVarStmt(ast::Var& stmt) final;
 
+    /*!
+     * \brief Evaluate a block statement.
+     */
     void VisitBlockStmt(ast::Block& stmt) final;
 
     /*!
@@ -70,6 +79,9 @@ public:
     std::any VisitVariableExpr(ast::Variable& expr) final
         { return environment_->Get(expr.name); }
 
+    /*!
+     * \brief Evaluate an assignment expression.
+     */
     std::any VisitAssignExpr(ast::Assign& expr) final;
 
     /*!
@@ -80,9 +92,18 @@ public:
      */
     void Interpret(const std::vector<std::shared_ptr<ast::Stmt>>& statements);
 private:
+    /*!
+     * \brief Execute the code represented by \a stmt.
+     */
     void Execute(std::shared_ptr<ast::Stmt> stmt)
         { stmt->Accept(*this); }
 
+    /*!
+     * \brief Call Execute() on all statements in \a statements.
+     *
+     * \param statements Vector of zero or more statements within a code block.
+     * \param env Environment of the block being executed.
+     */
     void ExecuteBlock(const std::vector<std::shared_ptr<ast::Stmt>>& statements,
                       std::shared_ptr<Environment> env);
 
@@ -126,6 +147,6 @@ private:
      */
     std::string Stringify(const std::any& object) const;
 
-    std::shared_ptr<Environment> environment_;
+    std::shared_ptr<Environment> environment_; /*!< Global scope Environment. */
 }; // end Interpreter
 } // end lox

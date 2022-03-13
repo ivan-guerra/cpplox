@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <exception>
 
 #include "Scanner.h"
 
@@ -12,7 +13,8 @@ namespace lox
  *
  * We don't want lox throwing C++ exceptions or crashing when faced with
  * erroneous runtime behavior. When the interpreter encounters an error
- * it will throw a RuntimeError that is handled by Interpret() gracefully.
+ * it will throw a RuntimeError that is handled by Interpreter::Interpret()
+ * gracefully.
  */
 class RuntimeError : public std::exception
 {

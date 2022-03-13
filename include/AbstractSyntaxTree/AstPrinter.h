@@ -11,7 +11,7 @@ namespace lox
 {
 /*!
  * \class AstPrinter
- * \brief The AstPrinter class outputs the AST as a Lisp like string.
+ * \brief The AstPrinter class outputs an Expr AST as a Lisp like string.
  *
  * See https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
  * for more details.

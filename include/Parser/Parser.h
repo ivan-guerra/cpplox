@@ -15,20 +15,21 @@ namespace lox
  * \class Parser
  * \brief The Parser class implements the Lox lang parser.
  *
- * The current state of the Parser allows us to parse Expressions. Future
- * revisions will implement the parse rules needed to parse the remaining
- * components of the language.
+ * Parser implements a recursive decent parsing strategy. You can find the
+ * complete Lox lang grammar
+ * <a href="https://craftinginterpreters.com/appendix-i.html">here</a>.
  */
 class Parser
 {
 public:
     Parser() = delete;
+
     ~Parser() = default;
 
     /*!
      * \brief Construct a Parser parsing the token stream \a tokens.
      *
-     * \param tokens A vector of Token objects returned by the Scanner.
+     * \param tokens A vector of Token objects obtained by the Scanner.
      */
     Parser(const std::vector<Token> tokens) : current_(0), tokens_(tokens) { }
 
@@ -41,10 +42,9 @@ public:
     Parser& operator=(Parser&&) = default;
 
     /*!
-     * \brief Parse the expression contained within the token stream.
+     * \brief Parse the Stmt ASTs contained within the token stream.
      *
-     * \return A shared pointer to the root of the AST representing the parsed
-     *         expression.
+     * \return A vector of pointers to the root node of zero or more Stmt ASTs.
      */
     std::vector<std::shared_ptr<ast::Stmt>> Parse();
 
@@ -71,7 +71,7 @@ private:
      * \param token A Token.
      * \param message An error message.
      *
-     * \return A default constructed ParserException object.
+     * \return A ParserException object.
      */
     ParserException Error(const Token& token,
                           const std::string& message) const;
@@ -125,16 +125,39 @@ private:
      */
     Token Consume(Token::TokenType type, const std::string& message);
 
+    /*!
+     * \brief Parse a declaration rule.
+     */
     StmtPtr Declaration();
 
+    /*!
+     * \brief Parse a variable declaration rule.
+     */
     StmtPtr VarDeclaration();
 
+    /*!
+     * \brief Parse a statement rule.
+     */
     StmtPtr Statement();
 
+    /*!
+     * \brief Parse a print statement rule.
+     */
     StmtPtr PrintStatement();
 
+    /*!
+     * \brief Parse an expression statement rule.
+     */
     StmtPtr ExpressionStatement();
 
+    /*!
+     * \brief Parse the statements contained within a scoped block.
+     *
+     * Block() will parse the zero or more statements contained within a code
+     * block (i.e., statements inside of an open/closing curly brace pair).
+     *
+     * \return A vector of Stmt pointers.
+     */
     std::vector<StmtPtr> Block();
 
     /*!

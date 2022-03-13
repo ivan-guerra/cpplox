@@ -190,7 +190,7 @@ void Interpreter::Interpret(
     const std::vector<std::shared_ptr<ast::Stmt>>& statements)
 {
     try {
-        for (auto& stmt : statements) {
+        for (const auto& stmt : statements) {
             if (stmt)
                 Execute(stmt);
         }
