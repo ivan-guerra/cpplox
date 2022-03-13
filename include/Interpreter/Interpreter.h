@@ -21,8 +21,8 @@ namespace lox
  * at runtime.
  */
 class Interpreter :
-    public ExprVisitor,
-    public StmtVisitor
+    public ast::ExprVisitor,
+    public ast::StmtVisitor
 {
 public:
     Interpreter() : environment_(std::make_shared<Environment>()) { }
@@ -36,41 +36,41 @@ public:
     Interpreter(Interpreter&&) = default;
     Interpreter& operator=(Interpreter&&) = default;
 
-    void VisitExpressionStmt(Expression& stmt) final
+    void VisitExpressionStmt(ast::Expression& stmt) final
         { Evaluate(stmt.expression); }
 
-    void VisitPrintStmt(Print& stmt) final;
+    void VisitPrintStmt(ast::Print& stmt) final;
 
-    void VisitVarStmt(Var& stmt) final;
+    void VisitVarStmt(ast::Var& stmt) final;
 
-    void VisitBlockStmt(Block& stmt) final;
+    void VisitBlockStmt(ast::Block& stmt) final;
 
     /*!
      * \brief Evaluate a binary expression.
      */
-    std::any VisitBinaryExpr(Binary& expr) final;
+    std::any VisitBinaryExpr(ast::Binary& expr) final;
 
     /*!
      * \brief Evaluate a parenthesized expression.
      */
-    std::any VisitGroupingExpr(Grouping& expr) final
+    std::any VisitGroupingExpr(ast::Grouping& expr) final
         { return Evaluate(expr.expression); }
 
     /*!
      * \brief Evaluate a literal expression.
      */
-    std::any VisitLiteralExpr(Literal& expr) final
+    std::any VisitLiteralExpr(ast::Literal& expr) final
         { return expr.value; }
 
     /*!
      * \brief Evaluate a unary expression.
      */
-    std::any VisitUnaryExpr(Unary& expr) final;
+    std::any VisitUnaryExpr(ast::Unary& expr) final;
 
-    std::any VisitVariableExpr(Variable& expr) final
+    std::any VisitVariableExpr(ast::Variable& expr) final
         { return environment_->Get(expr.name); }
 
-    std::any VisitAssignExpr(Assign& expr) final;
+    std::any VisitAssignExpr(ast::Assign& expr) final;
 
     /*!
      * \brief Evaluate \a expression.
@@ -78,18 +78,18 @@ public:
      * Interpret() will compute the value represented by \a expression. The
      * computed value is output to stdout.
      */
-    void Interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
+    void Interpret(const std::vector<std::shared_ptr<ast::Stmt>>& statements);
 private:
-    void Execute(std::shared_ptr<Stmt> stmt)
+    void Execute(std::shared_ptr<ast::Stmt> stmt)
         { stmt->Accept(*this); }
 
-    void ExecuteBlock(const std::vector<std::shared_ptr<Stmt>>& statements,
+    void ExecuteBlock(const std::vector<std::shared_ptr<ast::Stmt>>& statements,
                       std::shared_ptr<Environment> env);
 
     /*!
      * \brief Return the result of the evaluating \a expr.
      */
-    std::any Evaluate(std::shared_ptr<Expr> expr)
+    std::any Evaluate(std::shared_ptr<ast::Expr> expr)
         { return expr->Accept(*this); }
 
     /*!

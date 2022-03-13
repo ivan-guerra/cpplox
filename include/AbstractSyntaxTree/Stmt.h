@@ -6,6 +6,8 @@
 
 namespace lox
 {
+namespace ast
+{
 class Expression;
 class Print;
 class Var;
@@ -124,4 +126,5 @@ public:
 
     std::vector<std::shared_ptr<Stmt>> statements;
 }; // end Block
+} // end ast
 } // end lox

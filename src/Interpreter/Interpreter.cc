@@ -10,8 +10,9 @@
 
 namespace lox
 {
-void Interpreter::ExecuteBlock(const std::vector<std::shared_ptr<Stmt>>& statements,
-                               std::shared_ptr<Environment> env)
+void Interpreter::ExecuteBlock(
+    const std::vector<std::shared_ptr<ast::Stmt>>& statements,
+    std::shared_ptr<Environment> env)
 {
     std::shared_ptr<Environment> previous = this->environment_;
     try {
@@ -93,13 +94,13 @@ std::string Interpreter::Stringify(const std::any& object) const
     return std::any_cast<std::string>(object);
 }
 
-void Interpreter::VisitPrintStmt(Print& stmt)
+void Interpreter::VisitPrintStmt(ast::Print& stmt)
 {
     std::any value = Evaluate(stmt.expression);
     std::cout << Stringify(value) << std::endl;
 }
 
-void Interpreter::VisitVarStmt(Var& stmt)
+void Interpreter::VisitVarStmt(ast::Var& stmt)
 {
     std::any value(nullptr);
     if (stmt.initializer)
@@ -108,13 +109,13 @@ void Interpreter::VisitVarStmt(Var& stmt)
     environment_->Define(stmt.name.GetLexeme(), value);
 }
 
-void Interpreter::VisitBlockStmt(Block& stmt)
+void Interpreter::VisitBlockStmt(ast::Block& stmt)
 {
     ExecuteBlock(stmt.statements,
                  std::make_shared<Environment>(this->environment_));
 }
 
-std::any Interpreter::VisitBinaryExpr(Binary& expr)
+std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
 {
     std::any left  = Evaluate(expr.left);
     std::any right = Evaluate(expr.right);
@@ -161,7 +162,7 @@ std::any Interpreter::VisitBinaryExpr(Binary& expr)
     return nullptr;
 }
 
-std::any Interpreter::VisitUnaryExpr(Unary& expr)
+std::any Interpreter::VisitUnaryExpr(ast::Unary& expr)
 {
     std::any right = Evaluate(expr.right);
 
@@ -177,7 +178,7 @@ std::any Interpreter::VisitUnaryExpr(Unary& expr)
     return nullptr;
 }
 
-std::any Interpreter::VisitAssignExpr(Assign& expr)
+std::any Interpreter::VisitAssignExpr(ast::Assign& expr)
 {
     std::any value = Evaluate(expr.value);
     environment_->Assign(expr.name, value);
@@ -186,7 +187,7 @@ std::any Interpreter::VisitAssignExpr(Assign& expr)
 }
 
 void Interpreter::Interpret(
-    const std::vector<std::shared_ptr<Stmt>>& statements)
+    const std::vector<std::shared_ptr<ast::Stmt>>& statements)
 {
     try {
         for (auto& stmt : statements) {

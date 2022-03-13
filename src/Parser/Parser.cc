@@ -68,7 +68,7 @@ Token Parser::Consume(Token::TokenType type, const std::string& message)
     throw Error(Peek(), message);
 }
 
-std::shared_ptr<Stmt> Parser::Declaration()
+std::shared_ptr<ast::Stmt> Parser::Declaration()
 {
     try {
         if (Match({Token::TokenType::kVar}))
@@ -81,7 +81,7 @@ std::shared_ptr<Stmt> Parser::Declaration()
     }
 }
 
-std::shared_ptr<Stmt> Parser::VarDeclaration()
+std::shared_ptr<ast::Stmt> Parser::VarDeclaration()
 {
     Token name = Consume(Token::TokenType::kIdentifier,
                          "Expect variable name.");
@@ -91,37 +91,37 @@ std::shared_ptr<Stmt> Parser::VarDeclaration()
         initializer = Expression();
 
     Consume(Token::TokenType::kSemicolon, "Expect ';' after variable declaration.");
-    return std::make_shared<Var>(name, initializer);
+    return std::make_shared<ast::Var>(name, initializer);
 }
 
-std::shared_ptr<Stmt> Parser::Statement()
+std::shared_ptr<ast::Stmt> Parser::Statement()
 {
     if (Match({Token::TokenType::kPrint}))
         return PrintStatement();
 
     if (Match({Token::TokenType::kLeftBrace}))
-        return std::make_shared<lox::Block>(Parser::Block());
+        return std::make_shared<ast::Block>(Parser::Block());
 
     return ExpressionStatement();
 }
 
-std::shared_ptr<Stmt> Parser::PrintStatement()
+std::shared_ptr<ast::Stmt> Parser::PrintStatement()
 {
     ExprPtr value = Expression();
     Consume(Token::TokenType::kSemicolon, "Expect ';' after value.");
 
-    return std::make_shared<Print>(value);
+    return std::make_shared<ast::Print>(value);
 }
 
-std::shared_ptr<Stmt> Parser::ExpressionStatement()
+std::shared_ptr<ast::Stmt> Parser::ExpressionStatement()
 {
     ExprPtr expr = Expression();
     Consume(Token::TokenType::kSemicolon, "Expect ';' after expression.");
 
-    return std::make_shared<lox::Expression>(expr);
+    return std::make_shared<ast::Expression>(expr);
 }
 
-std::vector<std::shared_ptr<Stmt>> Parser::Block()
+std::vector<std::shared_ptr<ast::Stmt>> Parser::Block()
 {
     std::vector<StmtPtr> statements;
 
@@ -132,7 +132,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::Block()
     return statements;
 }
 
-std::shared_ptr<Expr> Parser::Assignment()
+std::shared_ptr<ast::Expr> Parser::Assignment()
 {
     ExprPtr expr = Equality();
 
@@ -140,16 +140,16 @@ std::shared_ptr<Expr> Parser::Assignment()
         Token   equals = Previous();
         ExprPtr value  = Assignment();
 
-        if (typeid(*expr) == typeid(Variable)) {
-            Token name = std::static_pointer_cast<Variable>(expr)->name;
-            return std::make_shared<Assign>(name, value);
+        if (typeid(*expr) == typeid(ast::Variable)) {
+            Token name = std::static_pointer_cast<ast::Variable>(expr)->name;
+            return std::make_shared<ast::Assign>(name, value);
         }
         LOG_STATIC_ERROR(equals.GetLine(), "Invalid assignment target.");
     }
     return expr;
 }
 
-std::shared_ptr<Expr> Parser::Equality()
+std::shared_ptr<ast::Expr> Parser::Equality()
 {
     ExprPtr expr = Comparison();
 
@@ -160,12 +160,12 @@ std::shared_ptr<Expr> Parser::Equality()
     while (Match(kEqualityTokens)) {
         Token op = Previous();
         ExprPtr right = Comparison();
-        expr = std::make_shared<Binary>(expr, op, right);
+        expr = std::make_shared<ast::Binary>(expr, op, right);
     }
     return expr;
 }
 
-std::shared_ptr<Expr> Parser::Comparison()
+std::shared_ptr<ast::Expr> Parser::Comparison()
 {
     ExprPtr expr = Term();
 
@@ -178,12 +178,12 @@ std::shared_ptr<Expr> Parser::Comparison()
     while (Match(kTermTokens)) {
         Token op = Previous();
         ExprPtr right = Term();
-        expr = std::make_shared<Binary>(expr, op, right);
+        expr = std::make_shared<ast::Binary>(expr, op, right);
     }
     return expr;
 }
 
-std::shared_ptr<Expr> Parser::Term()
+std::shared_ptr<ast::Expr> Parser::Term()
 {
     ExprPtr expr = Factor();
 
@@ -194,12 +194,12 @@ std::shared_ptr<Expr> Parser::Term()
     while (Match(kTermTokens)) {
         Token op = Previous();
         ExprPtr right = Factor();
-        expr = std::make_shared<Binary>(expr, op, right);
+        expr = std::make_shared<ast::Binary>(expr, op, right);
     }
     return expr;
 }
 
-std::shared_ptr<Expr> Parser::Factor()
+std::shared_ptr<ast::Expr> Parser::Factor()
 {
     ExprPtr expr = Unary();
 
@@ -210,12 +210,12 @@ std::shared_ptr<Expr> Parser::Factor()
     while (Match(kFactorTokens)) {
         Token op = Previous();
         ExprPtr right = Unary();
-        expr = std::make_shared<Binary>(expr, op, right);
+        expr = std::make_shared<ast::Binary>(expr, op, right);
     }
     return expr;
 }
 
-std::shared_ptr<Expr> Parser::Unary()
+std::shared_ptr<ast::Expr> Parser::Unary()
 {
     static const std::initializer_list<Token::TokenType> kUnaryTokens = {
         Token::TokenType::kBang,
@@ -224,39 +224,39 @@ std::shared_ptr<Expr> Parser::Unary()
     if (Match(kUnaryTokens)) {
         Token op = Previous();
         ExprPtr right = Unary();
-        return std::make_shared<lox::Unary>(op, right);
+        return std::make_shared<ast::Unary>(op, right);
     }
     return Primary();
 }
 
-std::shared_ptr<Expr> Parser::Primary()
+std::shared_ptr<ast::Expr> Parser::Primary()
 {
     if (Match({Token::TokenType::kFalse}))
-        return std::make_shared<Literal>(false);
+        return std::make_shared<ast::Literal>(false);
     if (Match({Token::TokenType::kTrue}))
-        return std::make_shared<Literal>(true);
+        return std::make_shared<ast::Literal>(true);
     if (Match({Token::TokenType::kNil}))
-        return std::make_shared<Literal>(nullptr);
+        return std::make_shared<ast::Literal>(nullptr);
 
     if (Match({Token::TokenType::kNumber, Token::TokenType::kString}))
-        return std::make_shared<Literal>(Previous().GetLiteral());
+        return std::make_shared<ast::Literal>(Previous().GetLiteral());
 
     if (Match({Token::TokenType::kIdentifier}))
-        return std::make_shared<Variable>(Previous());
+        return std::make_shared<ast::Variable>(Previous());
 
     if (Match({Token::TokenType::kLeftParen})) {
         ExprPtr expr = Expression();
         Consume(Token::TokenType::kRightParen,
                 "expected ')' after expression");
-        return std::make_shared<Grouping>(expr);
+        return std::make_shared<ast::Grouping>(expr);
     }
 
     throw Error(Peek(), "expected expression");
 }
 
-std::vector<std::shared_ptr<Stmt>> Parser::Parse()
+std::vector<std::shared_ptr<ast::Stmt>> Parser::Parse()
 {
-    std::vector<std::shared_ptr<Stmt>> statements;
+    std::vector<std::shared_ptr<ast::Stmt>> statements;
     try {
         while (!IsAtEnd())
             statements.push_back(Declaration());
