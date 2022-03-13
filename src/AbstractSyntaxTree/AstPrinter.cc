@@ -20,7 +20,7 @@ std::string AstPrinter::Parenthesize(const std::string& name,
     return ret;
 }
 
-std::any AstPrinter::VisitLiteralExpr(Literal& expr)
+std::any AstPrinter::VisitLiteralExpr(ast::Literal& expr)
 {
     if (!expr.value.has_value())
         return std::string("nil");

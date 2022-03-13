@@ -46,7 +46,7 @@ public:
      * \return A shared pointer to the root of the AST representing the parsed
      *         expression.
      */
-    std::vector<std::shared_ptr<Stmt>> Parse();
+    std::vector<std::shared_ptr<ast::Stmt>> Parse();
 
 private:
     /*!
@@ -59,8 +59,8 @@ private:
      */
     class ParserException : public std::exception { }; // end ParserException
 
-    using ExprPtr = std::shared_ptr<Expr>;
-    using StmtPtr = std::shared_ptr<Stmt>;
+    using ExprPtr = std::shared_ptr<ast::Expr>;
+    using StmtPtr = std::shared_ptr<ast::Stmt>;
 
     /*!
      * \brief Print an error message and return a ParserException.

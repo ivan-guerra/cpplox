@@ -115,6 +115,8 @@ def generate_ast(writer, data):
     writer.write('\n')
     writer.write('namespace lox\n')
     writer.write('{\n')
+    writer.write('namespace ast\n')
+    writer.write('{\n')
 
     # Forward declare the subtype classes.
     for subtype in data['subtypes']:
@@ -141,6 +143,7 @@ def generate_ast(writer, data):
         generate_type(writer, base_name, visitor_return, subtype)
         writer.write('\n')
 
+    writer.write('} // end ast\n')
     writer.write('} // end lox')
 
 

@@ -16,40 +16,41 @@ namespace lox
  * See https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
  * for more details.
  */
-class AstPrinter : public ExprVisitor
+class AstPrinter :
+    public ast::ExprVisitor
 {
 public:
     /*!
      * \brief Generate a binary expression output string.
      */
-    std::any VisitBinaryExpr(Binary& expr) final
+    std::any VisitBinaryExpr(ast::Binary& expr) final
         { return Parenthesize(expr.op.GetLexeme(), {expr.left, expr.right}); }
 
     /*!
      * \brief Generate a grouping expression output string.
      */
-    std::any VisitGroupingExpr(Grouping& expr) final
+    std::any VisitGroupingExpr(ast::Grouping& expr) final
         { return Parenthesize("group", {expr.expression}); }
 
     /*!
      * \brief Generate a literal expression output string.
      */
-    std::any VisitLiteralExpr(Literal& expr) final;
+    std::any VisitLiteralExpr(ast::Literal& expr) final;
 
     /*!
      * \brief Generate a unary expression output string.
      */
-    std::any VisitUnaryExpr(Unary& expr) final
+    std::any VisitUnaryExpr(ast::Unary& expr) final
         { return Parenthesize(expr.op.GetLexeme(), {expr.right}); }
 
     /*!
      * \brief Return the AST string represented using Lisp like syntax.
      */
-    std::string Print(std::shared_ptr<Expr> expr)
+    std::string Print(std::shared_ptr<ast::Expr> expr)
         { return std::any_cast<std::string>(expr->Accept(*this)); }
 
 private:
-    using ExprList = std::initializer_list<std::shared_ptr<Expr>>;
+    using ExprList = std::initializer_list<std::shared_ptr<ast::Expr>>;
 
     /*!
      * \brief Parenthesize \a name and all expressions in \a expressions.

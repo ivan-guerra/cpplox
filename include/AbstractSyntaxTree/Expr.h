@@ -7,6 +7,8 @@
 
 namespace lox
 {
+namespace ast
+{
 class Binary;
 class Grouping;
 class Literal;
@@ -183,4 +185,5 @@ public:
     Token name;
     std::shared_ptr<Expr> value;
 }; // end Assign
+} // end ast
 } // end lox

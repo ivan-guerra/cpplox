@@ -17,7 +17,7 @@ void Run(const std::string& source)
     static lox::Interpreter interpreter;
 
     /* Parse program statements. */
-    std::vector<std::shared_ptr<lox::Stmt>> statements = parser.Parse();
+    std::vector<std::shared_ptr<lox::ast::Stmt>> statements = parser.Parse();
 
     /* Interpret! */
     interpreter.Interpret(statements);
