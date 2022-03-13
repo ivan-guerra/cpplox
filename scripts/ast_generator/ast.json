@@ -6,15 +6,15 @@
                 {
                     "name":"Binary",
                     "fields":[
-                        {"type":"Expr" , "name":"left"},
+                        {"type":"std::shared_ptr<Expr>" , "name":"left"},
                         {"type":"Token", "name":"op"},
-                        {"type":"Expr" , "name":"right"}
+                        {"type":"std::shared_ptr<Expr>" , "name":"right"}
                     ]
                 },
                 {
                     "name":"Grouping",
                     "fields":[
-                        {"type":"Expr", "name":"expression"}
+                        {"type":"std::shared_ptr<Expr>", "name":"expression"}
                     ]
                 },
                 {
@@ -27,7 +27,7 @@
                     "name":"Unary",
                     "fields":[
                         {"type":"Token", "name":"op"},
-                        {"type":"Expr" , "name":"right"}
+                        {"type":"std::shared_ptr<Expr>" , "name":"right"}
                     ]
                 },
                 {
@@ -40,7 +40,7 @@
                     "name":"Assign",
                     "fields":[
                         {"type":"Token", "name":"name"},
-                        {"type":"Expr", "name":"value"}
+                        {"type":"std::shared_ptr<Expr>", "name":"value"}
                     ]
                 }
             ],

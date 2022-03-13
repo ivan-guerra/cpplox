@@ -58,11 +58,7 @@ def generate_type(writer, base_name, visitor_return, subtype_info):
     writer.write(ws() + subtype_info['name'] + '(')
     fields = []
     for field in subtype_info['fields']:
-        if field['type'] == base_name:
-            fields.append('std::shared_ptr<' + field['type'] + '> ' +
-                          field['name'] + '_')
-        else:
-            fields.append(field['type'] + ' ' + field['name'] + '_')
+        fields.append(field['type'] + ' ' + field['name'] + '_')
     writer.write(', '.join(fields) + ') : \n')
 
     # Constructor definition: the initializer list.
@@ -74,7 +70,7 @@ def generate_type(writer, base_name, visitor_return, subtype_info):
     writer.write(ws() + '}\n\n')
 
     # base_name::Accept method override.
-    writer.write(ws() + visitor_return +' Accept(' + base_name +
+    writer.write(ws() + visitor_return + ' Accept(' + base_name +
                  'Visitor& visitor) final\n')
     writer.write(ws() + '{\n')
     if 'void' == visitor_return:
