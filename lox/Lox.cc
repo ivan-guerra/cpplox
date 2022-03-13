@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "Expr.h"
+#include "Stmt.h"
 #include "Parser.h"
 #include "Scanner.h"
 #include "Interpreter.h"
@@ -16,12 +16,11 @@ void Run(const std::string& source)
     lox::Parser             parser(scanner.ScanTokens());
     static lox::Interpreter interpreter;
 
-    /* Parse an expression. */
-    std::shared_ptr<lox::Expr> expr = parser.Parse();
+    /* Parse program statements. */
+    std::vector<std::shared_ptr<lox::Stmt>> statements = parser.Parse();
 
-    if (expr)
-        /* Interpret! */
-        interpreter.Interpret(expr);
+    /* Interpret! */
+    interpreter.Interpret(statements);
 }
 
 void RunPrompt()

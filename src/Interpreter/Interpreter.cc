@@ -6,6 +6,7 @@
 #include "Scanner.h"
 #include "Interpreter.h"
 #include "ErrorLogger.h"
+#include "RuntimeError.h"
 
 namespace lox
 {
@@ -74,6 +75,21 @@ std::string Interpreter::Stringify(const std::any& object) const
     return std::any_cast<std::string>(object);
 }
 
+void Interpreter::VisitPrintStmt(Print& stmt)
+{
+    std::any value = Evaluate(stmt.expression);
+    std::cout << Stringify(value) << std::endl;
+}
+
+void Interpreter::VisitVarStmt(Var& stmt)
+{
+    std::any value(nullptr);
+    if (stmt.initializer)
+        value = Evaluate(stmt.initializer);
+
+    environment_.Define(stmt.name.GetLexeme(), value);
+}
+
 std::any Interpreter::VisitBinaryExpr(Binary& expr)
 {
     std::any left  = Evaluate(expr.left);
@@ -137,11 +153,14 @@ std::any Interpreter::VisitUnaryExpr(Unary& expr)
     return nullptr;
 }
 
-void Interpreter::Interpret(std::shared_ptr<Expr> expression)
+void Interpreter::Interpret(
+    const std::vector<std::shared_ptr<Stmt>>& statements)
 {
     try {
-        std::any value = Evaluate(expression);
-        std::cout << Stringify(value) << std::endl;
+        for (auto& stmt : statements) {
+            if (stmt)
+                Execute(stmt);
+        }
     } catch (const RuntimeError& e) {
         LOG_RUNTIME_ERROR(e.token.GetLine(), e.message);
     }

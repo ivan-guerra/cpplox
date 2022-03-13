@@ -1,32 +1,77 @@
 {
-    "base_name":"Expr",
-    "subtypes" :[
+    "ast":[
         {
-            "name":"Binary",
-            "fields":[
-                {"type":"Expr" , "name":"left"},
-                {"type":"Token", "name":"op"},
-                {"type":"Expr" , "name":"right"}
-            ]
+            "base_name":"Expr",
+            "subtypes":[
+                {
+                    "name":"Binary",
+                    "fields":[
+                        {"type":"Expr" , "name":"left"},
+                        {"type":"Token", "name":"op"},
+                        {"type":"Expr" , "name":"right"}
+                    ]
+                },
+                {
+                    "name":"Grouping",
+                    "fields":[
+                        {"type":"Expr", "name":"expression"}
+                    ]
+                },
+                {
+                    "name":"Literal",
+                    "fields":[
+                        {"type":"std::any", "name":"value"}
+                    ]
+                },
+                {
+                    "name":"Unary",
+                    "fields":[
+                        {"type":"Token", "name":"op"},
+                        {"type":"Expr" , "name":"right"}
+                    ]
+                },
+                {
+                    "name":"Variable",
+                    "fields":[
+                        {"type":"Token", "name":"name"}
+                    ]
+                }
+            ],
+            "headers":[
+                "<any>",
+                "<memory>",
+                "\"Scanner.h\""
+            ],
+            "visitor_return":"std::any"
         },
         {
-            "name":"Grouping",
-            "fields":[
-                {"type":"Expr", "name":"expression"}
-            ]
-        },
-        {
-            "name":"Literal",
-            "fields":[
-                {"type":"std::any", "name":"value"}
-            ]
-        },
-        {
-            "name":"Unary",
-            "fields":[
-                {"type":"Token", "name":"op"},
-                {"type":"Expr" , "name":"right"}
-            ]
+            "base_name":"Stmt",
+            "subtypes":[
+                {
+                    "name":"Expression",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>" , "name":"expression"}
+                    ]
+                },
+                {
+                    "name":"Print",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"expression"}
+                    ]
+                },
+                {
+                    "name":"Var",
+                    "fields":[
+                        {"type":"Token", "name":"name"},
+                        {"type":"std::shared_ptr<Expr>", "name":"initializer"}
+                    ]
+                }
+            ],
+            "headers":[
+                "<memory>",
+                "\"Expr.h\""
+            ],
+            "visitor_return":"void"
         }
     ]
 }

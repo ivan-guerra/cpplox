@@ -6,6 +6,7 @@
 #include <initializer_list>
 
 #include "Expr.h"
+#include "Stmt.h"
 #include "Scanner.h"
 
 namespace lox
@@ -45,7 +46,7 @@ public:
      * \return A shared pointer to the root of the AST representing the parsed
      *         expression.
      */
-    std::shared_ptr<Expr> Parse();
+    std::vector<std::shared_ptr<Stmt>> Parse();
 
 private:
     /*!
@@ -59,6 +60,7 @@ private:
     class ParserException : public std::exception { }; // end ParserException
 
     using ExprPtr = std::shared_ptr<Expr>;
+    using StmtPtr = std::shared_ptr<Stmt>;
 
     /*!
      * \brief Print an error message and return a ParserException.
@@ -122,6 +124,16 @@ private:
      * \return The consumed Token object.
      */
     Token Consume(Token::TokenType type, const std::string& message);
+
+    StmtPtr Declaration();
+
+    StmtPtr VarDeclaration();
+
+    StmtPtr Statement();
+
+    StmtPtr PrintStatement();
+
+    StmtPtr ExpressionStatement();
 
     /*!
      * \brief Parse an expression rule.

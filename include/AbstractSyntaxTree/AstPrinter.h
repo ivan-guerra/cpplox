@@ -16,7 +16,7 @@ namespace lox
  * See https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
  * for more details.
  */
-class AstPrinter : public Visitor
+class AstPrinter : public ExprVisitor
 {
 public:
     /*!

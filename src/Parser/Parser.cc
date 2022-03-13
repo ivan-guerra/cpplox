@@ -3,6 +3,7 @@
 #include <initializer_list>
 
 #include "Expr.h"
+#include "Stmt.h"
 #include "Parser.h"
 #include "Scanner.h"
 #include "ErrorLogger.h"
@@ -65,6 +66,56 @@ Token Parser::Consume(Token::TokenType type, const std::string& message)
         return Advance();
 
     throw Error(Peek(), message);
+}
+
+std::shared_ptr<Stmt> Parser::Declaration()
+{
+    try {
+        if (Match({Token::TokenType::kVar}))
+            return VarDeclaration();
+
+        return Statement();
+    } catch (const ParserException& e) {
+        Synchronize();
+        return nullptr;
+    }
+}
+
+std::shared_ptr<Stmt> Parser::VarDeclaration()
+{
+    Token name = Consume(Token::TokenType::kIdentifier,
+                         "Expect variable name.");
+
+    ExprPtr initializer = nullptr;
+    if (Match({Token::TokenType::kEqual}))
+        initializer = Expression();
+
+    Consume(Token::TokenType::kSemicolon, "Expect ';' after variable declaration.");
+    return std::make_shared<Var>(name, initializer);
+}
+
+std::shared_ptr<Stmt> Parser::Statement()
+{
+    if (Match({Token::TokenType::kPrint}))
+        return PrintStatement();
+
+    return ExpressionStatement();
+}
+
+std::shared_ptr<Stmt> Parser::PrintStatement()
+{
+    ExprPtr value = Expression();
+    Consume(Token::TokenType::kSemicolon, "Expect ';' after value.");
+
+    return std::make_shared<Print>(value);
+}
+
+std::shared_ptr<Stmt> Parser::ExpressionStatement()
+{
+    ExprPtr expr = Expression();
+    Consume(Token::TokenType::kSemicolon, "Expect ';' after expression.");
+
+    return std::make_shared<lox::Expression>(expr);
 }
 
 std::shared_ptr<Expr> Parser::Equality()
@@ -159,6 +210,9 @@ std::shared_ptr<Expr> Parser::Primary()
     if (Match({Token::TokenType::kNumber, Token::TokenType::kString}))
         return std::make_shared<Literal>(Previous().GetLiteral());
 
+    if (Match({Token::TokenType::kIdentifier}))
+        return std::make_shared<Variable>(Previous());
+
     if (Match({Token::TokenType::kLeftParen})) {
         ExprPtr expr = Expression();
         Consume(Token::TokenType::kRightParen,
@@ -169,12 +223,16 @@ std::shared_ptr<Expr> Parser::Primary()
     throw Error(Peek(), "expected expression");
 }
 
-std::shared_ptr<Expr> Parser::Parse()
+std::vector<std::shared_ptr<Stmt>> Parser::Parse()
 {
+    std::vector<std::shared_ptr<Stmt>> statements;
     try {
-        return Expression();
+        while (!IsAtEnd())
+            statements.push_back(Declaration());
+
+        return statements;
     } catch (ParserException& e) {
-        return nullptr;
+        return statements;
     }
 }
 } // end lox

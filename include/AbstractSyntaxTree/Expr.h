@@ -3,7 +3,6 @@
 
 #include <any>
 #include <memory>
-
 #include "Scanner.h"
 
 namespace lox
@@ -12,21 +11,23 @@ class Binary;
 class Grouping;
 class Literal;
 class Unary;
+class Variable;
 
-class Visitor
+class ExprVisitor
 {
 public:
     virtual std::any VisitBinaryExpr(Binary& expr) = 0;
     virtual std::any VisitGroupingExpr(Grouping& expr) = 0;
     virtual std::any VisitLiteralExpr(Literal& expr) = 0;
     virtual std::any VisitUnaryExpr(Unary& expr) = 0;
+    virtual std::any VisitVariableExpr(Variable& expr) = 0;
 }; // end Visitor
 
 class Expr
 {
 public:
     virtual ~Expr() = default;
-    virtual std::any Accept(Visitor& visitor) = 0;
+    virtual std::any Accept(ExprVisitor& visitor) = 0;
 }; // end Expr
 
 class Binary : public Expr
@@ -47,7 +48,7 @@ public:
 
     }
 
-    std::any Accept(Visitor& visitor) final
+    std::any Accept(ExprVisitor& visitor) final
     {
         return visitor.VisitBinaryExpr(*this);
     }
@@ -73,7 +74,7 @@ public:
 
     }
 
-    std::any Accept(Visitor& visitor) final
+    std::any Accept(ExprVisitor& visitor) final
     {
         return visitor.VisitGroupingExpr(*this);
     }
@@ -97,7 +98,7 @@ public:
 
     }
 
-    std::any Accept(Visitor& visitor) final
+    std::any Accept(ExprVisitor& visitor) final
     {
         return visitor.VisitLiteralExpr(*this);
     }
@@ -122,7 +123,7 @@ public:
 
     }
 
-    std::any Accept(Visitor& visitor) final
+    std::any Accept(ExprVisitor& visitor) final
     {
         return visitor.VisitUnaryExpr(*this);
     }
@@ -130,4 +131,28 @@ public:
     Token op;
     std::shared_ptr<Expr> right;
 }; // end Unary
+
+class Variable : public Expr
+{
+public:
+    Variable() = default;
+    ~Variable() = default;
+    Variable(const Variable&) = default;
+    Variable& operator=(const Variable&) = default;
+    Variable(Variable&&) = default;
+    Variable& operator=(Variable&&) = default;
+
+    Variable(Token name_) : 
+        name(name_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitVariableExpr(*this);
+    }
+
+    Token name;
+}; // end Variable
 } // end lox

@@ -3,9 +3,12 @@
 #include <any>
 #include <memory>
 #include <exception>
+#include <vector>
 
 #include "Expr.h"
+#include "Stmt.h"
 #include "Scanner.h"
+#include "Environment.h"
 
 namespace lox
 {
@@ -17,7 +20,9 @@ namespace lox
  * Future revisions will implement the logic to evaluate additional lox code
  * at runtime.
  */
-class Interpreter : public Visitor
+class Interpreter :
+    public ExprVisitor,
+    public StmtVisitor
 {
 public:
     Interpreter() = default;
@@ -30,6 +35,13 @@ public:
     /* Default move construction and assignment is valid. */
     Interpreter(Interpreter&&) = default;
     Interpreter& operator=(Interpreter&&) = default;
+
+    void VisitExpressionStmt(Expression& stmt) final
+        { Evaluate(stmt.expression); }
+
+    void VisitPrintStmt(Print& stmt) final;
+
+    void VisitVarStmt(Var& stmt) final;
 
     /*!
      * \brief Evaluate a binary expression.
@@ -53,31 +65,19 @@ public:
      */
     std::any VisitUnaryExpr(Unary& expr) final;
 
+    std::any VisitVariableExpr(Variable& expr) final
+        { return environment_.Get(expr.name); }
+
     /*!
      * \brief Evaluate \a expression.
      *
      * Interpret() will compute the value represented by \a expression. The
      * computed value is output to stdout.
      */
-    void Interpret(std::shared_ptr<Expr> expression);
+    void Interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
 private:
-    /*!
-     * \class RuntimeError
-     * \brief The RuntimeError class represents a lox runtime error.
-     *
-     * We don't want lox throwing C++ exceptions or crashing when faced with
-     * erroneous runtime behavior. When the interpreter encounters an error
-     * it will throw a RuntimeError that is handled by Interpret() gracefully.
-     */
-    class RuntimeError : public std::exception
-    {
-    public:
-        RuntimeError(const Token& token_, const std::string& message_) :
-            token(token_), message(message_) { }
-
-        Token       token;   /*!< Last Token processed before this error was thrown. */
-        std::string message; /*!< Message describing the runtime error. */
-    }; // end RuntimeError
+    void Execute(std::shared_ptr<Stmt> stmt)
+        { stmt->Accept(*this); }
 
     /*!
      * \brief Return the result of the evaluating \a expr.
@@ -118,5 +118,7 @@ private:
      * \brief Return the string representation of \a object.
      */
     std::string Stringify(const std::any& object) const;
+
+    Environment environment_;
 }; // end Interpreter
 } // end lox
