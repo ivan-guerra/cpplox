@@ -15,6 +15,7 @@ class Literal;
 class Unary;
 class Variable;
 class Assign;
+class Logical;
 
 class ExprVisitor
 {
@@ -25,6 +26,7 @@ public:
     virtual std::any VisitUnaryExpr(Unary& expr) = 0;
     virtual std::any VisitVariableExpr(Variable& expr) = 0;
     virtual std::any VisitAssignExpr(Assign& expr) = 0;
+    virtual std::any VisitLogicalExpr(Logical& expr) = 0;
 }; // end Visitor
 
 class Expr
@@ -185,5 +187,33 @@ public:
     Token name;
     std::shared_ptr<Expr> value;
 }; // end Assign
+
+class Logical : public Expr
+{
+public:
+    Logical() = default;
+    ~Logical() = default;
+    Logical(const Logical&) = default;
+    Logical& operator=(const Logical&) = default;
+    Logical(Logical&&) = default;
+    Logical& operator=(Logical&&) = default;
+
+    Logical(std::shared_ptr<Expr> left_, Token op_, std::shared_ptr<Expr> right_) : 
+        left(left_),
+        op(op_),
+        right(right_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitLogicalExpr(*this);
+    }
+
+    std::shared_ptr<Expr> left;
+    Token op;
+    std::shared_ptr<Expr> right;
+}; // end Logical
 } // end ast
 } // end lox

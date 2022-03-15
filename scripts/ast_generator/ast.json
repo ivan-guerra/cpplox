@@ -42,6 +42,14 @@
                         {"type":"Token", "name":"name"},
                         {"type":"std::shared_ptr<Expr>", "name":"value"}
                     ]
+                },
+                {
+                    "name":"Logical",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"left"},
+                        {"type":"Token", "name":"op"},
+                        {"type":"std::shared_ptr<Expr>", "name":"right"}
+                    ]
                 }
             ],
             "headers":[
@@ -77,6 +85,21 @@
                     "name":"Block",
                     "fields":[
                         {"type":"std::vector<std::shared_ptr<Stmt>>", "name":"statements"}
+                    ]
+                },
+                {
+                    "name":"If",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"condition"},
+                        {"type":"std::shared_ptr<Stmt>", "name":"then_branch"},
+                        {"type":"std::shared_ptr<Stmt>", "name":"else_branch"}
+                    ]
+                },
+                {
+                    "name":"While",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"condition"},
+                        {"type":"std::shared_ptr<Stmt>", "name":"body"}
                     ]
                 }
             ],
