@@ -55,6 +55,16 @@ public:
     void VisitBlockStmt(ast::Block& stmt) final;
 
     /*!
+     * \brief Evaluate an if/else statement.
+     */
+    void VisitIfStmt(ast::If& stmt) final;
+
+    /*!
+     * \brief Evaluate a while statement.
+     */
+    void VisitWhileStmt(ast::While& stmt) final;
+
+    /*!
      * \brief Evaluate a binary expression.
      */
     std::any VisitBinaryExpr(ast::Binary& expr) final;
@@ -84,6 +94,8 @@ public:
      */
     std::any VisitAssignExpr(ast::Assign& expr) final;
 
+    std::any VisitLogicalExpr(ast::Logical& expr) final;
+
     /*!
      * \brief Evaluate \a expression.
      *
@@ -96,7 +108,7 @@ private:
      * \brief Execute the code represented by \a stmt.
      */
     void Execute(std::shared_ptr<ast::Stmt> stmt)
-        { stmt->Accept(*this); }
+        { if (stmt) stmt->Accept(*this); }
 
     /*!
      * \brief Call Execute() on all statements in \a statements.
