@@ -140,10 +140,22 @@ private:
      */
     StmtPtr Statement();
 
+    StmtPtr IfStatement();
+
     /*!
      * \brief Parse a print statement rule.
      */
     StmtPtr PrintStatement();
+
+    /*!
+     * \brief Parse a for statement rule.
+     */
+    StmtPtr ForStatement();
+
+    /*!
+     * \brief Parse a while statement rule.
+     */
+    StmtPtr WhileStatement();
 
     /*!
      * \brief Parse an expression statement rule.
@@ -166,6 +178,19 @@ private:
     ExprPtr Expression()
         { return Assignment(); }
 
+    /*!
+     * \brief Parse a logical_or rule.
+     */
+    ExprPtr Or();
+
+    /*!
+     * \brief Parse a logical_and rule.
+     */
+    ExprPtr And();
+
+    /*!
+     * \brief Parse an assignment rule.
+     */
     ExprPtr Assignment();
 
     /*!

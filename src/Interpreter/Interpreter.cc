@@ -115,6 +115,20 @@ void Interpreter::VisitBlockStmt(ast::Block& stmt)
                  std::make_shared<Environment>(this->environment_));
 }
 
+void Interpreter::VisitIfStmt(ast::If& stmt)
+{
+    if (IsTruth(Evaluate(stmt.condition)))
+        Execute(stmt.then_branch);
+    else
+        Execute(stmt.else_branch);
+}
+
+void Interpreter::VisitWhileStmt(ast::While& stmt)
+{
+    while (IsTruth(Evaluate(stmt.condition)))
+        Execute(stmt.body);
+}
+
 std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
 {
     std::any left  = Evaluate(expr.left);
@@ -184,6 +198,20 @@ std::any Interpreter::VisitAssignExpr(ast::Assign& expr)
     environment_->Assign(expr.name, value);
 
     return value;
+}
+
+std::any Interpreter::VisitLogicalExpr(ast::Logical& expr)
+{
+    std::any left = Evaluate(expr.left);
+
+    if (expr.op.GetType() == Token::TokenType::kOr) {
+        if (IsTruth(left))
+            return left;
+    } else {
+        if (!IsTruth(left))
+            return left;
+    }
+    return Evaluate(expr.right);
 }
 
 void Interpreter::Interpret(
