@@ -125,113 +125,55 @@ private:
      */
     Token Consume(Token::TokenType type, const std::string& message);
 
-    /*!
-     * \brief Parse a declaration rule.
-     */
+    /* === Statement Productions === */
+
     StmtPtr Declaration();
 
     StmtPtr Function(const std::string& kind);
 
-    /*!
-     * \brief Parse a variable declaration rule.
-     */
     StmtPtr VarDeclaration();
 
-    /*!
-     * \brief Parse a statement rule.
-     */
     StmtPtr Statement();
 
     StmtPtr IfStatement();
 
-    /*!
-     * \brief Parse a print statement rule.
-     */
     StmtPtr PrintStatement();
 
-    /*!
-     * \brief Parse a for statement rule.
-     */
     StmtPtr ForStatement();
 
     StmtPtr ReturnStatement();
 
-    /*!
-     * \brief Parse a while statement rule.
-     */
     StmtPtr WhileStatement();
 
-    /*!
-     * \brief Parse an expression statement rule.
-     */
     StmtPtr ExpressionStatement();
 
-    /*!
-     * \brief Parse the statements contained within a scoped block.
-     *
-     * Block() will parse the zero or more statements contained within a code
-     * block (i.e., statements inside of an open/closing curly brace pair).
-     *
-     * \return A vector of Stmt pointers.
-     */
     std::vector<StmtPtr> Block();
 
-    /*!
-     * \brief Parse an expression rule.
-     */
+    /* === Expression Productions === */
+
     ExprPtr Expression()
         { return Assignment(); }
 
-    /*!
-     * \brief Parse a logical_or rule.
-     */
     ExprPtr Or();
 
-    /*!
-     * \brief Parse a logical_and rule.
-     */
     ExprPtr And();
 
-    /*!
-     * \brief Parse an assignment rule.
-     */
     ExprPtr Assignment();
 
-    /*!
-     * \brief Parse a comparison rule.
-     */
     ExprPtr Equality();
 
-    /*!
-     * \brief Parse a comparison rule.
-     */
     ExprPtr Comparison();
 
-    /*!
-     * \brief Parse a term rule.
-     */
     ExprPtr Term();
 
-    /*!
-     * \brief Parse a factor rule.
-     */
     ExprPtr Factor();
 
-    /*!
-     * \brief Parse a unary rule.
-     */
     ExprPtr Unary();
 
     ExprPtr FinishCall(ExprPtr callee);
 
-    /*!
-     * \brief Parse a function call rule.
-     */
     ExprPtr Call();
 
-    /*!
-     * \brief Parse a primary rule.
-     */
     ExprPtr Primary();
 
     int                current_; /*!< Index of the current parse token. */

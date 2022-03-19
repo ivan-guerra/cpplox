@@ -32,86 +32,44 @@ public:
     Interpreter(Interpreter&&) = default;
     Interpreter& operator=(Interpreter&&) = default;
 
-    /*!
-     * \brief Evaluate a statement.
-     */
     void VisitExpressionStmt(ast::Expression& stmt) final
         { Evaluate(stmt.expression); }
 
-    /*!
-     * \brief Evaluate a print statement.
-     */
     void VisitPrintStmt(ast::Print& stmt) final;
 
-    /*!
-     * \brief Evaluate a variable statement.
-     */
     void VisitVarStmt(ast::Var& stmt) final;
 
-    /*!
-     * \brief Evaluate a block statement.
-     */
     void VisitBlockStmt(ast::Block& stmt) final;
 
-    /*!
-     * \brief Evaluate an if/else statement.
-     */
     void VisitIfStmt(ast::If& stmt) final;
 
-    /*!
-     * \brief Evaluate a while statement.
-     */
     void VisitWhileStmt(ast::While& stmt) final;
 
     void VisitFunctionStmt(ast::Function& stmt) final;
 
     void VisitReturnStmt(ast::Return& stmt) final;
 
-    /*!
-     * \brief Evaluate a binary expression.
-     */
     std::any VisitBinaryExpr(ast::Binary& expr) final;
 
-    /*!
-     * \brief Evaluate a parenthesized expression.
-     */
     std::any VisitGroupingExpr(ast::Grouping& expr) final
         { return Evaluate(expr.expression); }
 
-    /*!
-     * \brief Evaluate a literal expression.
-     */
     std::any VisitLiteralExpr(ast::Literal& expr) final
         { return expr.value; }
 
-    /*!
-     * \brief Evaluate a unary expression.
-     */
     std::any VisitUnaryExpr(ast::Unary& expr) final;
 
     std::any VisitVariableExpr(ast::Variable& expr) final
         { return environment_->Get(expr.name); }
 
-    /*!
-     * \brief Evaluate an assignment expression.
-     */
     std::any VisitAssignExpr(ast::Assign& expr) final;
 
-    /*!
-     * \brief Evaluate a logical expression.
-     */
     std::any VisitLogicalExpr(ast::Logical& expr) final;
 
-    /*!
-     * Evaluate a function call expression.
-     */
     std::any VisitCallExpr(ast::Call& expr) final;
 
     /*!
-     * \brief Evaluate \a expression.
-     *
-     * Interpret() will compute the value represented by \a expression. The
-     * computed value is output to stdout.
+     * \brief Execute each statement in \a statements.
      */
     void Interpret(const std::vector<std::shared_ptr<ast::Stmt>>& statements);
 private:
@@ -134,7 +92,7 @@ private:
                               std::vector<std::any>& arguments) = 0;
 
         /*!
-         * \brief Number of arguments expected by the callable object.
+         * \brief Return number of arguments expected by the callable object.
          */
         virtual std::size_t Arity() const = 0;
     }; // end LoxCallable
