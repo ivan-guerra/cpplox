@@ -2,13 +2,13 @@
 
 #include <any>
 #include <memory>
-#include <exception>
 #include <vector>
 
 #include "Expr.h"
 #include "Stmt.h"
 #include "Scanner.h"
 #include "Environment.h"
+#include "RuntimeError.h"
 
 namespace lox
 {
@@ -21,8 +21,7 @@ class Interpreter :
     public ast::StmtVisitor
 {
 public:
-    Interpreter() : environment_(std::make_shared<Environment>()) { }
-
+    Interpreter();
     ~Interpreter() = default;
 
     /* Default copy construction and assignment is valid. */
@@ -64,6 +63,10 @@ public:
      */
     void VisitWhileStmt(ast::While& stmt) final;
 
+    void VisitFunctionStmt(ast::Function& stmt) final;
+
+    void VisitReturnStmt(ast::Return& stmt) final;
+
     /*!
      * \brief Evaluate a binary expression.
      */
@@ -94,7 +97,15 @@ public:
      */
     std::any VisitAssignExpr(ast::Assign& expr) final;
 
+    /*!
+     * \brief Evaluate a logical expression.
+     */
     std::any VisitLogicalExpr(ast::Logical& expr) final;
+
+    /*!
+     * Evaluate a function call expression.
+     */
+    std::any VisitCallExpr(ast::Call& expr) final;
 
     /*!
      * \brief Evaluate \a expression.
@@ -104,6 +115,77 @@ public:
      */
     void Interpret(const std::vector<std::shared_ptr<ast::Stmt>>& statements);
 private:
+    /*!
+     * \class LoxCallable
+     * \brief The LoxCallable class defines the interface for any callable Lox object.
+     */
+    class LoxCallable
+    {
+    public:
+        /*!
+         * \brief Action performed by the object when it is called.
+         *
+         * \param interpreter Instance of this Interpreter.
+         * \param arguments Call arguments.
+         *
+         * \return The result of the object action.
+         */
+        virtual std::any Call(Interpreter& interpreter,
+                              std::vector<std::any>& arguments) = 0;
+
+        /*!
+         * \brief Number of arguments expected by the callable object.
+         */
+        virtual std::size_t Arity() const = 0;
+    }; // end LoxCallable
+
+    /*!
+     * \class Clock
+     * \brief The Clock class implements the builtin Lox clock function.
+     *
+     * The Clock class implements a Lox built-in clock function. The Clock
+     * class is handy when benchmarking code. It allows you to generate a
+     * timestamp in seconds using the system clock as its source.
+     */
+    class Clock :
+        public LoxCallable
+    {
+        public:
+            /*!
+             * \brief Return the current system time in seconds.
+             */
+            std::any Call([[maybe_unused]]Interpreter& interpreter,
+                [[maybe_unused]]std::vector<std::any>& arguments) final;
+
+            std::size_t Arity() const final
+                { return 0; }
+    }; // end Clock
+
+    /*!
+     * \class LoxFunction
+     * \brief The LoxFunction class implements Lox function calls.
+     */
+    class LoxFunction :
+        public LoxCallable
+    {
+        public:
+            LoxFunction() = delete;
+            LoxFunction(const ast::Function& decl) : declaration(decl) { }
+
+            /*!
+             * \brief Perform the function call and return the result.
+             * \return If the function called has no return value, nil is
+             *         returned.
+             */
+            std::any Call(Interpreter& interpreter,
+                          std::vector<std::any>& arguments) final;
+
+            std::size_t Arity() const final
+                { return declaration.params.size(); }
+
+            ast::Function declaration; /*!< Function declaration statement. */
+    }; // end LoxFunction
+
     /*!
      * \brief Execute the code represented by \a stmt.
      */
@@ -157,8 +239,9 @@ private:
     /*!
      * \brief Return the string representation of \a object.
      */
-    std::string Stringify(const std::any& object) const;
+    std::string Stringify(const std::any& object);
 
-    std::shared_ptr<Environment> environment_; /*!< Global scope Environment. */
+    std::shared_ptr<Environment> globals_;     /*!< Global scope Environment. */
+    std::shared_ptr<Environment> environment_; /*!< Active Environment. */
 }; // end Interpreter
 } // end lox

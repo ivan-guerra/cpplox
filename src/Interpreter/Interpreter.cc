@@ -2,6 +2,9 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <chrono>
 
 #include "Scanner.h"
 #include "Interpreter.h"
@@ -10,6 +13,32 @@
 
 namespace lox
 {
+std::any Interpreter::Clock::Call([[maybe_unused]]Interpreter& interpreter,
+    [[maybe_unused]]std::vector<std::any>& arguments)
+{
+    auto curr_time = std::chrono::system_clock::now();
+    return std::chrono::duration<double>(curr_time.time_since_epoch()).count();
+}
+
+std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
+                           std::vector<std::any>& arguments)
+{
+    std::shared_ptr<Environment> env =
+        std::make_shared<Environment>(*interpreter.globals_);
+    env->SetEnclosingEnv(interpreter.environment_);
+
+    for (std::size_t i = 0; i < declaration.params.size(); ++i) {
+        env->Define(declaration.params[i].GetLexeme(),
+                arguments[i]);
+    }
+    try {
+        interpreter.ExecuteBlock(declaration.body, env);
+    } catch (const Return& e) {
+        return e.value;
+    }
+    return nullptr;
+}
+
 void Interpreter::ExecuteBlock(
     const std::vector<std::shared_ptr<ast::Stmt>>& statements,
     std::shared_ptr<Environment> env)
@@ -19,14 +48,14 @@ void Interpreter::ExecuteBlock(
         this->environment_ = env;
         for (const auto& stmt : statements)
             Execute(stmt);
-    } catch (const std::exception& e) {
-        /* If something goes wrong when processing statements, always revert
-           the environment. */
+    } catch (const std::runtime_error& e) {
         this->environment_ = previous;
-    }
 
-    /* Revert the environment after processing the block. */
-    this->environment_ = previous;
+        /* Important that we let the exception propagate up so that either
+           error handling code or a LoxCallable::Call() method sees the
+           exception and triggers the appropriate behavior. */
+        throw;
+    }
 }
 
 bool Interpreter::IsTruth(const std::any& object) const
@@ -78,7 +107,7 @@ void Interpreter::CheckNumberOperands(const Token& op,
     throw RuntimeError(op, "Operands must be numbers.");
 }
 
-std::string Interpreter::Stringify(const std::any& object) const
+std::string Interpreter::Stringify(const std::any& object)
 {
     if (typeid(nullptr) == object.type())
         return "nil";
@@ -91,6 +120,15 @@ std::string Interpreter::Stringify(const std::any& object) const
         double_str.erase(double_str.find_first_of('.'), std::string::npos);
         return double_str;
     }
+
+    using ClockPtr = std::shared_ptr<lox::Interpreter::Clock>;
+    if (typeid(ClockPtr) == object.type()) {
+        ClockPtr clock = std::any_cast<ClockPtr>(object);
+        std::vector<std::any> dummy;
+        double time = std::any_cast<double>(clock->Call(*this, dummy));
+        return std::to_string(time);
+    }
+
     return std::any_cast<std::string>(object);
 }
 
@@ -112,7 +150,7 @@ void Interpreter::VisitVarStmt(ast::Var& stmt)
 void Interpreter::VisitBlockStmt(ast::Block& stmt)
 {
     ExecuteBlock(stmt.statements,
-                 std::make_shared<Environment>(this->environment_));
+                 std::make_shared<Environment>(*environment_));
 }
 
 void Interpreter::VisitIfStmt(ast::If& stmt)
@@ -127,6 +165,23 @@ void Interpreter::VisitWhileStmt(ast::While& stmt)
 {
     while (IsTruth(Evaluate(stmt.condition)))
         Execute(stmt.body);
+}
+
+void Interpreter::VisitFunctionStmt(ast::Function& stmt)
+{
+    std::shared_ptr<LoxCallable> function =
+        std::make_shared<LoxFunction>(stmt);
+
+    environment_->Define(stmt.name.GetLexeme(), function);
+}
+
+void Interpreter::VisitReturnStmt(ast::Return& stmt)
+{
+    std::any value = nullptr;
+    if (stmt.value)
+        value = Evaluate(stmt.value);
+
+    throw Return(value);
 }
 
 std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
@@ -212,6 +267,38 @@ std::any Interpreter::VisitLogicalExpr(ast::Logical& expr)
             return left;
     }
     return Evaluate(expr.right);
+}
+
+std::any Interpreter::VisitCallExpr(ast::Call& expr)
+{
+    std::any callee = Evaluate(expr.callee);
+
+    std::vector<std::any> arguments;
+    for (const auto& argument : expr.arguments)
+        arguments.push_back(Evaluate(argument));
+
+    if (callee.type() != typeid(std::shared_ptr<LoxCallable>))
+        throw RuntimeError(expr.paren, "Can only call functions and classes.");
+
+    std::shared_ptr<LoxCallable> function =
+        std::any_cast<std::shared_ptr<LoxCallable>>(callee);
+
+    if (arguments.size() != function->Arity()) {
+        std::stringstream err_message;
+        err_message << "Expected " << function->Arity()
+                    << " arguments but got " << arguments.size() << ".";
+        throw RuntimeError(expr.paren, err_message.str());
+    }
+
+    return function->Call(*this, arguments);
+}
+
+Interpreter::Interpreter() :
+    globals_(std::make_shared<Environment>()),
+    environment_(std::make_shared<Environment>())
+{
+    globals_->Define("clock", std::make_shared<Clock>());
+    environment_->SetEnclosingEnv(globals_);
 }
 
 void Interpreter::Interpret(
