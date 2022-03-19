@@ -30,13 +30,6 @@ public:
      */
     Environment() : enclosing_(nullptr) { }
 
-    /*!
-     * \brief Define a child Environment.
-     *
-     * \param env Pointer to this Environment's parent scope.
-     */
-    Environment(const std::shared_ptr<Environment>& env) : enclosing_(env) { }
-
     ~Environment() = default;
 
     /* Allow default copy construction and assignment. */
@@ -46,6 +39,15 @@ public:
     /* Allow default move construction and assignment. */
     Environment(Environment&&) = default;
     Environment& operator=(Environment&&) = default;
+
+    /*!
+     * \brief Set this Environment object's parent Environment pointer.
+     *
+     * \param enclosing_env The parent (or enclosing) Environment of this
+     *                      child Environment object.
+     */
+    void SetEnclosingEnv(std::shared_ptr<Environment> enclosing_env)
+        { enclosing_ = enclosing_env; }
 
     /*!
      * \brief Define a variable.
