@@ -130,6 +130,8 @@ private:
      */
     StmtPtr Declaration();
 
+    StmtPtr Function(const std::string& kind);
+
     /*!
      * \brief Parse a variable declaration rule.
      */
@@ -151,6 +153,8 @@ private:
      * \brief Parse a for statement rule.
      */
     StmtPtr ForStatement();
+
+    StmtPtr ReturnStatement();
 
     /*!
      * \brief Parse a while statement rule.
@@ -217,6 +221,13 @@ private:
      * \brief Parse a unary rule.
      */
     ExprPtr Unary();
+
+    ExprPtr FinishCall(ExprPtr callee);
+
+    /*!
+     * \brief Parse a function call rule.
+     */
+    ExprPtr Call();
 
     /*!
      * \brief Parse a primary rule.

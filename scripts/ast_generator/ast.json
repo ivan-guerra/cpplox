@@ -50,6 +50,14 @@
                         {"type":"Token", "name":"op"},
                         {"type":"std::shared_ptr<Expr>", "name":"right"}
                     ]
+                },
+                {
+                    "name":"Call",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"callee"},
+                        {"type":"Token", "name":"paren"},
+                        {"type":"std::vector<std::shared_ptr<Expr>>", "name":"arguments"}
+                    ]
                 }
             ],
             "headers":[
@@ -100,6 +108,21 @@
                     "fields":[
                         {"type":"std::shared_ptr<Expr>", "name":"condition"},
                         {"type":"std::shared_ptr<Stmt>", "name":"body"}
+                    ]
+                },
+                {
+                    "name":"Function",
+                    "fields":[
+                        {"type":"Token", "name":"name"},
+                        {"type":"std::vector<Token>", "name":"params"},
+                        {"type":"std::vector<std::shared_ptr<Stmt>>", "name":"body"}
+                    ]
+                },
+                {
+                    "name":"Return",
+                    "fields":[
+                        {"type":"Token", "name":"keyword"},
+                        {"type":"std::shared_ptr<Expr>", "name":"value"}
                     ]
                 }
             ],

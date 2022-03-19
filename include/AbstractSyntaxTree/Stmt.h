@@ -14,6 +14,8 @@ class Var;
 class Block;
 class If;
 class While;
+class Function;
+class Return;
 
 class StmtVisitor
 {
@@ -24,6 +26,8 @@ public:
     virtual void VisitBlockStmt(Block& stmt) = 0;
     virtual void VisitIfStmt(If& stmt) = 0;
     virtual void VisitWhileStmt(While& stmt) = 0;
+    virtual void VisitFunctionStmt(Function& stmt) = 0;
+    virtual void VisitReturnStmt(Return& stmt) = 0;
 }; // end Visitor
 
 class Stmt
@@ -184,5 +188,59 @@ public:
     std::shared_ptr<Expr> condition;
     std::shared_ptr<Stmt> body;
 }; // end While
+
+class Function : public Stmt
+{
+public:
+    Function() = default;
+    ~Function() = default;
+    Function(const Function&) = default;
+    Function& operator=(const Function&) = default;
+    Function(Function&&) = default;
+    Function& operator=(Function&&) = default;
+
+    Function(Token name_, std::vector<Token> params_, std::vector<std::shared_ptr<Stmt>> body_) : 
+        name(name_),
+        params(params_),
+        body(body_)
+    {
+
+    }
+
+    void Accept(StmtVisitor& visitor) final
+    {
+        visitor.VisitFunctionStmt(*this);
+    }
+
+    Token name;
+    std::vector<Token> params;
+    std::vector<std::shared_ptr<Stmt>> body;
+}; // end Function
+
+class Return : public Stmt
+{
+public:
+    Return() = default;
+    ~Return() = default;
+    Return(const Return&) = default;
+    Return& operator=(const Return&) = default;
+    Return(Return&&) = default;
+    Return& operator=(Return&&) = default;
+
+    Return(Token keyword_, std::shared_ptr<Expr> value_) : 
+        keyword(keyword_),
+        value(value_)
+    {
+
+    }
+
+    void Accept(StmtVisitor& visitor) final
+    {
+        visitor.VisitReturnStmt(*this);
+    }
+
+    Token keyword;
+    std::shared_ptr<Expr> value;
+}; // end Return
 } // end ast
 } // end lox

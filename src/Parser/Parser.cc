@@ -1,6 +1,7 @@
 #include <memory>
 #include <unordered_set>
 #include <initializer_list>
+#include <sstream>
 
 #include "Expr.h"
 #include "Stmt.h"
@@ -71,6 +72,9 @@ Token Parser::Consume(Token::TokenType type, const std::string& message)
 std::shared_ptr<ast::Stmt> Parser::Declaration()
 {
     try {
+        if (Match({Token::TokenType::kFun}))
+            return Function("function");
+
         if (Match({Token::TokenType::kVar}))
             return VarDeclaration();
 
@@ -79,6 +83,33 @@ std::shared_ptr<ast::Stmt> Parser::Declaration()
         Synchronize();
         return nullptr;
     }
+}
+
+std::shared_ptr<ast::Stmt> Parser::Function(const std::string& kind)
+{
+    Token name =
+        Consume(Token::TokenType::kIdentifier,
+                std::string("Expect ") + kind + std::string(" name."));
+    Consume(Token::TokenType::kLeftParen,
+            std::string("Expect '(' after ") + kind + std::string(" name."));
+
+    std::vector<Token> parameters;
+    if (!Check(Token::TokenType::kRightParen)) {
+        do {
+            if (parameters.size() >= 255)
+                Error(Peek(), "Can't have more than 255 parameters.");
+
+            parameters.push_back(Consume(Token::TokenType::kIdentifier,
+                                         "Expect parameter name."));
+        } while (Match({Token::TokenType::kComma}));
+    }
+    Consume(Token::TokenType::kRightParen, "Expect ')' after parameters.");
+
+    Consume(Token::TokenType::kLeftBrace,
+            std::string("Expect '{' before ") + kind + std::string(" body."));
+    std::vector<std::shared_ptr<ast::Stmt>> body = Block();
+
+    return std::make_shared<ast::Function>(name, parameters, body);
 }
 
 std::shared_ptr<ast::Stmt> Parser::VarDeclaration()
@@ -104,6 +135,9 @@ std::shared_ptr<ast::Stmt> Parser::Statement()
 
     if (Match({Token::TokenType::kFor}))
         return ForStatement();
+
+    if (Match({Token::TokenType::kReturn}))
+        return ReturnStatement();
 
     if (Match({Token::TokenType::kWhile}))
         return WhileStatement();
@@ -177,6 +211,18 @@ std::shared_ptr<ast::Stmt> Parser::ForStatement()
     return body;
 }
 
+std::shared_ptr<ast::Stmt> Parser::ReturnStatement()
+{
+    Token keyword = Previous();
+
+    ExprPtr value = nullptr;
+    if (!Check(Token::TokenType::kSemicolon))
+        value = Expression();
+
+    Consume(Token::TokenType::kSemicolon, "Expect ';' after return value");
+    return std::make_shared<ast::Return>(keyword, value);
+}
+
 std::shared_ptr<ast::Stmt> Parser::WhileStatement()
 {
     Consume(Token::TokenType::kLeftParen, "Expect '(' after 'while'.");
@@ -203,7 +249,7 @@ std::vector<std::shared_ptr<ast::Stmt>> Parser::Block()
     while (!Check(Token::TokenType::kRightBrace) && !IsAtEnd())
         statements.push_back(Declaration());
 
-    Consume(Token::TokenType::kRightBrace, "Exprect '}' after block.");
+    Consume(Token::TokenType::kRightBrace, "Expect '}' after block.");
     return statements;
 }
 
@@ -325,7 +371,38 @@ std::shared_ptr<ast::Expr> Parser::Unary()
         ExprPtr right = Unary();
         return std::make_shared<ast::Unary>(op, right);
     }
-    return Primary();
+    return Call();
+}
+
+std::shared_ptr<ast::Expr> Parser::FinishCall(ExprPtr callee)
+{
+    std::vector<std::shared_ptr<ast::Expr>> arguments;
+    if (!Check(Token::TokenType::kRightParen)) {
+        do {
+            if (arguments.size() >= 255)
+                Error(Peek(), "Can't have more than 255 arguments.");
+
+            arguments.push_back(Expression());
+        } while (Match({Token::TokenType::kComma}));
+    }
+
+    Token paren = Consume(Token::TokenType::kRightParen,
+                          "Expect ')' after arguments.");
+
+    return std::make_shared<ast::Call>(callee, paren, arguments);
+}
+
+std::shared_ptr<ast::Expr> Parser::Call()
+{
+    ExprPtr expr = Primary();
+
+    while (true) {
+        if (Match({Token::TokenType::kLeftParen}))
+            expr = FinishCall(expr);
+        else
+            break;
+    }
+    return expr;
 }
 
 std::shared_ptr<ast::Expr> Parser::Primary()
