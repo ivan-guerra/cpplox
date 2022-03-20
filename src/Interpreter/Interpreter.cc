@@ -24,8 +24,8 @@ std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
                            std::vector<std::any>& arguments)
 {
     std::shared_ptr<Environment> env =
-        std::make_shared<Environment>(*interpreter.globals_);
-    env->SetEnclosingEnv(interpreter.environment_);
+        std::make_shared<Environment>(*interpreter.environment_);
+    env->SetEnclosingEnv(closure);
 
     for (std::size_t i = 0; i < declaration.params.size(); ++i) {
         env->Define(declaration.params[i].GetLexeme(),
@@ -170,7 +170,8 @@ void Interpreter::VisitWhileStmt(ast::While& stmt)
 void Interpreter::VisitFunctionStmt(ast::Function& stmt)
 {
     std::shared_ptr<LoxCallable> function =
-        std::make_shared<LoxFunction>(stmt);
+        std::make_shared<LoxFunction>(stmt,
+            std::make_shared<Environment>(*environment_));
 
     environment_->Define(stmt.name.GetLexeme(), function);
 }

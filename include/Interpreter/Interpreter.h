@@ -128,7 +128,11 @@ private:
     {
         public:
             LoxFunction() = delete;
-            LoxFunction(const ast::Function& decl) : declaration(decl) { }
+            LoxFunction(const ast::Function& decl,
+                        std::shared_ptr<Environment> cls) :
+                declaration(decl),
+                closure(cls)
+                { }
 
             /*!
              * \brief Perform the function call and return the result.
@@ -141,7 +145,8 @@ private:
             std::size_t Arity() const final
                 { return declaration.params.size(); }
 
-            ast::Function declaration; /*!< Function declaration statement. */
+            ast::Function declaration;            /*!< Function declaration statement. */
+            std::shared_ptr<Environment> closure; /*!< Closure environment. */
     }; // end LoxFunction
 
     /*!
