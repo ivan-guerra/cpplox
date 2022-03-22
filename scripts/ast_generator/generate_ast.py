@@ -28,7 +28,8 @@ def generate_visitor(writer, base_name, visitor_return, subtypes):
     for subtype in subtypes:
         writer.write(ws() + 'virtual ' + visitor_return + ' Visit' +
                      subtype['name'] + base_name + '(')
-        writer.write(subtype['name'] + '& ' + base_name.lower() + ') = 0;\n')
+        writer.write('std::shared_ptr<' + subtype['name'] + '> ' +
+                     base_name.lower() + ') = 0;\n')
     writer.write('}; // end Visitor')
 
 
@@ -36,8 +37,10 @@ def generate_type(writer, base_name, visitor_return, subtype_info):
     """Write the AST's subtype class definition(s)."""
 
     # Beginning of class definition.
-    writer.write('class ' + subtype_info['name'] + ' : public ' + base_name +
-                 '\n')
+    writer.write('class ' + subtype_info['name'] + ' : \n')
+    writer.write(ws() + 'public ' + base_name + ',\n')
+    writer.write(ws() + 'public std::enable_shared_from_this<' +
+                 subtype_info['name'] + '>\n')
     writer.write('{\n')
     writer.write('public:\n')
 
@@ -75,10 +78,10 @@ def generate_type(writer, base_name, visitor_return, subtype_info):
     writer.write(ws() + '{\n')
     if 'void' == visitor_return:
         writer.write(ws(8) + 'visitor.Visit' + subtype_info['name'] +
-                     base_name + '(*this);\n')
+                     base_name + '(shared_from_this());\n')
     else:
         writer.write(ws(8) + 'return visitor.Visit' + subtype_info['name'] +
-                     base_name + '(*this);\n')
+                     base_name + '(shared_from_this());\n')
     writer.write(ws() + '}\n\n')
 
     # Class member declarations.

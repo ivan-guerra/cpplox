@@ -23,25 +23,25 @@ public:
     /*!
      * \brief Generate a binary expression output string.
      */
-    std::any VisitBinaryExpr(ast::Binary& expr) final
-        { return Parenthesize(expr.op.GetLexeme(), {expr.left, expr.right}); }
+    std::any VisitBinaryExpr(std::shared_ptr<ast::Binary> expr) final
+        { return Parenthesize(expr->op.GetLexeme(), {expr->left, expr->right}); }
 
     /*!
      * \brief Generate a grouping expression output string.
      */
-    std::any VisitGroupingExpr(ast::Grouping& expr) final
-        { return Parenthesize("group", {expr.expression}); }
+    std::any VisitGroupingExpr(std::shared_ptr<ast::Grouping> expr) final
+        { return Parenthesize("group", {expr->expression}); }
 
     /*!
      * \brief Generate a literal expression output string.
      */
-    std::any VisitLiteralExpr(ast::Literal& expr) final;
+    std::any VisitLiteralExpr(std::shared_ptr<ast::Literal> expr) final;
 
     /*!
      * \brief Generate a unary expression output string.
      */
-    std::any VisitUnaryExpr(ast::Unary& expr) final
-        { return Parenthesize(expr.op.GetLexeme(), {expr.right}); }
+    std::any VisitUnaryExpr(std::shared_ptr<ast::Unary> expr) final
+        { return Parenthesize(expr->op.GetLexeme(), {expr->right}); }
 
     /*!
      * \brief Return the AST string represented using Lisp like syntax.

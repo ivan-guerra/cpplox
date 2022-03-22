@@ -20,14 +20,14 @@ class Return;
 class StmtVisitor
 {
 public:
-    virtual void VisitExpressionStmt(Expression& stmt) = 0;
-    virtual void VisitPrintStmt(Print& stmt) = 0;
-    virtual void VisitVarStmt(Var& stmt) = 0;
-    virtual void VisitBlockStmt(Block& stmt) = 0;
-    virtual void VisitIfStmt(If& stmt) = 0;
-    virtual void VisitWhileStmt(While& stmt) = 0;
-    virtual void VisitFunctionStmt(Function& stmt) = 0;
-    virtual void VisitReturnStmt(Return& stmt) = 0;
+    virtual void VisitExpressionStmt(std::shared_ptr<Expression> stmt) = 0;
+    virtual void VisitPrintStmt(std::shared_ptr<Print> stmt) = 0;
+    virtual void VisitVarStmt(std::shared_ptr<Var> stmt) = 0;
+    virtual void VisitBlockStmt(std::shared_ptr<Block> stmt) = 0;
+    virtual void VisitIfStmt(std::shared_ptr<If> stmt) = 0;
+    virtual void VisitWhileStmt(std::shared_ptr<While> stmt) = 0;
+    virtual void VisitFunctionStmt(std::shared_ptr<Function> stmt) = 0;
+    virtual void VisitReturnStmt(std::shared_ptr<Return> stmt) = 0;
 }; // end Visitor
 
 class Stmt
@@ -37,7 +37,9 @@ public:
     virtual void Accept(StmtVisitor& visitor) = 0;
 }; // end Stmt
 
-class Expression : public Stmt
+class Expression : 
+    public Stmt,
+    public std::enable_shared_from_this<Expression>
 {
 public:
     Expression() = default;
@@ -55,13 +57,15 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitExpressionStmt(*this);
+        visitor.VisitExpressionStmt(shared_from_this());
     }
 
     std::shared_ptr<Expr> expression;
 }; // end Expression
 
-class Print : public Stmt
+class Print : 
+    public Stmt,
+    public std::enable_shared_from_this<Print>
 {
 public:
     Print() = default;
@@ -79,13 +83,15 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitPrintStmt(*this);
+        visitor.VisitPrintStmt(shared_from_this());
     }
 
     std::shared_ptr<Expr> expression;
 }; // end Print
 
-class Var : public Stmt
+class Var : 
+    public Stmt,
+    public std::enable_shared_from_this<Var>
 {
 public:
     Var() = default;
@@ -104,14 +110,16 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitVarStmt(*this);
+        visitor.VisitVarStmt(shared_from_this());
     }
 
     Token name;
     std::shared_ptr<Expr> initializer;
 }; // end Var
 
-class Block : public Stmt
+class Block : 
+    public Stmt,
+    public std::enable_shared_from_this<Block>
 {
 public:
     Block() = default;
@@ -129,13 +137,15 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitBlockStmt(*this);
+        visitor.VisitBlockStmt(shared_from_this());
     }
 
     std::vector<std::shared_ptr<Stmt>> statements;
 }; // end Block
 
-class If : public Stmt
+class If : 
+    public Stmt,
+    public std::enable_shared_from_this<If>
 {
 public:
     If() = default;
@@ -155,7 +165,7 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitIfStmt(*this);
+        visitor.VisitIfStmt(shared_from_this());
     }
 
     std::shared_ptr<Expr> condition;
@@ -163,7 +173,9 @@ public:
     std::shared_ptr<Stmt> else_branch;
 }; // end If
 
-class While : public Stmt
+class While : 
+    public Stmt,
+    public std::enable_shared_from_this<While>
 {
 public:
     While() = default;
@@ -182,14 +194,16 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitWhileStmt(*this);
+        visitor.VisitWhileStmt(shared_from_this());
     }
 
     std::shared_ptr<Expr> condition;
     std::shared_ptr<Stmt> body;
 }; // end While
 
-class Function : public Stmt
+class Function : 
+    public Stmt,
+    public std::enable_shared_from_this<Function>
 {
 public:
     Function() = default;
@@ -209,7 +223,7 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitFunctionStmt(*this);
+        visitor.VisitFunctionStmt(shared_from_this());
     }
 
     Token name;
@@ -217,7 +231,9 @@ public:
     std::vector<std::shared_ptr<Stmt>> body;
 }; // end Function
 
-class Return : public Stmt
+class Return : 
+    public Stmt,
+    public std::enable_shared_from_this<Return>
 {
 public:
     Return() = default;
@@ -236,7 +252,7 @@ public:
 
     void Accept(StmtVisitor& visitor) final
     {
-        visitor.VisitReturnStmt(*this);
+        visitor.VisitReturnStmt(shared_from_this());
     }
 
     Token keyword;

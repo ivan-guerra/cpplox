@@ -27,12 +27,12 @@ std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
         std::make_shared<Environment>(*interpreter.environment_);
     env->SetEnclosingEnv(closure);
 
-    for (std::size_t i = 0; i < declaration.params.size(); ++i) {
-        env->Define(declaration.params[i].GetLexeme(),
+    for (std::size_t i = 0; i < declaration->params.size(); ++i) {
+        env->Define(declaration->params[i].GetLexeme(),
                 arguments[i]);
     }
     try {
-        interpreter.ExecuteBlock(declaration.body, env);
+        interpreter.ExecuteBlock(declaration->body, env);
     } catch (const Return& e) {
         return e.value;
     }
@@ -132,65 +132,65 @@ std::string Interpreter::Stringify(const std::any& object)
     return std::any_cast<std::string>(object);
 }
 
-void Interpreter::VisitPrintStmt(ast::Print& stmt)
+void Interpreter::VisitPrintStmt(std::shared_ptr<ast::Print> stmt)
 {
-    std::any value = Evaluate(stmt.expression);
+    std::any value = Evaluate(stmt->expression);
     std::cout << Stringify(value) << std::endl;
 }
 
-void Interpreter::VisitVarStmt(ast::Var& stmt)
+void Interpreter::VisitVarStmt(std::shared_ptr<ast::Var> stmt)
 {
     std::any value(nullptr);
-    if (stmt.initializer)
-        value = Evaluate(stmt.initializer);
+    if (stmt->initializer)
+        value = Evaluate(stmt->initializer);
 
-    environment_->Define(stmt.name.GetLexeme(), value);
+    environment_->Define(stmt->name.GetLexeme(), value);
 }
 
-void Interpreter::VisitBlockStmt(ast::Block& stmt)
+void Interpreter::VisitBlockStmt(std::shared_ptr<ast::Block> stmt)
 {
-    ExecuteBlock(stmt.statements,
+    ExecuteBlock(stmt->statements,
                  std::make_shared<Environment>(*environment_));
 }
 
-void Interpreter::VisitIfStmt(ast::If& stmt)
+void Interpreter::VisitIfStmt(std::shared_ptr<ast::If> stmt)
 {
-    if (IsTruth(Evaluate(stmt.condition)))
-        Execute(stmt.then_branch);
+    if (IsTruth(Evaluate(stmt->condition)))
+        Execute(stmt->then_branch);
     else
-        Execute(stmt.else_branch);
+        Execute(stmt->else_branch);
 }
 
-void Interpreter::VisitWhileStmt(ast::While& stmt)
+void Interpreter::VisitWhileStmt(std::shared_ptr<ast::While> stmt)
 {
-    while (IsTruth(Evaluate(stmt.condition)))
-        Execute(stmt.body);
+    while (IsTruth(Evaluate(stmt->condition)))
+        Execute(stmt->body);
 }
 
-void Interpreter::VisitFunctionStmt(ast::Function& stmt)
+void Interpreter::VisitFunctionStmt(std::shared_ptr<ast::Function> stmt)
 {
     std::shared_ptr<LoxCallable> function =
         std::make_shared<LoxFunction>(stmt,
             std::make_shared<Environment>(*environment_));
 
-    environment_->Define(stmt.name.GetLexeme(), function);
+    environment_->Define(stmt->name.GetLexeme(), function);
 }
 
-void Interpreter::VisitReturnStmt(ast::Return& stmt)
+void Interpreter::VisitReturnStmt(std::shared_ptr<ast::Return> stmt)
 {
     std::any value = nullptr;
-    if (stmt.value)
-        value = Evaluate(stmt.value);
+    if (stmt->value)
+        value = Evaluate(stmt->value);
 
     throw Return(value);
 }
 
-std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
+std::any Interpreter::VisitBinaryExpr(std::shared_ptr<ast::Binary> expr)
 {
-    std::any left  = Evaluate(expr.left);
-    std::any right = Evaluate(expr.right);
+    std::any left  = Evaluate(expr->left);
+    std::any right = Evaluate(expr->right);
 
-    Token::TokenType type = expr.op.GetType();
+    Token::TokenType type = expr->op.GetType();
     if (Token::TokenType::kPlus == type) {
         if ((typeid(double) == left.type()) &&
                 (typeid(double) == right.type()))
@@ -199,28 +199,28 @@ std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
                 (typeid(std::string) == right.type()))
             return (std::any_cast<std::string>(left) + std::any_cast<std::string>(right));
 
-        throw RuntimeError(expr.op,
+        throw RuntimeError(expr->op,
                            "Operands must be two numbers or two strings.");
     } else if (Token::TokenType::kMinus == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) - std::any_cast<double>(right));
     } else if (Token::TokenType::kSlash == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) / std::any_cast<double>(right));
     } else if (Token::TokenType::kStar == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) * std::any_cast<double>(right));
     } else if (Token::TokenType::kGreater == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) > std::any_cast<double>(right));
     } else if (Token::TokenType::kGreaterEqual == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) >= std::any_cast<double>(right));
     } else if (Token::TokenType::kLess == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) < std::any_cast<double>(right));
     } else if (Token::TokenType::kLessEqual == type) {
-        CheckNumberOperands(expr.op, left, right);
+        CheckNumberOperands(expr->op, left, right);
         return (std::any_cast<double>(left) <= std::any_cast<double>(right));
     } else if (Token::TokenType::kBangEqual == type) {
         return !IsEqual(left, right);
@@ -232,13 +232,13 @@ std::any Interpreter::VisitBinaryExpr(ast::Binary& expr)
     return nullptr;
 }
 
-std::any Interpreter::VisitUnaryExpr(ast::Unary& expr)
+std::any Interpreter::VisitUnaryExpr(std::shared_ptr<ast::Unary> expr)
 {
-    std::any right = Evaluate(expr.right);
+    std::any right = Evaluate(expr->right);
 
-    Token::TokenType type = expr.op.GetType();
+    Token::TokenType type = expr->op.GetType();
     if (Token::TokenType::kMinus == type) {
-        CheckNumberOperand(expr.op, right);
+        CheckNumberOperand(expr->op, right);
         return -(std::any_cast<double>(right));
     } else if (Token::TokenType::kBang == type) {
         return !IsTruth(right);
@@ -248,38 +248,38 @@ std::any Interpreter::VisitUnaryExpr(ast::Unary& expr)
     return nullptr;
 }
 
-std::any Interpreter::VisitAssignExpr(ast::Assign& expr)
+std::any Interpreter::VisitAssignExpr(std::shared_ptr<ast::Assign> expr)
 {
-    std::any value = Evaluate(expr.value);
-    environment_->Assign(expr.name, value);
+    std::any value = Evaluate(expr->value);
+    environment_->Assign(expr->name, value);
 
     return value;
 }
 
-std::any Interpreter::VisitLogicalExpr(ast::Logical& expr)
+std::any Interpreter::VisitLogicalExpr(std::shared_ptr<ast::Logical> expr)
 {
-    std::any left = Evaluate(expr.left);
+    std::any left = Evaluate(expr->left);
 
-    if (expr.op.GetType() == Token::TokenType::kOr) {
+    if (expr->op.GetType() == Token::TokenType::kOr) {
         if (IsTruth(left))
             return left;
     } else {
         if (!IsTruth(left))
             return left;
     }
-    return Evaluate(expr.right);
+    return Evaluate(expr->right);
 }
 
-std::any Interpreter::VisitCallExpr(ast::Call& expr)
+std::any Interpreter::VisitCallExpr(std::shared_ptr<ast::Call> expr)
 {
-    std::any callee = Evaluate(expr.callee);
+    std::any callee = Evaluate(expr->callee);
 
     std::vector<std::any> arguments;
-    for (const auto& argument : expr.arguments)
+    for (const auto& argument : expr->arguments)
         arguments.push_back(Evaluate(argument));
 
     if (callee.type() != typeid(std::shared_ptr<LoxCallable>))
-        throw RuntimeError(expr.paren, "Can only call functions and classes.");
+        throw RuntimeError(expr->paren, "Can only call functions and classes.");
 
     std::shared_ptr<LoxCallable> function =
         std::any_cast<std::shared_ptr<LoxCallable>>(callee);
@@ -288,7 +288,7 @@ std::any Interpreter::VisitCallExpr(ast::Call& expr)
         std::stringstream err_message;
         err_message << "Expected " << function->Arity()
                     << " arguments but got " << arguments.size() << ".";
-        throw RuntimeError(expr.paren, err_message.str());
+        throw RuntimeError(expr->paren, err_message.str());
     }
 
     return function->Call(*this, arguments);

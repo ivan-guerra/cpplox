@@ -21,14 +21,14 @@ class Call;
 class ExprVisitor
 {
 public:
-    virtual std::any VisitBinaryExpr(Binary& expr) = 0;
-    virtual std::any VisitGroupingExpr(Grouping& expr) = 0;
-    virtual std::any VisitLiteralExpr(Literal& expr) = 0;
-    virtual std::any VisitUnaryExpr(Unary& expr) = 0;
-    virtual std::any VisitVariableExpr(Variable& expr) = 0;
-    virtual std::any VisitAssignExpr(Assign& expr) = 0;
-    virtual std::any VisitLogicalExpr(Logical& expr) = 0;
-    virtual std::any VisitCallExpr(Call& expr) = 0;
+    virtual std::any VisitBinaryExpr(std::shared_ptr<Binary> expr) = 0;
+    virtual std::any VisitGroupingExpr(std::shared_ptr<Grouping> expr) = 0;
+    virtual std::any VisitLiteralExpr(std::shared_ptr<Literal> expr) = 0;
+    virtual std::any VisitUnaryExpr(std::shared_ptr<Unary> expr) = 0;
+    virtual std::any VisitVariableExpr(std::shared_ptr<Variable> expr) = 0;
+    virtual std::any VisitAssignExpr(std::shared_ptr<Assign> expr) = 0;
+    virtual std::any VisitLogicalExpr(std::shared_ptr<Logical> expr) = 0;
+    virtual std::any VisitCallExpr(std::shared_ptr<Call> expr) = 0;
 }; // end Visitor
 
 class Expr
@@ -38,7 +38,9 @@ public:
     virtual std::any Accept(ExprVisitor& visitor) = 0;
 }; // end Expr
 
-class Binary : public Expr
+class Binary : 
+    public Expr,
+    public std::enable_shared_from_this<Binary>
 {
 public:
     Binary() = default;
@@ -58,7 +60,7 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitBinaryExpr(*this);
+        return visitor.VisitBinaryExpr(shared_from_this());
     }
 
     std::shared_ptr<Expr> left;
@@ -66,7 +68,9 @@ public:
     std::shared_ptr<Expr> right;
 }; // end Binary
 
-class Grouping : public Expr
+class Grouping : 
+    public Expr,
+    public std::enable_shared_from_this<Grouping>
 {
 public:
     Grouping() = default;
@@ -84,13 +88,15 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitGroupingExpr(*this);
+        return visitor.VisitGroupingExpr(shared_from_this());
     }
 
     std::shared_ptr<Expr> expression;
 }; // end Grouping
 
-class Literal : public Expr
+class Literal : 
+    public Expr,
+    public std::enable_shared_from_this<Literal>
 {
 public:
     Literal() = default;
@@ -108,13 +114,15 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitLiteralExpr(*this);
+        return visitor.VisitLiteralExpr(shared_from_this());
     }
 
     std::any value;
 }; // end Literal
 
-class Unary : public Expr
+class Unary : 
+    public Expr,
+    public std::enable_shared_from_this<Unary>
 {
 public:
     Unary() = default;
@@ -133,14 +141,16 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitUnaryExpr(*this);
+        return visitor.VisitUnaryExpr(shared_from_this());
     }
 
     Token op;
     std::shared_ptr<Expr> right;
 }; // end Unary
 
-class Variable : public Expr
+class Variable : 
+    public Expr,
+    public std::enable_shared_from_this<Variable>
 {
 public:
     Variable() = default;
@@ -158,13 +168,15 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitVariableExpr(*this);
+        return visitor.VisitVariableExpr(shared_from_this());
     }
 
     Token name;
 }; // end Variable
 
-class Assign : public Expr
+class Assign : 
+    public Expr,
+    public std::enable_shared_from_this<Assign>
 {
 public:
     Assign() = default;
@@ -183,14 +195,16 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitAssignExpr(*this);
+        return visitor.VisitAssignExpr(shared_from_this());
     }
 
     Token name;
     std::shared_ptr<Expr> value;
 }; // end Assign
 
-class Logical : public Expr
+class Logical : 
+    public Expr,
+    public std::enable_shared_from_this<Logical>
 {
 public:
     Logical() = default;
@@ -210,7 +224,7 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitLogicalExpr(*this);
+        return visitor.VisitLogicalExpr(shared_from_this());
     }
 
     std::shared_ptr<Expr> left;
@@ -218,7 +232,9 @@ public:
     std::shared_ptr<Expr> right;
 }; // end Logical
 
-class Call : public Expr
+class Call : 
+    public Expr,
+    public std::enable_shared_from_this<Call>
 {
 public:
     Call() = default;
@@ -238,7 +254,7 @@ public:
 
     std::any Accept(ExprVisitor& visitor) final
     {
-        return visitor.VisitCallExpr(*this);
+        return visitor.VisitCallExpr(shared_from_this());
     }
 
     std::shared_ptr<Expr> callee;

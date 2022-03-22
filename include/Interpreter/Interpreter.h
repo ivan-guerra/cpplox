@@ -32,41 +32,41 @@ public:
     Interpreter(Interpreter&&) = default;
     Interpreter& operator=(Interpreter&&) = default;
 
-    void VisitExpressionStmt(ast::Expression& stmt) final
-        { Evaluate(stmt.expression); }
+    void VisitExpressionStmt(std::shared_ptr<ast::Expression> stmt) final
+        { Evaluate(stmt->expression); }
 
-    void VisitPrintStmt(ast::Print& stmt) final;
+    void VisitPrintStmt(std::shared_ptr<ast::Print> stmt) final;
 
-    void VisitVarStmt(ast::Var& stmt) final;
+    void VisitVarStmt(std::shared_ptr<ast::Var> stmt) final;
 
-    void VisitBlockStmt(ast::Block& stmt) final;
+    void VisitBlockStmt(std::shared_ptr<ast::Block> stmt) final;
 
-    void VisitIfStmt(ast::If& stmt) final;
+    void VisitIfStmt(std::shared_ptr<ast::If> stmt) final;
 
-    void VisitWhileStmt(ast::While& stmt) final;
+    void VisitWhileStmt(std::shared_ptr<ast::While> stmt) final;
 
-    void VisitFunctionStmt(ast::Function& stmt) final;
+    void VisitFunctionStmt(std::shared_ptr<ast::Function> stmt) final;
 
-    void VisitReturnStmt(ast::Return& stmt) final;
+    void VisitReturnStmt(std::shared_ptr<ast::Return> stmt) final;
 
-    std::any VisitBinaryExpr(ast::Binary& expr) final;
+    std::any VisitBinaryExpr(std::shared_ptr<ast::Binary> expr) final;
 
-    std::any VisitGroupingExpr(ast::Grouping& expr) final
-        { return Evaluate(expr.expression); }
+    std::any VisitGroupingExpr(std::shared_ptr<ast::Grouping> expr) final
+        { return Evaluate(expr->expression); }
 
-    std::any VisitLiteralExpr(ast::Literal& expr) final
-        { return expr.value; }
+    std::any VisitLiteralExpr(std::shared_ptr<ast::Literal> expr) final
+        { return expr->value; }
 
-    std::any VisitUnaryExpr(ast::Unary& expr) final;
+    std::any VisitUnaryExpr(std::shared_ptr<ast::Unary> expr) final;
 
-    std::any VisitVariableExpr(ast::Variable& expr) final
-        { return environment_->Get(expr.name); }
+    std::any VisitVariableExpr(std::shared_ptr<ast::Variable> expr) final
+        { return environment_->Get(expr->name); }
 
-    std::any VisitAssignExpr(ast::Assign& expr) final;
+    std::any VisitAssignExpr(std::shared_ptr<ast::Assign> expr) final;
 
-    std::any VisitLogicalExpr(ast::Logical& expr) final;
+    std::any VisitLogicalExpr(std::shared_ptr<ast::Logical> expr) final;
 
-    std::any VisitCallExpr(ast::Call& expr) final;
+    std::any VisitCallExpr(std::shared_ptr<ast::Call> expr) final;
 
     /*!
      * \brief Execute each statement in \a statements.
@@ -128,7 +128,7 @@ private:
     {
         public:
             LoxFunction() = delete;
-            LoxFunction(const ast::Function& decl,
+            LoxFunction(std::shared_ptr<ast::Function> decl,
                         std::shared_ptr<Environment> cls) :
                 declaration(decl),
                 closure(cls)
@@ -143,10 +143,10 @@ private:
                           std::vector<std::any>& arguments) final;
 
             std::size_t Arity() const final
-                { return declaration.params.size(); }
+                { return declaration->params.size(); }
 
-            ast::Function declaration;            /*!< Function declaration statement. */
-            std::shared_ptr<Environment> closure; /*!< Closure environment. */
+            std::shared_ptr<ast::Function> declaration; /*!< Function declaration statement. */
+            std::shared_ptr<Environment>   closure;     /*!< Closure environment. */
     }; // end LoxFunction
 
     /*!

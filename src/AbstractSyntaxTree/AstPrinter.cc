@@ -20,16 +20,16 @@ std::string AstPrinter::Parenthesize(const std::string& name,
     return ret;
 }
 
-std::any AstPrinter::VisitLiteralExpr(ast::Literal& expr)
+std::any AstPrinter::VisitLiteralExpr(std::shared_ptr<ast::Literal> expr)
 {
-    if (!expr.value.has_value())
+    if (!expr->value.has_value())
         return std::string("nil");
 
-    if (typeid(std::string) == expr.value.type())
-        return std::any_cast<std::string>(expr.value);
+    if (typeid(std::string) == expr->value.type())
+        return std::any_cast<std::string>(expr->value);
 
-    if (typeid(double) == expr.value.type())
-        return std::to_string(std::any_cast<double>(expr.value));
+    if (typeid(double) == expr->value.type())
+        return std::to_string(std::any_cast<double>(expr->value));
 
     return std::string("unknown");
 }
