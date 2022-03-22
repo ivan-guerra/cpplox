@@ -1,5 +1,6 @@
 #include <any>
 #include <string>
+#include <memory>
 
 #include "Scanner.h"
 #include "Environment.h"
@@ -7,6 +8,15 @@
 
 namespace lox
 {
+std::shared_ptr<Environment> Environment::Ancestor(int distance)
+{
+    EnvPtr env = shared_from_this();
+    for (int i = 0; i < distance; ++i)
+        env = env->enclosing_;
+
+    return env;
+}
+
 std::any Environment::Get(const Token& name) const
 {
     if (env_.find(name.GetLexeme()) != env_.end())
@@ -20,7 +30,7 @@ std::any Environment::Get(const Token& name) const
     throw RuntimeError(name, error_msg);
 }
 
-void Environment::Assign(Token name, const std::any& value)
+void Environment::Assign(const Token& name, const std::any& value)
 {
     if (env_.find(name.GetLexeme()) != env_.end()) {
         env_[name.GetLexeme()] = value;

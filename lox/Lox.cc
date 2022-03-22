@@ -9,18 +9,34 @@
 #include "Scanner.h"
 #include "Interpreter.h"
 #include "ErrorLogger.h"
+#include "Resolver.h"
 
 void Run(const std::string& source)
 {
+    /* Generate a token stream and hand it off to the parser. */
     lox::Scanner            scanner(source);
     lox::Parser             parser(scanner.ScanTokens());
-    static lox::Interpreter interpreter;
 
-    /* Parse program statements. */
+    /* Convert the token stream to a list of AST statements. */
     std::vector<std::shared_ptr<lox::ast::Stmt>> statements = parser.Parse();
 
-    /* Interpret! */
-    interpreter.Interpret(statements);
+    /* Stop if there was a syntax error. */
+    lox::ErrorLogger& err_logger = lox::ErrorLogger::GetInstance();
+    if (err_logger.HadStaticError())
+        return;
+
+    /* Resolve names. */
+    std::shared_ptr<lox::Interpreter> interpreter =
+        std::make_shared<lox::Interpreter>();
+    lox::Resolver resolver(interpreter);
+    resolver.Resolve(statements);
+
+    /* Stop if there was a resolution error. */
+    if (err_logger.HadStaticError())
+        return;
+
+    /* Interpret the source code (i.e, execute the User code). */
+    interpreter->Interpret(statements);
 }
 
 void RunPrompt()

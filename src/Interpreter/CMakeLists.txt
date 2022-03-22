@@ -27,7 +27,7 @@ target_compile_features(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         AbstractSyntaxTree
-    PRIVATE
         Scanner
+    PRIVATE
         ErrorLogger
 )

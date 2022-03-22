@@ -19,10 +19,10 @@ namespace lox
  * defined: each Environment points to its parent scope's Environment. The
  * latter is useful when implementing nesting/shadowing of scopes.
  */
-class Environment
+class Environment :
+    public std::enable_shared_from_this<Environment>
 {
 public:
-
     /*!
      * \brief Construct the root Environment.
      *
@@ -70,15 +70,42 @@ public:
     std::any Get(const Token& name) const;
 
     /*!
+     * \brief Return the value associated with \a name \a distance envs back.
+     *
+     * GetAt() walks back through the Environment list \a distance nodes and
+     * retrieves the value of \a name.
+     */
+    std::any GetAt(int distance, const std::string& name)
+        { return Ancestor(distance)->env_[name]; }
+
+    /*!
      * \brief Assign \a value to the variable with name \a name.
      *
      * If no variable name \a name exists in this or any enclosing environment,
      * a RuntimeError is thrown.
      */
-    void Assign(Token name, const std::any& value);
+    void Assign(const Token& name, const std::any& value);
+
+    /*!
+     * \brief Assign \a value to \a name at the Environment \a distance nodes
+     * back in the env list.
+     */
+    void AssignAt(int distance, const Token& name, const std::any& value)
+        { Ancestor(distance)->env_[name.GetLexeme()] = value; }
 
 private:
-    std::shared_ptr<Environment>              enclosing_; /*!< Pointer to parent Environment. */
-    std::unordered_map<std::string, std::any> env_;       /*!< Map of variable names to their values. */
+    using EnvPtr = std::shared_ptr<Environment>;
+    using EnvMap = std::unordered_map<std::string, std::any>;
+
+    /*!
+     * \brief Return a pointer to this \a distance'th Environment's ancestor.
+     *
+     * \return Ancestor() will return a pointer to the Environment \a distance
+     *         Environment's back in the Environment list.
+     */
+    EnvPtr Ancestor(int distance);
+
+    EnvPtr enclosing_; /*!< Pointer to parent Environment. */
+    EnvMap env_;       /*!< Map of variable names to their values. */
 }; // end Environment
 } // end lox

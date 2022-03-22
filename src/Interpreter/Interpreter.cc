@@ -5,7 +5,10 @@
 #include <sstream>
 #include <stdexcept>
 #include <chrono>
+#include <unordered_map>
 
+#include "Expr.h"
+#include "Stmt.h"
 #include "Scanner.h"
 #include "Interpreter.h"
 #include "ErrorLogger.h"
@@ -23,8 +26,7 @@ std::any Interpreter::Clock::Call([[maybe_unused]]Interpreter& interpreter,
 std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
                            std::vector<std::any>& arguments)
 {
-    std::shared_ptr<Environment> env =
-        std::make_shared<Environment>(*interpreter.environment_);
+    EnvPtr env = std::make_shared<Environment>(*interpreter.environment_);
     env->SetEnclosingEnv(closure);
 
     for (std::size_t i = 0; i < declaration->params.size(); ++i) {
@@ -43,7 +45,7 @@ void Interpreter::ExecuteBlock(
     const std::vector<std::shared_ptr<ast::Stmt>>& statements,
     std::shared_ptr<Environment> env)
 {
-    std::shared_ptr<Environment> previous = this->environment_;
+    EnvPtr previous = this->environment_;
     try {
         this->environment_ = env;
         for (const auto& stmt : statements)
@@ -56,6 +58,10 @@ void Interpreter::ExecuteBlock(
            exception and triggers the appropriate behavior. */
         throw;
     }
+
+    /* We don't have finally in C++ so this assignment must live outside
+       the catch statement. */
+    this->environment_ = previous;
 }
 
 bool Interpreter::IsTruth(const std::any& object) const
@@ -132,6 +138,17 @@ std::string Interpreter::Stringify(const std::any& object)
     return std::any_cast<std::string>(object);
 }
 
+std::any Interpreter::LookupVariable(const Token& name,
+                                     std::shared_ptr<ast::Expr> expr)
+{
+    if (locals_.find(expr) != locals_.end()) {
+        int distance = locals_[expr];
+        return environment_->GetAt(distance, name.GetLexeme());
+    }
+
+    return globals_->Get(name);
+}
+
 void Interpreter::VisitPrintStmt(std::shared_ptr<ast::Print> stmt)
 {
     std::any value = Evaluate(stmt->expression);
@@ -149,8 +166,10 @@ void Interpreter::VisitVarStmt(std::shared_ptr<ast::Var> stmt)
 
 void Interpreter::VisitBlockStmt(std::shared_ptr<ast::Block> stmt)
 {
-    ExecuteBlock(stmt->statements,
-                 std::make_shared<Environment>(*environment_));
+    EnvPtr env = std::make_shared<Environment>();
+    env->SetEnclosingEnv(this->environment_);
+
+    ExecuteBlock(stmt->statements, env);
 }
 
 void Interpreter::VisitIfStmt(std::shared_ptr<ast::If> stmt)
@@ -251,7 +270,13 @@ std::any Interpreter::VisitUnaryExpr(std::shared_ptr<ast::Unary> expr)
 std::any Interpreter::VisitAssignExpr(std::shared_ptr<ast::Assign> expr)
 {
     std::any value = Evaluate(expr->value);
-    environment_->Assign(expr->name, value);
+
+    if (locals_.find(expr) != locals_.end()) {
+        int distance = locals_[expr];
+        environment_->AssignAt(distance, expr->name, value);
+    } else {
+        globals_->Assign(expr->name, value);
+    }
 
     return value;
 }
@@ -296,10 +321,9 @@ std::any Interpreter::VisitCallExpr(std::shared_ptr<ast::Call> expr)
 
 Interpreter::Interpreter() :
     globals_(std::make_shared<Environment>()),
-    environment_(std::make_shared<Environment>())
+    environment_(globals_)
 {
     globals_->Define("clock", std::make_shared<Clock>());
-    environment_->SetEnclosingEnv(globals_);
 }
 
 void Interpreter::Interpret(

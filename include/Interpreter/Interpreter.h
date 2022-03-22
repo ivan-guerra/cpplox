@@ -3,6 +3,7 @@
 #include <any>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "Expr.h"
 #include "Stmt.h"
@@ -60,7 +61,7 @@ public:
     std::any VisitUnaryExpr(std::shared_ptr<ast::Unary> expr) final;
 
     std::any VisitVariableExpr(std::shared_ptr<ast::Variable> expr) final
-        { return environment_->Get(expr->name); }
+        { return LookupVariable(expr->name, expr); }
 
     std::any VisitAssignExpr(std::shared_ptr<ast::Assign> expr) final;
 
@@ -72,7 +73,22 @@ public:
      * \brief Execute each statement in \a statements.
      */
     void Interpret(const std::vector<std::shared_ptr<ast::Stmt>>& statements);
+
+    /*!
+     * \brief Method used by the Resolver to register variable resolution info.
+     *
+     * \param expr Node in the AST assoicated with resolution info.
+     * \param depth Number of Environments to walk back in the Environment
+     *              chain when attempting to resolve a variable reference
+     *              in \a expr at runtime.
+     */
+    void Resolve(std::shared_ptr<ast::Expr> expr, int depth)
+        { locals_[expr] = depth; }
+
 private:
+    using EnvPtr    = std::shared_ptr<Environment>;
+    using LocalsMap = std::unordered_map<std::shared_ptr<ast::Expr>, int>;
+
     /*!
      * \class LoxCallable
      * \brief The LoxCallable class defines the interface for any callable Lox object.
@@ -204,7 +220,25 @@ private:
      */
     std::string Stringify(const std::any& object);
 
-    std::shared_ptr<Environment> globals_;     /*!< Global scope Environment. */
-    std::shared_ptr<Environment> environment_; /*!< Active Environment. */
+    /*!
+     * \brief Return the value associated with \a name.
+     *
+     * LookupVariable() walks backwards through the Environment list searching
+     * for reference to \a name. The exact number of steps taken in the
+     * Environment chain is stored in #locals_ and is used during traversal
+     * to ensure the "right" reference to \a name is found.
+     *
+     * \param name Token that is searched for in the Environment.
+     * \param expr Pointer to the AST node used to find the depth of \a name
+     *             in the Environment list (see #locals_).
+     *
+     * \return Resolution of \a name.
+     */
+    std::any LookupVariable(const Token& name,
+                            std::shared_ptr<ast::Expr> expr);
+
+    EnvPtr    globals_;     /*!< Global scope Environment. */
+    EnvPtr    environment_; /*!< Active Environment. */
+    LocalsMap locals_;      /*!< Map of local variables and their depth in the Environment list. */
 }; // end Interpreter
 } // end lox
