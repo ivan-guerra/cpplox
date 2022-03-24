@@ -8,7 +8,7 @@
 
 namespace lox
 {
-std::shared_ptr<Environment> Environment::Ancestor(int distance)
+Environment::EnvPtr Environment::Ancestor(int distance)
 {
     EnvPtr env = shared_from_this();
     for (int i = 0; i < distance; ++i)

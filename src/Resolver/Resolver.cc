@@ -30,7 +30,7 @@ void Resolver::Define(const Token& name)
     scopes_.top()[name.GetLexeme()] = true;
 }
 
-void Resolver::ResolveLocal(std::shared_ptr<ast::Expr> expr, const Token& name)
+void Resolver::ResolveLocal(ExprPtr expr, const Token& name)
 {
     ScopeStack aux = scopes_;
     for (int i = scopes_.size() - 1; i >= 0; i--) {

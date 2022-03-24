@@ -49,6 +49,9 @@ public:
     std::vector<std::shared_ptr<ast::Stmt>> Parse();
 
 private:
+    using ExprPtr = std::shared_ptr<ast::Expr>;
+    using StmtPtr = std::shared_ptr<ast::Stmt>;
+
     /*!
      * \class ParserException
      * \brief ParserException is a sentinel class used to unwind the parser.
@@ -58,9 +61,6 @@ private:
      * for a clear description of how ParserException is used.
      */
     class ParserException : public std::exception { }; // end ParserException
-
-    using ExprPtr = std::shared_ptr<ast::Expr>;
-    using StmtPtr = std::shared_ptr<ast::Stmt>;
 
     /*!
      * \brief Print an error message and return a ParserException.

@@ -69,7 +69,7 @@ Token Parser::Consume(Token::TokenType type, const std::string& message)
     throw Error(Peek(), message);
 }
 
-std::shared_ptr<ast::Stmt> Parser::Declaration()
+Parser::StmtPtr Parser::Declaration()
 {
     try {
         if (Match({Token::TokenType::kFun}))
@@ -85,7 +85,7 @@ std::shared_ptr<ast::Stmt> Parser::Declaration()
     }
 }
 
-std::shared_ptr<ast::Stmt> Parser::Function(const std::string& kind)
+Parser::StmtPtr Parser::Function(const std::string& kind)
 {
     Token name =
         Consume(Token::TokenType::kIdentifier,
@@ -107,12 +107,12 @@ std::shared_ptr<ast::Stmt> Parser::Function(const std::string& kind)
 
     Consume(Token::TokenType::kLeftBrace,
             std::string("Expect '{' before ") + kind + std::string(" body."));
-    std::vector<std::shared_ptr<ast::Stmt>> body = Block();
+    std::vector<StmtPtr> body = Block();
 
     return std::make_shared<ast::Function>(name, parameters, body);
 }
 
-std::shared_ptr<ast::Stmt> Parser::VarDeclaration()
+Parser::StmtPtr Parser::VarDeclaration()
 {
     Token name = Consume(Token::TokenType::kIdentifier,
                          "Expect variable name.");
@@ -125,7 +125,7 @@ std::shared_ptr<ast::Stmt> Parser::VarDeclaration()
     return std::make_shared<ast::Var>(name, initializer);
 }
 
-std::shared_ptr<ast::Stmt> Parser::Statement()
+Parser::StmtPtr Parser::Statement()
 {
     if (Match({Token::TokenType::kIf}))
         return IfStatement();
@@ -148,7 +148,7 @@ std::shared_ptr<ast::Stmt> Parser::Statement()
     return ExpressionStatement();
 }
 
-std::shared_ptr<ast::Stmt> Parser::IfStatement()
+Parser::StmtPtr Parser::IfStatement()
 {
     Consume(Token::TokenType::kLeftParen, "Expect '(' after 'if'.");
     ExprPtr condition = Expression();
@@ -162,7 +162,7 @@ std::shared_ptr<ast::Stmt> Parser::IfStatement()
     return std::make_shared<ast::If>(condition, then_branch, else_branch);
 }
 
-std::shared_ptr<ast::Stmt> Parser::PrintStatement()
+Parser::StmtPtr Parser::PrintStatement()
 {
     ExprPtr value = Expression();
     Consume(Token::TokenType::kSemicolon, "Expect ';' after value.");
@@ -170,7 +170,7 @@ std::shared_ptr<ast::Stmt> Parser::PrintStatement()
     return std::make_shared<ast::Print>(value);
 }
 
-std::shared_ptr<ast::Stmt> Parser::ForStatement()
+Parser::StmtPtr Parser::ForStatement()
 {
     Consume(Token::TokenType::kLeftParen, "Expect '(' after 'for'.");
 
@@ -194,7 +194,7 @@ std::shared_ptr<ast::Stmt> Parser::ForStatement()
 
     StmtPtr body = Statement();
 
-    using StmtPtrList = std::vector<std::shared_ptr<ast::Stmt>>;
+    using StmtPtrList = std::vector<StmtPtr>;
     if (increment) {
         body = std::make_shared<ast::Block>(
             StmtPtrList{body, std::make_shared<ast::Expression>(increment)}
@@ -211,7 +211,7 @@ std::shared_ptr<ast::Stmt> Parser::ForStatement()
     return body;
 }
 
-std::shared_ptr<ast::Stmt> Parser::ReturnStatement()
+Parser::StmtPtr Parser::ReturnStatement()
 {
     Token keyword = Previous();
 
@@ -223,7 +223,7 @@ std::shared_ptr<ast::Stmt> Parser::ReturnStatement()
     return std::make_shared<ast::Return>(keyword, value);
 }
 
-std::shared_ptr<ast::Stmt> Parser::WhileStatement()
+Parser::StmtPtr Parser::WhileStatement()
 {
     Consume(Token::TokenType::kLeftParen, "Expect '(' after 'while'.");
     ExprPtr condition = Expression();
@@ -234,7 +234,7 @@ std::shared_ptr<ast::Stmt> Parser::WhileStatement()
     return std::make_shared<ast::While>(condition, body);
 }
 
-std::shared_ptr<ast::Stmt> Parser::ExpressionStatement()
+Parser::StmtPtr Parser::ExpressionStatement()
 {
     ExprPtr expr = Expression();
     Consume(Token::TokenType::kSemicolon, "Expect ';' after expression.");
@@ -242,7 +242,7 @@ std::shared_ptr<ast::Stmt> Parser::ExpressionStatement()
     return std::make_shared<ast::Expression>(expr);
 }
 
-std::vector<std::shared_ptr<ast::Stmt>> Parser::Block()
+std::vector<Parser::StmtPtr> Parser::Block()
 {
     std::vector<StmtPtr> statements;
 
@@ -253,7 +253,7 @@ std::vector<std::shared_ptr<ast::Stmt>> Parser::Block()
     return statements;
 }
 
-std::shared_ptr<ast::Expr> Parser::Or()
+Parser::ExprPtr Parser::Or()
 {
     ExprPtr expr = And();
 
@@ -265,7 +265,7 @@ std::shared_ptr<ast::Expr> Parser::Or()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::And()
+Parser::ExprPtr Parser::And()
 {
     ExprPtr expr = Equality();
 
@@ -277,7 +277,7 @@ std::shared_ptr<ast::Expr> Parser::And()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Assignment()
+Parser::ExprPtr Parser::Assignment()
 {
     ExprPtr expr = Or();
 
@@ -294,7 +294,7 @@ std::shared_ptr<ast::Expr> Parser::Assignment()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Equality()
+Parser::ExprPtr Parser::Equality()
 {
     ExprPtr expr = Comparison();
 
@@ -310,7 +310,7 @@ std::shared_ptr<ast::Expr> Parser::Equality()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Comparison()
+Parser::ExprPtr Parser::Comparison()
 {
     ExprPtr expr = Term();
 
@@ -328,7 +328,7 @@ std::shared_ptr<ast::Expr> Parser::Comparison()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Term()
+Parser::ExprPtr Parser::Term()
 {
     ExprPtr expr = Factor();
 
@@ -344,7 +344,7 @@ std::shared_ptr<ast::Expr> Parser::Term()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Factor()
+Parser::ExprPtr Parser::Factor()
 {
     ExprPtr expr = Unary();
 
@@ -360,7 +360,7 @@ std::shared_ptr<ast::Expr> Parser::Factor()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Unary()
+Parser::ExprPtr Parser::Unary()
 {
     static const std::initializer_list<Token::TokenType> kUnaryTokens = {
         Token::TokenType::kBang,
@@ -374,9 +374,9 @@ std::shared_ptr<ast::Expr> Parser::Unary()
     return Call();
 }
 
-std::shared_ptr<ast::Expr> Parser::FinishCall(ExprPtr callee)
+Parser::ExprPtr Parser::FinishCall(ExprPtr callee)
 {
-    std::vector<std::shared_ptr<ast::Expr>> arguments;
+    std::vector<Parser::ExprPtr> arguments;
     if (!Check(Token::TokenType::kRightParen)) {
         do {
             if (arguments.size() >= 255)
@@ -392,7 +392,7 @@ std::shared_ptr<ast::Expr> Parser::FinishCall(ExprPtr callee)
     return std::make_shared<ast::Call>(callee, paren, arguments);
 }
 
-std::shared_ptr<ast::Expr> Parser::Call()
+Parser::ExprPtr Parser::Call()
 {
     ExprPtr expr = Primary();
 
@@ -405,7 +405,7 @@ std::shared_ptr<ast::Expr> Parser::Call()
     return expr;
 }
 
-std::shared_ptr<ast::Expr> Parser::Primary()
+Parser::ExprPtr Parser::Primary()
 {
     if (Match({Token::TokenType::kFalse}))
         return std::make_shared<ast::Literal>(false);
@@ -432,7 +432,7 @@ std::shared_ptr<ast::Expr> Parser::Primary()
 
 std::vector<std::shared_ptr<ast::Stmt>> Parser::Parse()
 {
-    std::vector<std::shared_ptr<ast::Stmt>> statements;
+    std::vector<StmtPtr> statements;
     try {
         while (!IsAtEnd())
             statements.push_back(Declaration());
