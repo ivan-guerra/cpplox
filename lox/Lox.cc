@@ -26,9 +26,9 @@ void Run(const std::string& source)
         return;
 
     /* Resolve names. */
-    std::shared_ptr<lox::Interpreter> interpreter =
+    static std::shared_ptr<lox::Interpreter> interpreter =
         std::make_shared<lox::Interpreter>();
-    lox::Resolver resolver(interpreter);
+    static lox::Resolver resolver(interpreter);
     resolver.Resolve(statements);
 
     /* Stop if there was a resolution error. */
