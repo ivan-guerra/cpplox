@@ -4,15 +4,15 @@ project(AbstractSyntaxTree DESCRIPTION "Lox lang abstract syntax tree"
                            LANGUAGES   CXX
 )
 
-add_library(${PROJECT_NAME} STATIC AstPrinter.cc)
+add_library(${PROJECT_NAME} INTERFACE)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC
+    INTERFACE
        "${LOX_INCLUDE_DIR}/AbstractSyntaxTree"
 )
 
 target_compile_options(${PROJECT_NAME}
-    PRIVATE
+    INTERFACE
         -Wall
         -Werror
         -Wextra
@@ -20,11 +20,11 @@ target_compile_options(${PROJECT_NAME}
 )
 
 target_compile_features(${PROJECT_NAME}
-    PRIVATE
+    INTERFACE
         cxx_std_17
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC
+    INTERFACE
         Scanner
 )
