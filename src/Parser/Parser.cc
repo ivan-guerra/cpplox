@@ -72,6 +72,9 @@ Token Parser::Consume(Token::TokenType type, const std::string& message)
 Parser::StmtPtr Parser::Declaration()
 {
     try {
+        if (Match({Token::TokenType::kClass}))
+            return ClassDeclaration();
+
         if (Match({Token::TokenType::kFun}))
             return Function("function");
 
@@ -83,6 +86,22 @@ Parser::StmtPtr Parser::Declaration()
         Synchronize();
         return nullptr;
     }
+}
+
+Parser::StmtPtr Parser::ClassDeclaration()
+{
+    Token name = Consume(Token::TokenType::kIdentifier, "Expect class name.");
+    Consume(Token::TokenType::kLeftBrace, "Expect '{' before class body.");
+
+    std::vector<std::shared_ptr<ast::Function>> methods;
+    while (!Check(Token::TokenType::kRightBrace) && !IsAtEnd()) {
+        methods.push_back(
+            std::static_pointer_cast<ast::Function>(Function("method")));
+    }
+
+    Consume(Token::TokenType::kRightBrace, "Expect '}' after class body.");
+
+    return std::make_shared<ast::Class>(name, methods);
 }
 
 Parser::StmtPtr Parser::Function(const std::string& kind)
@@ -288,6 +307,10 @@ Parser::ExprPtr Parser::Assignment()
         if (typeid(*expr) == typeid(ast::Variable)) {
             Token name = std::static_pointer_cast<ast::Variable>(expr)->name;
             return std::make_shared<ast::Assign>(name, value);
+        } else if (typeid(*expr) == typeid(ast::Get)) {
+            std::shared_ptr<ast::Get> get =
+                std::static_pointer_cast<ast::Get>(expr);
+            return std::make_shared<ast::Set>(get->object, get->name, value);
         }
         LOG_STATIC_ERROR(equals.GetLine(), "Invalid assignment target.");
     }
@@ -397,10 +420,15 @@ Parser::ExprPtr Parser::Call()
     ExprPtr expr = Primary();
 
     while (true) {
-        if (Match({Token::TokenType::kLeftParen}))
+        if (Match({Token::TokenType::kLeftParen})) {
             expr = FinishCall(expr);
-        else
+        } else if (Match({Token::TokenType::kDot})) {
+            Token name = Consume(Token::TokenType::kIdentifier,
+                                 "Expect property name after '.'.");
+            expr = std::make_shared<ast::Get>(expr, name);
+        } else {
             break;
+        }
     }
     return expr;
 }
@@ -416,6 +444,9 @@ Parser::ExprPtr Parser::Primary()
 
     if (Match({Token::TokenType::kNumber, Token::TokenType::kString}))
         return std::make_shared<ast::Literal>(Previous().GetLiteral());
+
+    if (Match({Token::TokenType::kThis}))
+        return std::make_shared<ast::This>(Previous());
 
     if (Match({Token::TokenType::kIdentifier}))
         return std::make_shared<ast::Variable>(Previous());

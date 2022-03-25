@@ -109,6 +109,32 @@ std::any Resolver::VisitCallExpr(std::shared_ptr<ast::Call> expr)
     return nullptr;
 }
 
+std::any Resolver::VisitGetExpr(std::shared_ptr<ast::Get> expr)
+{
+    Resolve(expr->object);
+    return nullptr;
+}
+
+std::any Resolver::VisitSetExpr(std::shared_ptr<ast::Set> expr)
+{
+    Resolve(expr->value);
+    Resolve(expr->object);
+    return nullptr;
+}
+
+std::any Resolver::VisitThisExpr(std::shared_ptr<ast::This> expr)
+{
+    if (ClassType::kNone == current_class_) {
+        LOG_STATIC_ERROR(expr->keyword.GetLine(),
+                         "Can't use 'this' outside of a class.");
+        return nullptr;
+    }
+
+    ResolveLocal(expr, expr->keyword);
+
+    return nullptr;
+}
+
 std::any Resolver::VisitLogicalExpr(std::shared_ptr<ast::Logical> expr)
 {
     Resolve(expr->left);
@@ -153,6 +179,29 @@ void Resolver::VisitWhileStmt(std::shared_ptr<ast::While> stmt)
     Resolve(stmt->body);
 }
 
+void Resolver::VisitClassStmt(std::shared_ptr<ast::Class> stmt)
+{
+    ClassType enclosing_class = current_class_;
+    current_class_ = ClassType::kClass;
+
+    Declare(stmt->name);
+    Define(stmt->name);
+
+    BeginScope();
+    scopes_.top()["this"] = true;
+
+    for (auto& method : stmt->methods) {
+        FunctionType declaration = FunctionType::kMethod;
+        if (method->name.GetLexeme() == std::string("init"))
+            declaration = FunctionType::kInitializer;
+
+        ResolveFunction(method, declaration);
+    }
+    EndScope();
+
+    current_class_ = enclosing_class;
+}
+
 void Resolver::VisitReturnStmt(std::shared_ptr<ast::Return> stmt)
 {
     if (current_function_ == FunctionType::kNone) {
@@ -160,8 +209,13 @@ void Resolver::VisitReturnStmt(std::shared_ptr<ast::Return> stmt)
                          "Can't return from top-level code.");
     }
 
-    if (stmt->value)
+    if (stmt->value) {
+        if (current_function_ == FunctionType::kInitializer) {
+            LOG_STATIC_ERROR(stmt->keyword.GetLine(),
+                             "Can't return a value from an initializer.");
+        }
         Resolve(stmt->value);
+    }
 }
 
 void Resolver::Resolve(

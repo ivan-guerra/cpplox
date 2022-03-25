@@ -17,6 +17,9 @@ class Variable;
 class Assign;
 class Logical;
 class Call;
+class Get;
+class Set;
+class This;
 
 class ExprVisitor
 {
@@ -29,6 +32,9 @@ public:
     virtual std::any VisitAssignExpr(std::shared_ptr<Assign> expr) = 0;
     virtual std::any VisitLogicalExpr(std::shared_ptr<Logical> expr) = 0;
     virtual std::any VisitCallExpr(std::shared_ptr<Call> expr) = 0;
+    virtual std::any VisitGetExpr(std::shared_ptr<Get> expr) = 0;
+    virtual std::any VisitSetExpr(std::shared_ptr<Set> expr) = 0;
+    virtual std::any VisitThisExpr(std::shared_ptr<This> expr) = 0;
 }; // end Visitor
 
 class Expr
@@ -261,5 +267,89 @@ public:
     Token paren;
     std::vector<std::shared_ptr<Expr>> arguments;
 }; // end Call
+
+class Get : 
+    public Expr,
+    public std::enable_shared_from_this<Get>
+{
+public:
+    Get() = default;
+    ~Get() = default;
+    Get(const Get&) = default;
+    Get& operator=(const Get&) = default;
+    Get(Get&&) = default;
+    Get& operator=(Get&&) = default;
+
+    Get(std::shared_ptr<Expr> object_, Token name_) : 
+        object(object_),
+        name(name_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitGetExpr(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> object;
+    Token name;
+}; // end Get
+
+class Set : 
+    public Expr,
+    public std::enable_shared_from_this<Set>
+{
+public:
+    Set() = default;
+    ~Set() = default;
+    Set(const Set&) = default;
+    Set& operator=(const Set&) = default;
+    Set(Set&&) = default;
+    Set& operator=(Set&&) = default;
+
+    Set(std::shared_ptr<Expr> object_, Token name_, std::shared_ptr<Expr> value_) : 
+        object(object_),
+        name(name_),
+        value(value_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitSetExpr(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> object;
+    Token name;
+    std::shared_ptr<Expr> value;
+}; // end Set
+
+class This : 
+    public Expr,
+    public std::enable_shared_from_this<This>
+{
+public:
+    This() = default;
+    ~This() = default;
+    This(const This&) = default;
+    This& operator=(const This&) = default;
+    This(This&&) = default;
+    This& operator=(This&&) = default;
+
+    This(Token keyword_) : 
+        keyword(keyword_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitThisExpr(shared_from_this());
+    }
+
+    Token keyword;
+}; // end This
 } // end ast
 } // end lox

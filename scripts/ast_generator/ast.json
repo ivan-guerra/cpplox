@@ -58,6 +58,27 @@
                         {"type":"Token", "name":"paren"},
                         {"type":"std::vector<std::shared_ptr<Expr>>", "name":"arguments"}
                     ]
+                },
+                {
+                    "name":"Get",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"object"},
+                        {"type":"Token", "name":"name"}
+                    ]
+                },
+                {
+                    "name":"Set",
+                    "fields":[
+                        {"type":"std::shared_ptr<Expr>", "name":"object"},
+                        {"type":"Token", "name":"name"},
+                        {"type":"std::shared_ptr<Expr>", "name":"value"}
+                    ]
+                },
+                {
+                    "name":"This",
+                    "fields":[
+                        {"type":"Token", "name":"keyword"}
+                    ]
                 }
             ],
             "headers":[
@@ -116,6 +137,13 @@
                         {"type":"Token", "name":"name"},
                         {"type":"std::vector<Token>", "name":"params"},
                         {"type":"std::vector<std::shared_ptr<Stmt>>", "name":"body"}
+                    ]
+                },
+                {
+                    "name":"Class",
+                    "fields":[
+                        {"type":"Token" , "name":"name"},
+                        {"type":"std::vector<std::shared_ptr<ast::Function>>", "name":"methods"}
                     ]
                 },
                 {

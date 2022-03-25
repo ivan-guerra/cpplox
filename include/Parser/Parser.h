@@ -129,6 +129,8 @@ private:
 
     StmtPtr Declaration();
 
+    StmtPtr ClassDeclaration();
+
     StmtPtr Function(const std::string& kind);
 
     StmtPtr VarDeclaration();

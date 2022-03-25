@@ -48,6 +48,8 @@ public:
 
     void VisitFunctionStmt(std::shared_ptr<ast::Function> stmt) final;
 
+    void VisitClassStmt(std::shared_ptr<ast::Class> stmt) final;
+
     void VisitReturnStmt(std::shared_ptr<ast::Return> stmt) final;
 
     std::any VisitBinaryExpr(std::shared_ptr<ast::Binary> expr) final;
@@ -68,6 +70,13 @@ public:
     std::any VisitLogicalExpr(std::shared_ptr<ast::Logical> expr) final;
 
     std::any VisitCallExpr(std::shared_ptr<ast::Call> expr) final;
+
+    std::any VisitGetExpr(std::shared_ptr<ast::Get> expr) final;
+
+    std::any VisitSetExpr(std::shared_ptr<ast::Set> expr) final;
+
+    std::any VisitThisExpr(std::shared_ptr<ast::This> expr) final
+        { return LookupVariable(expr->keyword, expr); }
 
     /*!
      * \brief Execute each statement in \a statements.
@@ -136,6 +145,58 @@ private:
     }; // end Clock
 
     /*!
+     * \class LoxClass
+     * \brief The LoxClass class implements Lox classes.
+     */
+    class LoxClass :
+        public LoxCallable,
+        public std::enable_shared_from_this<LoxClass>
+    {
+        public:
+            using MethodMap =
+                std::unordered_map<std::string, std::shared_ptr<LoxCallable>>;
+
+            LoxClass() = delete;
+            LoxClass(const std::string& name_, const MethodMap& methods_) :
+                name(name_),
+                methods(methods_)
+                { }
+
+            std::any Call(Interpreter& interpreter,
+                          std::vector<std::any>& arguments) final;
+
+            std::size_t Arity() const final;
+
+            std::shared_ptr<LoxCallable> FindMethod(
+                const std::string& name) const;
+
+            std::string name;    /*!< Class name. */
+            MethodMap   methods; /*!< Map of class methods. */
+    }; // end LoxClass
+
+    /*!
+     * \class LoxInstance
+     * \brief The LoxInstance class implements Lox class instances.
+     */
+    class LoxInstance :
+        public std::enable_shared_from_this<LoxInstance>
+    {
+        public:
+            LoxInstance() = delete;
+            LoxInstance(std::shared_ptr<LoxClass> klass_) :
+                klass(klass_)
+                { }
+
+            std::any Get(const Token& name);
+
+            void Set(const Token& name, const std::any& value)
+                { fields[name.GetLexeme()] = value; }
+
+            std::shared_ptr<LoxClass>                 klass;  /*!< Pointer to the class that this LoxInstance is an instance of. */
+            std::unordered_map<std::string, std::any> fields; /*!< Map of field names to their underlying Lox types. */
+    }; // end LoxInstance
+
+    /*!
      * \class LoxFunction
      * \brief The LoxFunction class implements Lox function calls.
      */
@@ -145,9 +206,11 @@ private:
         public:
             LoxFunction() = delete;
             LoxFunction(std::shared_ptr<ast::Function> decl,
-                        std::shared_ptr<Environment> cls) :
+                        std::shared_ptr<Environment> cls,
+                        bool is_init) :
                 declaration(decl),
-                closure(cls)
+                closure(cls),
+                is_initializer(is_init)
                 { }
 
             /*!
@@ -161,8 +224,12 @@ private:
             std::size_t Arity() const final
                 { return declaration->params.size(); }
 
-            std::shared_ptr<ast::Function> declaration; /*!< Function declaration statement. */
-            std::shared_ptr<Environment>   closure;     /*!< Closure environment. */
+            std::shared_ptr<LoxCallable> Bind(
+                std::shared_ptr<LoxInstance> instance);
+
+            std::shared_ptr<ast::Function> declaration;    /*!< Function declaration statement. */
+            std::shared_ptr<Environment>   closure;        /*!< Closure environment. */
+            bool                           is_initializer; /*!< Flag indicating this function is a class initializer. */
     }; // end LoxFunction
 
     /*!

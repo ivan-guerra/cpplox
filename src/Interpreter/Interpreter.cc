@@ -24,7 +24,7 @@ std::any Interpreter::Clock::Call([[maybe_unused]]Interpreter& interpreter,
 }
 
 std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
-                           std::vector<std::any>& arguments)
+                                        std::vector<std::any>& arguments)
 {
     EnvPtr env = std::make_shared<Environment>(*interpreter.environment_);
     env->SetEnclosingEnv(closure);
@@ -36,9 +36,73 @@ std::any Interpreter::LoxFunction::Call(Interpreter& interpreter,
     try {
         interpreter.ExecuteBlock(declaration->body, env);
     } catch (const Return& e) {
-        return e.value;
+        return (is_initializer) ? closure->GetAt(0, "this") : e.value;
     }
+
+    if (is_initializer)
+        return closure->GetAt(0, "this");
+
     return nullptr;
+}
+
+std::shared_ptr<Interpreter::LoxCallable> Interpreter::LoxFunction::Bind(
+    std::shared_ptr<LoxInstance> instance)
+{
+    std::shared_ptr<Environment> env = std::make_shared<Environment>();
+    env->SetEnclosingEnv(closure);
+    env->Define("this", instance);
+
+    std::shared_ptr<LoxCallable> binding =
+        std::make_shared<LoxFunction>(declaration, env, is_initializer);
+
+    return binding;
+}
+
+std::any Interpreter::LoxClass::Call(Interpreter& interpreter,
+                                     std::vector<std::any>& arguments)
+{
+    std::shared_ptr<LoxInstance> instance =
+        std::make_shared<LoxInstance>(shared_from_this());
+
+    std::shared_ptr<LoxCallable> initializer = FindMethod("init");
+    if (initializer) {
+        std::static_pointer_cast<LoxFunction>(initializer)->Bind(instance)->Call(interpreter, arguments);
+    }
+    return instance;
+}
+
+std::size_t Interpreter::LoxClass::Arity() const
+{
+    std::shared_ptr<LoxCallable> initializer = FindMethod("init");
+    if (!initializer)
+        return 0;
+
+    return initializer->Arity();
+}
+
+std::shared_ptr<Interpreter::LoxCallable> Interpreter::LoxClass::FindMethod(
+    const std::string& name) const
+{
+    if (methods.find(name) != methods.end())
+        return methods.at(name);
+
+    return nullptr;
+}
+
+std::any Interpreter::LoxInstance::Get(const Token& name)
+{
+    if (fields.find(name.GetLexeme()) != fields.end())
+        return fields.at(name.GetLexeme());
+
+    std::shared_ptr<LoxFunction> method =
+        std::static_pointer_cast<LoxFunction>(
+            klass->FindMethod(name.GetLexeme()));
+    if (method)
+        return method->Bind(shared_from_this());
+
+    std::stringstream err_message;
+    err_message << "Undefined property '" << name.GetLexeme() << "'.";
+    throw RuntimeError(name, err_message.str());
 }
 
 void Interpreter::ExecuteBlock(
@@ -190,9 +254,26 @@ void Interpreter::VisitFunctionStmt(std::shared_ptr<ast::Function> stmt)
 {
     std::shared_ptr<LoxCallable> function =
         std::make_shared<LoxFunction>(stmt,
-            std::make_shared<Environment>(*environment_));
+            std::make_shared<Environment>(*environment_), false);
 
     environment_->Define(stmt->name.GetLexeme(), function);
+}
+
+void Interpreter::VisitClassStmt(std::shared_ptr<ast::Class> stmt)
+{
+    environment_->Define(stmt->name.GetLexeme(), nullptr);
+
+    std::unordered_map<std::string, std::shared_ptr<LoxCallable>> methods;
+    for (auto& method : stmt->methods) {
+        std::shared_ptr<LoxCallable> function =
+            std::make_shared<LoxFunction>(method, environment_,
+                method->name.GetLexeme() == std::string("init"));
+            methods[method->name.GetLexeme()] = function;
+    }
+
+    std::shared_ptr<LoxCallable> klass =
+        std::make_shared<LoxClass>(stmt->name.GetLexeme(), methods);
+    environment_->Assign(stmt->name, klass);
 }
 
 void Interpreter::VisitReturnStmt(std::shared_ptr<ast::Return> stmt)
@@ -317,6 +398,30 @@ std::any Interpreter::VisitCallExpr(std::shared_ptr<ast::Call> expr)
     }
 
     return function->Call(*this, arguments);
+}
+
+std::any Interpreter::VisitGetExpr(std::shared_ptr<ast::Get> expr)
+{
+    std::any object = Evaluate(expr->object);
+
+    using LoxInstancePtr = std::shared_ptr<LoxInstance>;
+    if (object.type() == typeid(LoxInstancePtr))
+        return std::any_cast<LoxInstancePtr>(object)->Get(expr->name);
+
+    throw RuntimeError(expr->name, "Only instances have properties.");
+}
+
+std::any Interpreter::VisitSetExpr(std::shared_ptr<ast::Set> expr)
+{
+    std::any object = Evaluate(expr->object);
+
+    using LoxInstancePtr = std::shared_ptr<LoxInstance>;
+    if (object.type() != typeid(LoxInstancePtr))
+        throw RuntimeError(expr->name, "Only instances have fields.");
+
+    std::any value = Evaluate(expr->value);
+    std::any_cast<LoxInstancePtr>(object)->Set(expr->name, value);
+    return value;
 }
 
 Interpreter::Interpreter() :

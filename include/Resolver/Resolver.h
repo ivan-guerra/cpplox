@@ -42,7 +42,8 @@ public:
      */
     Resolver(std::shared_ptr<lox::Interpreter> interpreter) :
         interpreter_(interpreter),
-        current_function_(FunctionType::kNone)
+        current_function_(FunctionType::kNone),
+        current_class_(ClassType::kNone)
         { }
 
     ~Resolver() = default;
@@ -71,6 +72,12 @@ public:
 
     std::any VisitCallExpr(std::shared_ptr<ast::Call> expr) final;
 
+    std::any VisitGetExpr(std::shared_ptr<ast::Get> expr) final;
+
+    std::any VisitSetExpr(std::shared_ptr<ast::Set> expr) final;
+
+    std::any VisitThisExpr(std::shared_ptr<ast::This> expr) final;
+
     void VisitExpressionStmt(std::shared_ptr<ast::Expression> stmt) final
         { Resolve(stmt->expression); }
 
@@ -86,6 +93,8 @@ public:
     void VisitWhileStmt(std::shared_ptr<ast::While> stmt) final;
 
     void VisitFunctionStmt(std::shared_ptr<ast::Function> stmt) final;
+
+    void VisitClassStmt(std::shared_ptr<ast::Class> stmt) final;
 
     void VisitReturnStmt(std::shared_ptr<ast::Return> stmt) final;
 
@@ -103,9 +112,21 @@ private:
      */
     enum class FunctionType
     {
-        kNone,    /*!< Not a function. */
-        kFunction /*!< Standard Lox function. */
+        kNone,        /*!< Not a function. */
+        kFunction,    /*!< Standard Lox function. */
+        kInitializer, /*!< Constructor/Initializer function. */
+        kMethod       /*<! Class method. */
     }; // end FunctionType
+
+    /*!
+     * \enum ClassType
+     * \brief The ClassType enum is used to help us detect invalid use of this.
+     */
+    enum class ClassType
+    {
+        kNone, /*!< Indicates we are not resolving a class. */
+        kClass /*!< Indicates we are resolving a class. */
+    }; // end ClassType
 
     /*!
      * \brief Add a scope to #scopes_.
@@ -153,5 +174,6 @@ private:
     std::shared_ptr<lox::Interpreter> interpreter_;      /*!< Interpret which this Resolver is registering its variable resolutions. */
     ScopeStack                        scopes_;           /*!< Stack of active scopes. */
     FunctionType                      current_function_; /*!< Flag used to track the function type if any. */
+    ClassType                         current_class_;    /*!< Flag used to track whether we are resolving a class. */
 }; // end Resolver
 } // end lox
