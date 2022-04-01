@@ -185,11 +185,8 @@ std::string Interpreter::Stringify(const std::any& object)
     if (typeid(bool) == object.type())
         return (std::any_cast<bool>(object) ? "true" : "false");
 
-    if (typeid(double) == object.type()) {
-        std::string double_str = std::to_string(std::any_cast<double>(object));
-        double_str.erase(double_str.find_first_of('.'), std::string::npos);
-        return double_str;
-    }
+    if (typeid(double) == object.type())
+        return std::to_string(std::any_cast<double>(object));
 
     using ClockPtr = std::shared_ptr<lox::Interpreter::Clock>;
     if (typeid(ClockPtr) == object.type()) {
