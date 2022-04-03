@@ -78,6 +78,8 @@ public:
 
     std::any VisitThisExpr(std::shared_ptr<ast::This> expr) final;
 
+    std::any VisitSuperExpr(std::shared_ptr<ast::Super> expr) final;
+
     void VisitExpressionStmt(std::shared_ptr<ast::Expression> stmt) final
         { Resolve(stmt->expression); }
 
@@ -124,8 +126,9 @@ private:
      */
     enum class ClassType
     {
-        kNone, /*!< Indicates we are not resolving a class. */
-        kClass /*!< Indicates we are resolving a class. */
+        kNone,    /*!< Indicates we are not resolving a class. */
+        kClass,   /*!< Indicates we are resolving a class. */
+        kSubclass /*!< Indicates we are resolving a subclass. */
     }; // end ClassType
 
     /*!

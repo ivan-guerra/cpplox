@@ -135,6 +135,20 @@ std::any Resolver::VisitThisExpr(std::shared_ptr<ast::This> expr)
     return nullptr;
 }
 
+std::any Resolver::VisitSuperExpr(std::shared_ptr<ast::Super> expr)
+{
+    if (current_class_ == ClassType::kNone) {
+        LOG_STATIC_ERROR(expr->keyword.GetLine(),
+                         "Can't use 'super' outside of a class.");
+    } else if (current_class_ != ClassType::kSubclass) {
+        LOG_STATIC_ERROR(expr->keyword.GetLine(),
+                         "Can't use 'super' in a class with no superclass.");
+    }
+
+    ResolveLocal(expr, expr->keyword);
+    return nullptr;
+}
+
 std::any Resolver::VisitLogicalExpr(std::shared_ptr<ast::Logical> expr)
 {
     Resolve(expr->left);
@@ -187,6 +201,22 @@ void Resolver::VisitClassStmt(std::shared_ptr<ast::Class> stmt)
     Declare(stmt->name);
     Define(stmt->name);
 
+    if (stmt->superclass &&
+        (stmt->superclass->name.GetLexeme() == stmt->name.GetLexeme())) {
+        LOG_STATIC_ERROR(stmt->superclass->name.GetLine(),
+                         "A class can't inherit from itself.");
+    }
+
+    if (stmt->superclass) {
+        current_class_ = ClassType::kSubclass;
+        Resolve(stmt->superclass);
+    }
+
+    if (stmt->superclass) {
+        BeginScope();
+        scopes_.top()["super"] = true;
+    }
+
     BeginScope();
     scopes_.top()["this"] = true;
 
@@ -198,6 +228,9 @@ void Resolver::VisitClassStmt(std::shared_ptr<ast::Class> stmt)
         ResolveFunction(method, declaration);
     }
     EndScope();
+
+    if (stmt->superclass)
+        EndScope();
 
     current_class_ = enclosing_class;
 }

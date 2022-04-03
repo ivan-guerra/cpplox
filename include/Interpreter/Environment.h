@@ -50,6 +50,12 @@ public:
         { enclosing_ = enclosing_env; }
 
     /*!
+     * \brief Return this Environment object's enclosing Environment pointer.
+     */
+    std::shared_ptr<Environment> GetEnclosingEnv()
+        { return enclosing_; }
+
+    /*!
      * \brief Define a variable.
      *
      * Define() adds a variable with name \a name and value \a value to the

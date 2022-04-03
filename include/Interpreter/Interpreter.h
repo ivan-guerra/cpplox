@@ -78,6 +78,8 @@ public:
     std::any VisitThisExpr(std::shared_ptr<ast::This> expr) final
         { return LookupVariable(expr->keyword, expr); }
 
+    std::any VisitSuperExpr(std::shared_ptr<ast::Super> expr) final;
+
     /*!
      * \brief Execute each statement in \a statements.
      */
@@ -157,8 +159,11 @@ private:
                 std::unordered_map<std::string, std::shared_ptr<LoxCallable>>;
 
             LoxClass() = delete;
-            LoxClass(const std::string& name_, const MethodMap& methods_) :
+            LoxClass(const std::string& name_,
+                     std::shared_ptr<LoxClass> superclass_,
+                     const MethodMap& methods_) :
                 name(name_),
+                superclass(superclass_),
                 methods(methods_)
                 { }
 
@@ -170,8 +175,9 @@ private:
             std::shared_ptr<LoxCallable> FindMethod(
                 const std::string& name) const;
 
-            std::string name;    /*!< Class name. */
-            MethodMap   methods; /*!< Map of class methods. */
+            std::string               name;       /*!< Class name. */
+            std::shared_ptr<LoxClass> superclass; /*!< Superclass pointer. */
+            MethodMap                 methods;    /*!< Map of class methods. */
     }; // end LoxClass
 
     /*!

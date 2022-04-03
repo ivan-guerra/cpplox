@@ -20,6 +20,7 @@ class Call;
 class Get;
 class Set;
 class This;
+class Super;
 
 class ExprVisitor
 {
@@ -35,6 +36,7 @@ public:
     virtual std::any VisitGetExpr(std::shared_ptr<Get> expr) = 0;
     virtual std::any VisitSetExpr(std::shared_ptr<Set> expr) = 0;
     virtual std::any VisitThisExpr(std::shared_ptr<This> expr) = 0;
+    virtual std::any VisitSuperExpr(std::shared_ptr<Super> expr) = 0;
 }; // end Visitor
 
 class Expr
@@ -351,5 +353,33 @@ public:
 
     Token keyword;
 }; // end This
+
+class Super : 
+    public Expr,
+    public std::enable_shared_from_this<Super>
+{
+public:
+    Super() = default;
+    ~Super() = default;
+    Super(const Super&) = default;
+    Super& operator=(const Super&) = default;
+    Super(Super&&) = default;
+    Super& operator=(Super&&) = default;
+
+    Super(Token keyword_, Token method_) : 
+        keyword(keyword_),
+        method(method_)
+    {
+
+    }
+
+    std::any Accept(ExprVisitor& visitor) final
+    {
+        return visitor.VisitSuperExpr(shared_from_this());
+    }
+
+    Token keyword;
+    Token method;
+}; // end Super
 } // end ast
 } // end lox

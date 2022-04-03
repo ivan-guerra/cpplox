@@ -12,10 +12,10 @@ class Expression;
 class Print;
 class Var;
 class Block;
+class Class;
 class If;
 class While;
 class Function;
-class Class;
 class Return;
 
 class StmtVisitor
@@ -25,10 +25,10 @@ public:
     virtual void VisitPrintStmt(std::shared_ptr<Print> stmt) = 0;
     virtual void VisitVarStmt(std::shared_ptr<Var> stmt) = 0;
     virtual void VisitBlockStmt(std::shared_ptr<Block> stmt) = 0;
+    virtual void VisitClassStmt(std::shared_ptr<Class> stmt) = 0;
     virtual void VisitIfStmt(std::shared_ptr<If> stmt) = 0;
     virtual void VisitWhileStmt(std::shared_ptr<While> stmt) = 0;
     virtual void VisitFunctionStmt(std::shared_ptr<Function> stmt) = 0;
-    virtual void VisitClassStmt(std::shared_ptr<Class> stmt) = 0;
     virtual void VisitReturnStmt(std::shared_ptr<Return> stmt) = 0;
 }; // end Visitor
 
@@ -145,6 +145,36 @@ public:
     std::vector<std::shared_ptr<Stmt>> statements;
 }; // end Block
 
+class Class : 
+    public Stmt,
+    public std::enable_shared_from_this<Class>
+{
+public:
+    Class() = default;
+    ~Class() = default;
+    Class(const Class&) = default;
+    Class& operator=(const Class&) = default;
+    Class(Class&&) = default;
+    Class& operator=(Class&&) = default;
+
+    Class(Token name_, std::shared_ptr<Variable> superclass_, std::vector<std::shared_ptr<Function>> methods_) : 
+        name(name_),
+        superclass(superclass_),
+        methods(methods_)
+    {
+
+    }
+
+    void Accept(StmtVisitor& visitor) final
+    {
+        visitor.VisitClassStmt(shared_from_this());
+    }
+
+    Token name;
+    std::shared_ptr<Variable> superclass;
+    std::vector<std::shared_ptr<Function>> methods;
+}; // end Class
+
 class If : 
     public Stmt,
     public std::enable_shared_from_this<If>
@@ -232,34 +262,6 @@ public:
     std::vector<Token> params;
     std::vector<std::shared_ptr<Stmt>> body;
 }; // end Function
-
-class Class : 
-    public Stmt,
-    public std::enable_shared_from_this<Class>
-{
-public:
-    Class() = default;
-    ~Class() = default;
-    Class(const Class&) = default;
-    Class& operator=(const Class&) = default;
-    Class(Class&&) = default;
-    Class& operator=(Class&&) = default;
-
-    Class(Token name_, std::vector<std::shared_ptr<ast::Function>> methods_) : 
-        name(name_),
-        methods(methods_)
-    {
-
-    }
-
-    void Accept(StmtVisitor& visitor) final
-    {
-        visitor.VisitClassStmt(shared_from_this());
-    }
-
-    Token name;
-    std::vector<std::shared_ptr<ast::Function>> methods;
-}; // end Class
 
 class Return : 
     public Stmt,

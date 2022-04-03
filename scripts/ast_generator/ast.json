@@ -79,6 +79,13 @@
                     "fields":[
                         {"type":"Token", "name":"keyword"}
                     ]
+                },
+                {
+                    "name":"Super",
+                    "fields":[
+                        {"type":"Token", "name":"keyword"},
+                        {"type":"Token", "name":"method"}
+                    ]
                 }
             ],
             "headers":[
@@ -117,6 +124,14 @@
                     ]
                 },
                 {
+                    "name":"Class",
+                    "fields":[
+                        {"type":"Token", "name":"name"},
+                        {"type":"std::shared_ptr<Variable>", "name":"superclass"},
+                        {"type":"std::vector<std::shared_ptr<Function>>", "name":"methods"}
+                    ]
+                },
+                {
                     "name":"If",
                     "fields":[
                         {"type":"std::shared_ptr<Expr>", "name":"condition"},
@@ -137,13 +152,6 @@
                         {"type":"Token", "name":"name"},
                         {"type":"std::vector<Token>", "name":"params"},
                         {"type":"std::vector<std::shared_ptr<Stmt>>", "name":"body"}
-                    ]
-                },
-                {
-                    "name":"Class",
-                    "fields":[
-                        {"type":"Token" , "name":"name"},
-                        {"type":"std::vector<std::shared_ptr<ast::Function>>", "name":"methods"}
                     ]
                 },
                 {

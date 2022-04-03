@@ -91,6 +91,13 @@ Parser::StmtPtr Parser::Declaration()
 Parser::StmtPtr Parser::ClassDeclaration()
 {
     Token name = Consume(Token::TokenType::kIdentifier, "Expect class name.");
+
+    std::shared_ptr<ast::Variable> superclass = nullptr;
+    if (Match({Token::TokenType::kLess})) {
+        Consume(Token::TokenType::kIdentifier, "Expect superclass name.");
+        superclass = std::make_shared<ast::Variable>(Previous());
+    }
+
     Consume(Token::TokenType::kLeftBrace, "Expect '{' before class body.");
 
     std::vector<std::shared_ptr<ast::Function>> methods;
@@ -101,7 +108,7 @@ Parser::StmtPtr Parser::ClassDeclaration()
 
     Consume(Token::TokenType::kRightBrace, "Expect '}' after class body.");
 
-    return std::make_shared<ast::Class>(name, methods);
+    return std::make_shared<ast::Class>(name, superclass, methods);
 }
 
 Parser::StmtPtr Parser::Function(const std::string& kind)
@@ -444,6 +451,14 @@ Parser::ExprPtr Parser::Primary()
 
     if (Match({Token::TokenType::kNumber, Token::TokenType::kString}))
         return std::make_shared<ast::Literal>(Previous().GetLiteral());
+
+    if (Match({Token::TokenType::kSuper})) {
+        Token keyword = Previous();
+        Consume(Token::TokenType::kDot, "Expect '.', after 'super'.");
+        Token method = Consume(Token::TokenType::kIdentifier,
+                               "Expect superclass method name.");
+        return std::make_shared<ast::Super>(keyword, method);
+    }
 
     if (Match({Token::TokenType::kThis}))
         return std::make_shared<ast::This>(Previous());
