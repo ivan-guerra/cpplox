@@ -1,6 +1,21 @@
-class Circle {
+class Shape
+{
+    init(name)
+    {
+        this.name = name;
+    }
+
+    get_name()
+    {
+        return this.name;
+    }
+}
+
+class Circle < Shape
+{
     init(radius)
     {
+        super.init("Circle");
         this.radius = radius;
     }
 
@@ -11,4 +26,5 @@ class Circle {
 }
 
 var circle = Circle(4);
-print circle.area(); // Prints roughly "50.2655".
+print circle.get_name() + " has an area of ";
+print circle.area();
