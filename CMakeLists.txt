@@ -15,4 +15,3 @@ set(LOX_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include"
 
 add_subdirectory(docs)
 add_subdirectory(lox)
-add_subdirectory(src)
