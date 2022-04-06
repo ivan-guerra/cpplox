@@ -34,7 +34,7 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
         case OpCode::kOpDivide:
             return DisassembleSimpleInstruction("OP_DIVIDE", offset);
         default:
-            std::printf("Unknown opcode %d\n", instruction);
+            std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);
     }
 }
@@ -54,6 +54,8 @@ std::size_t Chunk::DisassembleConstantInstruction(const std::string& name,
     value::PrintValue(constants_[constant]);
     std::printf("'\n");
 
+    /* Note we add 2 not 1 on return because the constant instruction is
+       2 bytes long. */
     return (offset + 2);
 }
 
@@ -63,7 +65,7 @@ void Chunk::Write(uint8_t byte, int line)
         code_.push_back(byte);
         lines_.push_back(line);
     } catch (const std::bad_alloc& e) {
-        std::printf("error: %s\n", e.what());
+        std::fprintf(stderr, "error: %s\n", e.what());
         exit(EXIT_FAILURE);
     }
 }
@@ -82,7 +84,6 @@ int Chunk::AddConstant(value::value_t value)
 void Chunk::Disassemble(const std::string& name) const
 {
     std::printf("== %s ==\n", name.c_str());
-
     for (std::size_t offset = 0; offset < code_.size();)
         offset = DisassembleInstruction(offset);
 }

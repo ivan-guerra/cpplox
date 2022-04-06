@@ -28,7 +28,7 @@ void VirtualMachine::PrintVmStack()
     std::printf("\n");
 }
 
-void VirtualMachine::BinaryOp(uint8_t op)
+void VirtualMachine::BinaryOp(Chunk::OpCode op)
 {
     value::value_t b = vm_stack_.top();
     vm_stack_.pop();
@@ -76,7 +76,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             case Chunk::OpCode::kOpSubtract:
             case Chunk::OpCode::kOpMultiply:
             case Chunk::OpCode::kOpDivide:
-                BinaryOp(instruction);
+                BinaryOp(static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpReturn:
                 value::PrintValue(vm_stack_.top());
