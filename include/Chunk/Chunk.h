@@ -14,7 +14,12 @@ public:
     enum OpCode
     {
         kOpReturn,
-        kOpConstant
+        kOpConstant,
+        kOpNegate,
+        kOpAdd,
+        kOpSubtract,
+        kOpMultiply,
+        kOpDivide
     }; // end OpCode
 
     Chunk() = default;
@@ -26,11 +31,19 @@ public:
     Chunk(Chunk&&) = default;
     Chunk& operator=(Chunk&&) = default;
 
+    const std::vector<uint8_t>& GetCode() const
+        { return code_; }
+
+    const std::vector<value::value_t>& GetConstants() const
+        { return constants_; }
+
     void Write(uint8_t byte, int line);
 
     int AddConstant(value::value_t value);
 
     void Disassemble(const std::string& name) const;
+
+    void Disassemble(int offset) const;
 private:
     std::size_t DisassembleInstruction(int offset) const;
 

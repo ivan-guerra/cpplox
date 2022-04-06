@@ -23,6 +23,16 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleSimpleInstruction("OP_RETURN", offset);
         case OpCode::kOpConstant:
             return DisassembleConstantInstruction("OP_CONSTANT", offset);
+        case OpCode::kOpNegate:
+            return DisassembleSimpleInstruction("OP_NEGATE", offset);
+        case OpCode::kOpAdd:
+            return DisassembleSimpleInstruction("OP_ADD", offset);
+        case OpCode::kOpSubtract:
+            return DisassembleSimpleInstruction("OP_SUBTRACT", offset);
+        case OpCode::kOpMultiply:
+            return DisassembleSimpleInstruction("OP_MULTIPLY", offset);
+        case OpCode::kOpDivide:
+            return DisassembleSimpleInstruction("OP_DIVIDE", offset);
         default:
             std::printf("Unknown opcode %d\n", instruction);
             return (offset + 1);
@@ -75,5 +85,14 @@ void Chunk::Disassemble(const std::string& name) const
 
     for (std::size_t offset = 0; offset < code_.size();)
         offset = DisassembleInstruction(offset);
+}
+
+void Chunk::Disassemble(int offset) const
+{
+    if (offset < 0 || offset > static_cast<int>(code_.size()))
+        /* NOOP on invalid offsets. */
+        return;
+
+    DisassembleInstruction(offset);
 }
 } // end lox

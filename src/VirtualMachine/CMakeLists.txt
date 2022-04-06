@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(lox DESCRIPTION "Lox lang interpreter"
-            LANGUAGES   CXX
+project(VirtualMachine DESCRIPTION "Virtual machine executing lox bytecode"
+                       LANGUAGES   CXX
 )
 
-add_executable(${PROJECT_NAME} Lox.cc)
+add_library(${PROJECT_NAME} STATIC VirtualMachine.cc)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+       "${LOX_INCLUDE_DIR}/VirtualMachine"
+)
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
@@ -20,12 +25,6 @@ target_compile_features(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE
+    PUBLIC
         Chunk
-        VirtualMachine
-)
-
-set(LOX_INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION ${LOX_INSTALL_DIR}
 )
