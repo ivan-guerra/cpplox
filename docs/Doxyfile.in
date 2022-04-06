@@ -14,9 +14,6 @@ REPEAT_BRIEF           = YES
 DISABLE_INDEX          = YES
 GENERATE_TREEVIEW      = YES
 FULL_SIDEBAR           = YES
-HTML_COLORSTYLE_HUE    = 185
-HTML_COLORSTYLE_SAT    = 125
-HTML_COLORSTYLE_GAMMA  = 100
 
 #------------------------------------------------------------------------------
 # Build related configuration options
