@@ -1,3 +1,5 @@
 add_subdirectory(Chunk)
 add_subdirectory(Value)
 add_subdirectory(VirtualMachine)
+add_subdirectory(Compiler)
+add_subdirectory(Scanner)

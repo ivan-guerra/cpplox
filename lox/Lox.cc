@@ -1,39 +1,65 @@
+#include <cstdio>
 #include <cstdlib>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
 
-#include "Chunk.h"
+#include "Compiler.h"
 #include "VirtualMachine.h"
 
-int main(void)
+static lox::VirtualMachine::InterpretResult Interpret(
+    [[maybe_unused]]const std::string& source)
 {
-    using OpCode = lox::Chunk::OpCode;
+    lox::Compiler compiler;
+    compiler.Compile(source);
 
-    lox::VirtualMachine vm;
+    return lox::VirtualMachine::InterpretResult::kInterpretOk;
+}
 
+static void Repl()
+{
+    const std::string kPrompt = "lox >>> ";
+    std::printf("%s", kPrompt.c_str());
 
-    lox::Chunk chunk;
-    int line_number = 123;
-    int constant = chunk.AddConstant(1.2);
-    chunk.Write(OpCode::kOpConstant, line_number);
-    chunk.Write(constant, line_number);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        Interpret(line);
+        std::printf("%s", kPrompt.c_str());
+    }
+}
 
-    constant = chunk.AddConstant(3.4);
-    chunk.Write(OpCode::kOpConstant, line_number);
-    chunk.Write(constant, line_number);
+static void RunFile(const std::string& script)
+{
+    std::ifstream script_fd(script);
+    if (!script_fd.is_open()) {
+        std::fprintf(stderr, "error: unable to open script '%s'\n",
+                     script.c_str());
+        exit(74);
+    }
 
-    chunk.Write(OpCode::kOpAdd, line_number);
+    /* Read the User script in one fell swoop. */
+    std::stringstream buffer;
+    buffer << script_fd.rdbuf();
 
-    constant = chunk.AddConstant(5.6);
-    chunk.Write(OpCode::kOpConstant, line_number);
-    chunk.Write(constant, line_number);
+    using InterpretResult = lox::VirtualMachine::InterpretResult;
+    InterpretResult result = Interpret(buffer.str());
+    if (InterpretResult::kInterpretCompileError == result)
+        exit(65);
+    if (InterpretResult::kInterpretRuntimeError == result)
+        exit(70);
+}
 
-    chunk.Write(OpCode::kOpDivide, line_number);
-
-    chunk.Write(OpCode::kOpNegate, line_number);
-    chunk.Write(OpCode::kOpReturn, line_number);
-
-    chunk.Disassemble("Test Chunk");
-
-    vm.Interpret(chunk);
+int main(int argc, char** argv)
+{
+    if (1 == argc) {
+        Repl();
+    } else if (2 == argc) {
+        RunFile(argv[1]);
+    } else {
+        std::fprintf(stderr, "usage: lox [script_path]\n");
+        exit(64);
+    }
 
     exit(EXIT_SUCCESS);
 }
