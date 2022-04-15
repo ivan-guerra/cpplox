@@ -51,6 +51,14 @@ Token::kTokenToStr_ =
     {Token::TokenType::kEof,          "EOF"}
 };
 
+Token::Token() :
+    type_(TokenType::kEof),
+    lexeme_(""),
+    line_(0)
+{
+
+}
+
 Token::Token(TokenType type, const std::string& lexeme, int line) :
     type_(type),
     lexeme_(lexeme),
@@ -80,6 +88,22 @@ Scanner::kKeywords_ =
     {"while",  Token::TokenType::kWhile}
 };
 
+char Scanner::Peek() const
+{
+    if (IsAtEnd())
+        return '\0';
+
+    return source_.at(current_);
+}
+
+char Scanner::PeekNext() const
+{
+    if ((current_ + 1) >= source_.size())
+        return '\0';
+
+    return source_.at(current_ + 1);
+}
+
 bool Scanner::Match(char expected)
 {
     if (IsAtEnd())
@@ -94,7 +118,7 @@ bool Scanner::Match(char expected)
 
 void Scanner::SkipWhitespace()
 {
-    while (!IsAtEnd()) {
+    while (true) {
         char c = Peek();
         switch(c) {
             case ' ':

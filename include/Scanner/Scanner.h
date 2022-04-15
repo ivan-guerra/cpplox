@@ -70,7 +70,7 @@ public:
         kEof
     }; // end TokenType
 
-    Token() = delete;
+    Token();
 
     /*!
      * \brief Construct a token.
@@ -138,10 +138,10 @@ public:
 
     ~Scanner() = default;
 
-    Scanner(const Scanner&) = delete;
-    Scanner& operator=(const Scanner&) = delete;
-    Scanner(Scanner&&) = delete;
-    Scanner& operator=(Scanner&&) = delete;
+    Scanner(const Scanner&) = default;
+    Scanner& operator=(const Scanner&) = default;
+    Scanner(Scanner&&) = default;
+    Scanner& operator=(Scanner&&) = default;
 
     /*!
      * \brief Return the next Token in the source code stream.
@@ -161,7 +161,7 @@ private:
      * \brief Return \c true if the entire source text has been scanned.
      */
     bool IsAtEnd() const
-        { return ('\0' == source_[current_]); }
+        { return (current_ >= source_.size()); }
 
     /*!
      * \brief Return \c true if \a c is a digit.
@@ -202,16 +202,14 @@ private:
     /*!
      * \brief Return the character currentl under the Scanner's cursor.
      */
-    char Peek() const
-        { return source_.at(current_); }
+    char Peek() const;
 
     /*!
      * \brief Return the character one index past the current cursor position.
      * \return If the the scanner is at the end of the source text, the null
      *         character is returned.
      */
-    char PeekNext() const
-        { return (IsAtEnd()) ? '\0' : source_[current_ + 1]; }
+    char PeekNext() const;
 
     /*!
      * \brief Return \c true if the char under the cursor matches \a expected.
