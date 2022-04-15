@@ -8,18 +8,21 @@ Help()
 {
     echo "Build the lox interpreter."
     echo
-    echo "usage: build_lox.sh [d|h]"
+    echo "usage: build_lox.sh [OPTION]..."
     echo "options:"
-    echo "d    Build project documentation (default OFF)."
-    echo "h    Print this help message."
+    echo -e "\td    Build project documentation (default OFF)."
+    echo -e "\tg    Enable debug info (default OFF)."
+    echo -e "\th    Print this help message."
 }
 
 BUILD_DOC="OFF"
+DEBUG_PRINT_CODE="OFF"
 
-while getopts ":hd" flag
+while getopts ":hdg" flag
 do
     case "${flag}" in
         d) BUILD_DOC="ON";;
+        g) DEBUG_PRINT_CODE="ON";;
         h) Help
            exit;;
        \?) echo "Error: Invalid option"
@@ -39,7 +42,8 @@ fi
 
 # Build and install the kernel.
 pushd $LOX_BUILD_DIR
-    cmake ../ -DBUILD_DOC=${BUILD_DOC} && \
+    cmake ../ -DBUILD_DOC=${BUILD_DOC} \
+              -DDEBUG_PRINT_CODE=${DEBUG_PRINT_CODE} && \
     make -j$(nproc) all                && \
     make install
 

@@ -91,8 +91,7 @@ private:
     void EmitConstant(value::value_t value)
         { EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(value)); }
 
-    void EndCompiler()
-        { EmitReturn(); }
+    void EndCompiler();
 
     void Number();
 

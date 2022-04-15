@@ -167,6 +167,15 @@ void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
     EmitByte(byte2);
 }
 
+void Compiler::EndCompiler()
+{
+    EmitReturn();
+#ifdef DEBUG_PRINT_CODE
+    if (!parser_.had_error)
+        chunk_->Disassemble("code");
+#endif
+}
+
 void Compiler::Number()
 {
     double value = std::stod(parser_.previous.GetLexeme());

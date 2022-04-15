@@ -6,6 +6,13 @@ project(Compiler DESCRIPTION "Bytecode compiler"
 
 add_library(${PROJECT_NAME} STATIC Compiler.cc)
 
+if(DEBUG_PRINT_CODE)
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            -DDEBUG_PRINT_CODE
+    )
+endif(DEBUG_PRINT_CODE)
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
        "${LOX_INCLUDE_DIR}/Compiler"
