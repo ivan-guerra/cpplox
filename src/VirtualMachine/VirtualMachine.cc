@@ -1,4 +1,5 @@
 #include <stack>
+#include <memory>
 #include <cstdio>
 #include <cstdint>
 
@@ -59,7 +60,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
     while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
         PrintVmStack();
-        chunk_.Disassemble(ip_);
+        chunk_->Disassemble(ip_);
 #endif
         uint8_t instruction = ReadByte();
         switch (instruction) {
@@ -88,15 +89,21 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 }
 
 VirtualMachine::VirtualMachine() :
-    ip_(0)
+    ip_(0),
+    chunk_(std::make_shared<Chunk>())
 {
 
 }
 
-VirtualMachine::InterpretResult VirtualMachine::Interpret(const Chunk& chunk)
+VirtualMachine::InterpretResult VirtualMachine::Interpret(
+    const std::string& source)
 {
-   chunk_ = chunk;
-   ip_    = 0;
-   return Run();
+    if (!compiler_.Compile(source, chunk_))
+        return InterpretResult::kInterpretCompileError;
+
+    /* Set the instruction pointer to point to the start of the chunk. */
+    ip_ = 0;
+
+    return Run();
 }
 } // end lox

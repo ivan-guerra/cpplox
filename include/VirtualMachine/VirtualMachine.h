@@ -1,11 +1,13 @@
 #pragma once
 
 #include <stack>
+#include <memory>
 #include <cstddef>
 #include <cstdint>
 
 #include "Value.h"
 #include "Chunk.h"
+#include "Compiler.h"
 
 namespace lox
 {
@@ -38,7 +40,7 @@ public:
     /*!
      * \brief Interpret the bytecode contained within \a chunk.
      */
-    InterpretResult Interpret(const Chunk& chunk);
+    InterpretResult Interpret(const std::string& source);
 
 private:
     /*!
@@ -55,7 +57,7 @@ private:
      * the next instruction in the chunk_.
      */
     uint8_t ReadByte()
-        { return chunk_.GetCode()[ip_++]; }
+        { return chunk_->GetCode()[ip_++]; }
 
     /*!
      * \brief Return a constant in #chunk_.
@@ -65,7 +67,7 @@ private:
      * constant instruction's argument.
      */
     value::value_t ReadConstant()
-        { return chunk_.GetConstants()[ReadByte()]; }
+        { return chunk_->GetConstants()[ReadByte()]; }
 
     /*!
      * \brief Helper function used to evaluate binary operations.
@@ -82,7 +84,8 @@ private:
     InterpretResult Run();
 
     std::size_t                ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
-    Chunk                      chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
+    std::shared_ptr<Chunk>     chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
     std::stack<value::value_t> vm_stack_; /*!< The value stack. */
+    lox::Compiler              compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine
 } // end lox
