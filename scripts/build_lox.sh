@@ -17,12 +17,14 @@ Help()
 
 BUILD_DOC="OFF"
 DEBUG_PRINT_CODE="OFF"
+DEBUG_TRACE_EXECUTION="OFF"
 
 while getopts ":hdg" flag
 do
     case "${flag}" in
         d) BUILD_DOC="ON";;
-        g) DEBUG_PRINT_CODE="ON";;
+        g) DEBUG_PRINT_CODE="ON"
+           DEBUG_TRACE_EXECUTION="ON";;
         h) Help
            exit;;
        \?) echo "Error: Invalid option"
@@ -42,9 +44,11 @@ fi
 
 # Build and install the kernel.
 pushd $LOX_BUILD_DIR
-    cmake ../ -DBUILD_DOC=${BUILD_DOC} \
-              -DDEBUG_PRINT_CODE=${DEBUG_PRINT_CODE} && \
-    make -j$(nproc) all                && \
+    cmake ../                                                 \
+          -DBUILD_DOC=${BUILD_DOC}                            \
+          -DDEBUG_PRINT_CODE=${DEBUG_PRINT_CODE}              \
+          -DDEBUG_TRACE_EXECUTION=${DEBUG_TRACE_EXECUTION} && \
+    make -j$(nproc) all                                    && \
     make install
 
     # Exit if any of the above commands fails.

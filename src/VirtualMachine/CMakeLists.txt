@@ -11,6 +11,13 @@ target_include_directories(${PROJECT_NAME}
        "${LOX_INCLUDE_DIR}/VirtualMachine"
 )
 
+if(DEBUG_TRACE_EXECUTION)
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            -DDEBUG_TRACE_EXECUTION
+    )
+endif(DEBUG_TRACE_EXECUTION)
+
 target_compile_options(${PROJECT_NAME}
     PRIVATE
         -Wall
