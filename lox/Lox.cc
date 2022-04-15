@@ -5,16 +5,13 @@
 #include <fstream>
 #include <iostream>
 
-#include "Compiler.h"
 #include "VirtualMachine.h"
 
 static lox::VirtualMachine::InterpretResult Interpret(
-    [[maybe_unused]]const std::string& source)
+    const std::string& source)
 {
-    lox::Compiler compiler;
-    compiler.Compile(source);
-
-    return lox::VirtualMachine::InterpretResult::kInterpretOk;
+    lox::VirtualMachine vm;
+    return vm.Interpret(source);
 }
 
 static void Repl()
