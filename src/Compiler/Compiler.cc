@@ -95,6 +95,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
 void Compiler::ParsePrecedence(Precedence precedence)
 {
     Advance();
+
     ParseFn prefix_rule = rules_[parser_.previous.GetType()].prefix;
     if (!prefix_rule) {
         Error("Expect expression.");
@@ -242,9 +243,9 @@ Compiler::Compiler() :
 bool Compiler::Compile(const std::string& source,
                        std::shared_ptr<Chunk> chunk)
 {
-    chunk_ = chunk;
-
+    chunk_   = chunk;
     scanner_ = lox::Scanner(source);
+
     Advance();
     Expression();
     Consume(Token::TokenType::kEof, "Expect end of expression.");

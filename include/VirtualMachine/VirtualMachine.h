@@ -38,7 +38,7 @@ public:
     VirtualMachine& operator=(VirtualMachine&&) = default;
 
     /*!
-     * \brief Interpret the bytecode contained within \a chunk.
+     * \brief Compile and execute the code defined in \a source.
      */
     InterpretResult Interpret(const std::string& source);
 
