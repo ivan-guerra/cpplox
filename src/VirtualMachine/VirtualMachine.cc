@@ -1,6 +1,7 @@
 #include <stack>
 #include <memory>
 #include <cstdio>
+#include <cstdarg>
 #include <cstdint>
 
 #include "Chunk.h"
@@ -11,7 +12,7 @@ namespace lox
 {
 void VirtualMachine::PrintVmStack()
 {
-    std::stack<value::value_t> aux;
+    std::stack<value::Value> aux;
 
     while (!vm_stack_.empty()) {
         aux.push(vm_stack_.top());
@@ -29,30 +30,18 @@ void VirtualMachine::PrintVmStack()
     std::printf("\n");
 }
 
-void VirtualMachine::BinaryOp(Chunk::OpCode op)
+void VirtualMachine::RuntimeError(const char* format, ...)
 {
-    value::value_t b = vm_stack_.top();
-    vm_stack_.pop();
-    value::value_t a = vm_stack_.top();
-    vm_stack_.pop();
+    va_list args;
+    va_start(args, format);
+    std::vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
 
-    switch (op) {
-        case Chunk::OpCode::kOpAdd:
-            vm_stack_.push(a + b);
-            break;
-        case Chunk::OpCode::kOpSubtract:
-            vm_stack_.push(a - b);
-            break;
-        case Chunk::OpCode::kOpMultiply:
-            vm_stack_.push(a * b);
-            break;
-        case Chunk::OpCode::kOpDivide:
-            vm_stack_.push(a / b);
-            break;
-        default:
-            std::printf("Unknown opcode %d\n", op);
-            exit(EXIT_FAILURE);
-    }
+    size_t instruction = chunk_->GetCode().size() - ip_ - 1;
+    int line = chunk_->GetLines().at(instruction);
+    std::fprintf(stderr, "[line %d] in script\n", line);
+    vm_stack_ = {};
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Run()
@@ -68,16 +57,21 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 vm_stack_.push(ReadConstant());
                 break;
             case Chunk::OpCode::kOpNegate: {
-                value::value_t val = vm_stack_.top();
+                value::Value val = vm_stack_.top();
+                if (!value::IsNumber(val)) {
+                    RuntimeError("Operand must be a number.");
+                    return InterpretResult::kInterpretRuntimeError;
+                }
                 vm_stack_.pop();
-                vm_stack_.push(-val);
+                vm_stack_.push(value::NumberVal(-value::AsNumber(val)));
                 break;
             }
             case Chunk::OpCode::kOpAdd:
             case Chunk::OpCode::kOpSubtract:
             case Chunk::OpCode::kOpMultiply:
             case Chunk::OpCode::kOpDivide:
-                BinaryOp(static_cast<Chunk::OpCode>(instruction));
+                BinaryOp<double>(value::NumberVal,
+                                 static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpReturn:
                 value::PrintValue(vm_stack_.top());

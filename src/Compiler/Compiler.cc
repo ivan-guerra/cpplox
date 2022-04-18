@@ -131,7 +131,7 @@ void Compiler::Consume(Token::TokenType type, const std::string& message)
     ErrorAtCurrent(message);
 }
 
-uint8_t Compiler::MakeConstant(value::value_t value)
+uint8_t Compiler::MakeConstant(const value::Value& value)
 {
     int constant = chunk_->AddConstant(value);
     if (constant > UINT8_MAX) {
@@ -180,7 +180,7 @@ void Compiler::EndCompiler()
 void Compiler::Number()
 {
     double value = std::stod(parser_.previous.GetLexeme());
-    EmitConstant(value);
+    EmitConstant(value::NumberVal(value));
 }
 
 void Compiler::Grouping()

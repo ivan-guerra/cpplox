@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <memory>
+#include <functional>
 #include <cstddef>
 #include <cstdint>
 
@@ -51,6 +52,11 @@ private:
     void PrintVmStack();
 
     /*!
+     * \brief Print a runtime error message to STDOUT.
+     */
+    void RuntimeError(const char* format, ...);
+
+    /*!
      * \brief Return the next byte in #chunk_.
      *
      * ReadByte() has the side effect of always incrementing #ip_ to point to
@@ -66,7 +72,7 @@ private:
      * behavior can arise when ReadConstant() is called when not parsing a
      * constant instruction's argument.
      */
-    value::value_t ReadConstant()
+    value::Value ReadConstant()
         { return chunk_->GetConstants()[ReadByte()]; }
 
     /*!
@@ -74,18 +80,67 @@ private:
      *
      * BinaryOp() pops the two values at the top of #vm_stack_ and applies
      * the binary operation specified by \a op taking care to order the
-     * operands correctly.
+     * operands correctly. If the values at the top of the stack are invalid
+     * operands, a runtime error is reported.
+     *
+     * \param value_type Value conversion function applied to each operand.
+     * \param op The binary operation opcode.
+     *
+     * \return InterpretResult::kInterpretRuntimeError if an error occurs, else
+     *         InterpretResult::kInterpretOk is returned.
      */
-    void BinaryOp(Chunk::OpCode op);
+    template <typename T>
+    InterpretResult BinaryOp(
+        std::function<value::Value(T)> value_type,
+        Chunk::OpCode op);
 
     /*!
      * \brief Execute the bytecode within #chunk_ one instruction at a time.
      */
     InterpretResult Run();
 
-    std::size_t                ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
-    std::shared_ptr<Chunk>     chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
-    std::stack<value::value_t> vm_stack_; /*!< The value stack. */
-    lox::Compiler              compiler_; /*!< Bytecode compiler. */
+    std::size_t              ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
+    std::shared_ptr<Chunk>   chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
+    std::stack<value::Value> vm_stack_; /*!< The value stack. */
+    lox::Compiler            compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine
+
+template <typename T>
+VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
+    std::function<value::Value(T)> value_type,
+    Chunk::OpCode op)
+{
+    if (!value::IsNumber(vm_stack_.top())) {
+        RuntimeError("Operands must be numbers.");
+        return InterpretResult::kInterpretRuntimeError;
+    }
+    double b = value::AsNumber(vm_stack_.top());
+    vm_stack_.pop();
+
+    if (!value::IsNumber(vm_stack_.top())) {
+        RuntimeError("Operands must be numbers.");
+        return InterpretResult::kInterpretRuntimeError;
+    }
+    double a = value::AsNumber(vm_stack_.top());
+    vm_stack_.pop();
+
+    switch (op) {
+        case Chunk::OpCode::kOpAdd:
+            vm_stack_.push(value_type(a + b));
+            break;
+        case Chunk::OpCode::kOpSubtract:
+            vm_stack_.push(value_type(a - b));
+            break;
+        case Chunk::OpCode::kOpMultiply:
+            vm_stack_.push(value_type(a * b));
+            break;
+        case Chunk::OpCode::kOpDivide:
+            vm_stack_.push(value_type(a / b));
+            break;
+        default:
+            RuntimeError("Unknown opcode");
+            return InterpretResult::kInterpretRuntimeError;
+    }
+    return InterpretResult::kInterpretOk;
+}
 } // end lox

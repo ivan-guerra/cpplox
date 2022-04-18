@@ -70,7 +70,7 @@ void Chunk::Write(uint8_t byte, int line)
     }
 }
 
-int Chunk::AddConstant(value::value_t value)
+int Chunk::AddConstant(const value::Value& value)
 {
     try {
         constants_.push_back(value);

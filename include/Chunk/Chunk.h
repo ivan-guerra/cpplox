@@ -48,8 +48,14 @@ public:
     /*!
      * \brief Return a read only view of the Chunk's constants.
      */
-    const std::vector<value::value_t>& GetConstants() const
+    const std::vector<value::Value>& GetConstants() const
         { return constants_; }
+
+    /*!
+     * \brief Return a read only view of the Chunk's line array.
+     */
+    const std::vector<int>& GetLines() const
+        { return lines_; }
 
     /*!
      * \brief Write a raw byte to the Chunk.
@@ -71,7 +77,7 @@ public:
      *         OpCode::kOpConstant instruction which has the form:
      *         OP_CONSTANT \<CONSTANT_INDEX\>
      */
-    int AddConstant(value::value_t value);
+    int AddConstant(const value::Value& value);
 
     /*!
      * \brief Disassemble all instructions in this Chunk.
@@ -113,7 +119,7 @@ private:
                                                int offset) const;
 
     std::vector<uint8_t>        code_;      /*!< Vector of compiled bytecode instructions. */
-    std::vector<value::value_t> constants_; /*!< Vector of constants parsed from the source text. */
+    std::vector<value::Value> constants_; /*!< Vector of constants parsed from the source text. */
     std::vector<int>            lines_;     /*!< Vector of line numbers. Usage TBD. */
 }; // end Chunk
 } // end lox
