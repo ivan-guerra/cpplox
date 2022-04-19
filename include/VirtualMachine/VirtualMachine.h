@@ -57,6 +57,15 @@ private:
     void RuntimeError(const char* format, ...);
 
     /*!
+     * \brief Return \c true if \a value contains a \c false value.
+     *
+     * nil is considered to be false. The only other possibility is the \c
+     * false literal.
+     */
+    bool IsFalsey(const value::Value& value) const
+        { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
+
+    /*!
      * \brief Return the next byte in #chunk_.
      *
      * ReadByte() has the side effect of always incrementing #ip_ to point to
@@ -136,6 +145,12 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
             break;
         case Chunk::OpCode::kOpDivide:
             vm_stack_.push(value_type(a / b));
+            break;
+        case Chunk::OpCode::kOpGreater:
+            vm_stack_.push(value_type(a > b));
+            break;
+        case Chunk::OpCode::kOpLess:
+            vm_stack_.push(value_type(a < b));
             break;
         default:
             RuntimeError("Unknown opcode");

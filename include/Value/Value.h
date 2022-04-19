@@ -50,6 +50,11 @@ namespace value
     Value NumberVal(double value);
 
     /*!
+     * \brief Return \c true if \a equals \a b.
+     */
+    bool ValuesEqual(const Value& a, const Value& b);
+
+    /*!
      * \brief Convert \a value a to a C++ boolean type.
      */
     bool AsBool(const Value& value);

@@ -56,6 +56,35 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             case Chunk::OpCode::kOpConstant:
                 vm_stack_.push(ReadConstant());
                 break;
+            case Chunk::OpCode::kOpNil:
+                vm_stack_.push(value::NilVal());
+                break;
+            case Chunk::OpCode::kOpTrue:
+                vm_stack_.push(value::BoolVal(true));
+                break;
+            case Chunk::OpCode::kOpFalse:
+                vm_stack_.push(value::BoolVal(false));
+                break;
+            case Chunk::OpCode::KOpEqual: {
+                value::Value b = vm_stack_.top();
+                vm_stack_.pop();
+                value::Value a = vm_stack_.top();
+                vm_stack_.pop();
+
+                vm_stack_.push(value::BoolVal(value::ValuesEqual(a, b)));
+                break;
+            }
+            case Chunk::OpCode::kOpGreater:
+            case Chunk::OpCode::kOpLess:
+                BinaryOp<bool>(value::BoolVal,
+                               static_cast<Chunk::OpCode>(instruction));
+                break;
+            case Chunk::OpCode::kOpNot: {
+                bool is_falsey = IsFalsey(vm_stack_.top());
+                vm_stack_.pop();
+                vm_stack_.push(value::BoolVal(is_falsey));
+                break;
+            }
             case Chunk::OpCode::kOpNegate: {
                 value::Value val = vm_stack_.top();
                 if (!value::IsNumber(val)) {

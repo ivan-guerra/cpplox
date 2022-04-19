@@ -24,6 +24,13 @@ public:
     {
         kOpReturn,
         kOpConstant,
+        kOpNil,
+        kOpTrue,
+        kOpFalse,
+        KOpEqual,
+        kOpGreater,
+        kOpLess,
+        kOpNot,
         kOpNegate,
         kOpAdd,
         kOpSubtract,

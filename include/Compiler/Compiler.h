@@ -175,6 +175,11 @@ private:
      */
     void Binary();
 
+    /*!
+     * \brief Compile a literal expression.
+     */
+    void Literal();
+
     Scanner                scanner_; /*!< Token scanner. */
     std::shared_ptr<Chunk> chunk_;   /*!< Chunk storing compiled bytecode. */
     Parser                 parser_;  /*!< Handle to the Parser. */

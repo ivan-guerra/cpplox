@@ -23,6 +23,20 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleSimpleInstruction("OP_RETURN", offset);
         case OpCode::kOpConstant:
             return DisassembleConstantInstruction("OP_CONSTANT", offset);
+        case OpCode::kOpNot:
+            return DisassembleSimpleInstruction("OP_NOT", offset);
+        case OpCode::kOpNil:
+            return DisassembleSimpleInstruction("OP_NIL", offset);
+         case OpCode::kOpTrue:
+            return DisassembleSimpleInstruction("OP_TRUE", offset);
+        case OpCode::kOpFalse:
+            return DisassembleSimpleInstruction("OP_FALSE", offset);
+        case OpCode::KOpEqual:
+            return DisassembleSimpleInstruction("OP_EQUAL", offset);
+         case OpCode::kOpGreater:
+            return DisassembleSimpleInstruction("OP_GREATER", offset);
+        case OpCode::kOpLess:
+            return DisassembleSimpleInstruction("OP_LESS", offset);
         case OpCode::kOpNegate:
             return DisassembleSimpleInstruction("OP_NEGATE", offset);
         case OpCode::kOpAdd:

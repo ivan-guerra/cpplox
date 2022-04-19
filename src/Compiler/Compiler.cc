@@ -33,21 +33,21 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kStar,
         {nullptr, &Compiler::Binary, Precedence::kPrecFactor}},
     {Token::TokenType::kBang,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Unary, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kBangEqual,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecEquality}},
     {Token::TokenType::kEqual,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kEqualEqual,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecEquality}},
     {Token::TokenType::kGreater,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
     {Token::TokenType::kGreaterEqual,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
     {Token::TokenType::kLess,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
     {Token::TokenType::kLessEqual,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
     {Token::TokenType::kIdentifier,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kString,
@@ -61,7 +61,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kElse,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kFalse,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kFun,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kFor,
@@ -69,7 +69,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kIf,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kNil,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kOr,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kPrint,
@@ -81,7 +81,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kThis,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kTrue,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kVar,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kWhile,
@@ -198,6 +198,9 @@ void Compiler::Unary()
 
     /* Emit the operator instruction. */
     switch (operator_type) {
+        case Token::TokenType::kBang:
+            EmitByte(Chunk::OpCode::kOpNot);
+            break;
         case Token::TokenType::kMinus:
             EmitByte(Chunk::OpCode::kOpNegate);
             break;
@@ -214,6 +217,24 @@ void Compiler::Binary()
         static_cast<Precedence>(rules_[operator_type].precedence + 1));
 
     switch (operator_type) {
+        case Token::TokenType::kBangEqual:
+            EmitBytes(Chunk::OpCode::KOpEqual, Chunk::OpCode::kOpNot);
+            break;
+        case Token::TokenType::kEqualEqual:
+            EmitByte(Chunk::OpCode::KOpEqual);
+            break;
+        case Token::TokenType::kGreater:
+            EmitByte(Chunk::OpCode::kOpGreater);
+            break;
+        case Token::TokenType::kGreaterEqual:
+            EmitBytes(Chunk::OpCode::kOpLess, Chunk::OpCode::kOpNot);
+            break;
+        case Token::TokenType::kLess:
+            EmitByte(Chunk::OpCode::kOpLess);
+            break;
+        case Token::TokenType::kLessEqual:
+            EmitBytes(Chunk::OpCode::kOpGreater, Chunk::OpCode::kOpNot);
+            break;
         case Token::TokenType::kPlus:
             EmitByte(Chunk::OpCode::kOpAdd);
             break;
@@ -228,6 +249,23 @@ void Compiler::Binary()
             break;
         default:
             /* Unreachable */
+            return;
+    }
+}
+
+void Compiler::Literal()
+{
+    switch (parser_.previous.GetType()) {
+        case Token::TokenType::kFalse:
+            EmitByte(Chunk::OpCode::kOpFalse);
+            break;
+        case Token::TokenType::kTrue:
+            EmitByte(Chunk::OpCode::kOpTrue);
+            break;
+        case Token::TokenType::kNil:
+            EmitByte(Chunk::OpCode::kOpNil);
+            break;
+        default:
             return;
     }
 }
