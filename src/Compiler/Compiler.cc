@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 
+#include "Object.h"
 #include "Scanner.h"
 #include "Compiler.h"
 
@@ -51,7 +52,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kIdentifier,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kString,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::String, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kNumber,
         {&Compiler::Number, nullptr,  Precedence::kPrecNone}},
     {Token::TokenType::kAnd,
@@ -268,6 +269,17 @@ void Compiler::Literal()
         default:
             return;
     }
+}
+
+void Compiler::String()
+{
+    std::string lexeme = parser_.previous.GetLexeme();
+
+    /* Trim off the '"' marks on either end of the lexeme before copying. */
+    std::shared_ptr<obj::Obj> str_obj =
+        obj::CopyString(lexeme.substr(1, lexeme.size() - 2));
+
+    EmitConstant(obj::ObjVal(str_obj));
 }
 
 Compiler::Compiler() :

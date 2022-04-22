@@ -36,4 +36,6 @@ target_link_libraries(${PROJECT_NAME}
         Chunk
         Value
         Scanner
+    PRIVATE
+        Object
 )
