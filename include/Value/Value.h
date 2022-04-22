@@ -1,7 +1,18 @@
 #pragma once
 
+#include <memory>
+#include <variant>
+
 namespace lox
 {
+/* Forward declaration of lox::obj objects to avoid a circular dependency
+   between lox::value and lox::obj. */
+namespace obj
+{
+    typedef struct Obj Obj;
+    typedef struct ObjString ObjString;
+} // end obj
+
 namespace value
 {
     /*!
@@ -10,9 +21,10 @@ namespace value
      */
     enum ValueType
     {
-        kBool,  /*!< Boolean. */
-        kNil,   /*!< nil (i.e., NULL). */
-        kNumber /*!< Numerical. */
+        kBool,   /*!< Boolean. */
+        kNil,    /*!< nil (i.e., NULL). */
+        kNumber, /*!< Numerical. */
+        kObj     /*!< Lox objects (e.g., strings, functions, etc.) */
     }; // end ValueType
 
     /*!
@@ -21,17 +33,8 @@ namespace value
      */
     struct Value
     {
-        ValueType type; /*!< Type of this Value. */
-
-        /*!
-         * \union as
-         * \brief Union storing the underlying C++ representation of this value.
-         */
-        union
-        {
-            bool   boolean;
-            double number;
-        } as; // end as
+        ValueType type;
+        std::variant<bool, double, std::shared_ptr<obj::Obj>> as;
     }; // end Value
 
     /*!
@@ -80,8 +83,13 @@ namespace value
     bool IsNumber(const Value& value);
 
     /*!
+     * \brief Print the Lox object stored in \a value to STDOUT.
+     */
+    void PrintObject(const Value& value);
+
+    /*!
      * \brief Print \a val to STDOUT.
      */
-    void PrintValue(const Value& val);
+    void PrintValue(const Value& value);
 } // end value
 } // end lox

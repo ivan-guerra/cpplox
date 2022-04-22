@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(Value DESCRIPTION "Representation of a lox value"
-              LANGUAGES   CXX
+project(Object DESCRIPTION "Representation of a lox objects"
+               LANGUAGES   CXX
 )
 
-add_library(${PROJECT_NAME} STATIC Value.cc)
+add_library(${PROJECT_NAME} STATIC Object.cc)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-       "${LOX_INCLUDE_DIR}/Value"
+       "${LOX_INCLUDE_DIR}/Object"
 )
 
 target_compile_options(${PROJECT_NAME}
@@ -25,6 +25,6 @@ target_compile_features(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        Object
+    PUBLIC
+        Value
 )

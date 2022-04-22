@@ -1,19 +1,21 @@
 #include <cstdio>
+#include <variant>
 
 #include "Value.h"
+#include "Object.h"
 
 namespace lox
 {
 namespace value
 {
 Value BoolVal(bool value)
-    { return {ValueType::kBool, {.boolean = value}}; }
+    { return {ValueType::kBool, value}; }
 
 Value NilVal()
-    { return {ValueType::kNil, {.number = 0}}; }
+    { return {ValueType::kNil, 0.0}; }
 
 Value NumberVal(double value)
-    { return {ValueType::kNumber, {.number = value}}; }
+    { return {ValueType::kNumber, value}; }
 
 bool ValuesEqual(const Value& a, const Value& b)
 {
@@ -27,6 +29,8 @@ bool ValuesEqual(const Value& a, const Value& b)
             return true;
         case ValueType::kNumber:
             return (AsNumber(a) == AsNumber(b));
+        case ValueType::kObj:
+            return (obj::AsStdString(a) == obj::AsStdString(b));
         default:
             /* Unreachable */
             return false;
@@ -34,10 +38,10 @@ bool ValuesEqual(const Value& a, const Value& b)
 }
 
 bool AsBool(const Value& value)
-    { return value.as.boolean; }
+    { return std::get<bool>(value.as); }
 
 double AsNumber(const Value& value)
-    { return value.as.number; }
+    { return std::get<double>(value.as); }
 
 bool IsBool(const Value& value)
     { return (value.type == ValueType::kBool); }
@@ -48,17 +52,29 @@ bool IsNil(const Value& value)
 bool IsNumber(const Value& value)
     { return (value.type == ValueType::kNumber); }
 
-void PrintValue(const Value& val)
+void PrintObject([[maybe_unused]]const Value& value)
 {
-    switch (val.type) {
+    switch (obj::GetType(value)) {
+        case obj::ObjType::kObjString:
+            std::printf("%s", obj::AsStdString(value).c_str());
+            break;
+    }
+}
+
+void PrintValue(const Value& value)
+{
+    switch (value.type) {
         case ValueType::kBool:
-            std::printf(AsBool(val) ? "true" : "false");
+            std::printf(AsBool(value) ? "true" : "false");
             break;
         case ValueType::kNil:
             std::printf("nil");
             break;
         case ValueType::kNumber:
-            std::printf("%g", AsNumber(val));
+            std::printf("%g", AsNumber(value));
+            break;
+        case ValueType::kObj:
+            PrintObject(value);
             break;
     }
 }
