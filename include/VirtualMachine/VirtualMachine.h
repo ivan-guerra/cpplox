@@ -55,7 +55,7 @@ private:
      *
      * \return The Value object at the ith index in #vm_stack_.
      */
-    value::Value Peek(int i);
+    val::Value Peek(int i);
 
     /*!
      * \brief Print #vm_stack_ to STDOUT.
@@ -75,7 +75,7 @@ private:
      * nil is considered to be false. The only other possibility is the \c
      * false literal.
      */
-    bool IsFalsey(const value::Value& value) const
+    bool IsFalsey(const val::Value& value) const
         { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
 
     /*!
@@ -94,7 +94,7 @@ private:
      * behavior can arise when ReadConstant() is called when not parsing a
      * constant instruction's argument.
      */
-    value::Value ReadConstant()
+    val::Value ReadConstant()
         { return chunk_->GetConstants()[ReadByte()]; }
 
     /*!
@@ -118,7 +118,7 @@ private:
      */
     template <typename T>
     InterpretResult BinaryOp(
-        std::function<value::Value(T)> value_type,
+        std::function<val::Value(T)> value_type,
         Chunk::OpCode op);
 
     /*!
@@ -126,31 +126,26 @@ private:
      */
     InterpretResult Run();
 
-    std::size_t              ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
-    std::shared_ptr<Chunk>   chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
-    std::stack<value::Value> vm_stack_; /*!< The value stack. */
-    lox::Compiler            compiler_; /*!< Bytecode compiler. */
+    std::size_t            ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
+    std::shared_ptr<Chunk> chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
+    std::stack<val::Value> vm_stack_; /*!< The value stack. */
+    lox::Compiler          compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine
 
 template <typename T>
 VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
-    std::function<value::Value(T)> value_type,
+    std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
-    if (!value::IsNumber(vm_stack_.top())) {
+    if (!val::IsNumber(Peek(0)) || !val::IsNumber(Peek(1))) {
         RuntimeError("Operands must be numbers.");
         return InterpretResult::kInterpretRuntimeError;
     }
-    double b = value::AsNumber(vm_stack_.top());
-    vm_stack_.pop();
 
-    if (!value::IsNumber(vm_stack_.top())) {
-        RuntimeError("Operands must be numbers.");
-        return InterpretResult::kInterpretRuntimeError;
-    }
-    double a = value::AsNumber(vm_stack_.top());
+    double b = val::AsNumber(vm_stack_.top());
     vm_stack_.pop();
-
+    double a = val::AsNumber(vm_stack_.top());
+    vm_stack_.pop();
     switch (op) {
         case Chunk::OpCode::kOpAdd:
             vm_stack_.push(value_type(a + b));

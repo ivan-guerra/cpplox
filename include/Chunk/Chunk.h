@@ -55,7 +55,7 @@ public:
     /*!
      * \brief Return a read only view of the Chunk's constants.
      */
-    const std::vector<value::Value>& GetConstants() const
+    const std::vector<val::Value>& GetConstants() const
         { return constants_; }
 
     /*!
@@ -84,7 +84,7 @@ public:
      *         OpCode::kOpConstant instruction which has the form:
      *         OP_CONSTANT \<CONSTANT_INDEX\>
      */
-    int AddConstant(const value::Value& value);
+    int AddConstant(const val::Value& value);
 
     /*!
      * \brief Disassemble all instructions in this Chunk.
@@ -125,8 +125,8 @@ private:
     std::size_t DisassembleConstantInstruction(const std::string& name,
                                                int offset) const;
 
-    std::vector<uint8_t>        code_;      /*!< Vector of compiled bytecode instructions. */
-    std::vector<value::Value> constants_; /*!< Vector of constants parsed from the source text. */
-    std::vector<int>            lines_;     /*!< Vector of line numbers. Usage TBD. */
+    std::vector<uint8_t>    code_;      /*!< Vector of compiled bytecode instructions. */
+    std::vector<val::Value> constants_; /*!< Vector of constants parsed from the source text. */
+    std::vector<int>        lines_;     /*!< Vector of line numbers. Usage TBD. */
 }; // end Chunk
 } // end lox

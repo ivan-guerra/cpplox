@@ -12,18 +12,18 @@
 
 namespace lox
 {
-value::Value VirtualMachine::Peek(int i)
+val::Value VirtualMachine::Peek(int i)
 {
     if (0 == i)
         return vm_stack_.top();
 
-    std::queue<value::Value> aux;
+    std::queue<val::Value> aux;
     while (i--) {
         aux.push(vm_stack_.top());
         vm_stack_.pop();
     }
 
-    value::Value ret = vm_stack_.top();
+    val::Value ret = vm_stack_.top();
 
     while (!aux.empty()) {
         vm_stack_.push(aux.front());
@@ -34,7 +34,7 @@ value::Value VirtualMachine::Peek(int i)
 
 void VirtualMachine::PrintVmStack()
 {
-    std::stack<value::Value> aux;
+    std::stack<val::Value> aux;
 
     while (!vm_stack_.empty()) {
         aux.push(vm_stack_.top());
@@ -45,7 +45,7 @@ void VirtualMachine::PrintVmStack()
     while (!aux.empty()) {
         std::printf("[ ");
         vm_stack_.push(aux.top());
-        value::PrintValue(aux.top());
+        val::PrintValue(aux.top());
         aux.pop();
         std::printf(" ]");
     }
@@ -92,51 +92,51 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 vm_stack_.push(ReadConstant());
                 break;
             case Chunk::OpCode::kOpNil:
-                vm_stack_.push(value::NilVal());
+                vm_stack_.push(val::NilVal());
                 break;
             case Chunk::OpCode::kOpTrue:
-                vm_stack_.push(value::BoolVal(true));
+                vm_stack_.push(val::BoolVal(true));
                 break;
             case Chunk::OpCode::kOpFalse:
-                vm_stack_.push(value::BoolVal(false));
+                vm_stack_.push(val::BoolVal(false));
                 break;
             case Chunk::OpCode::KOpEqual: {
-                value::Value b = vm_stack_.top();
+                val::Value b = vm_stack_.top();
                 vm_stack_.pop();
-                value::Value a = vm_stack_.top();
+                val::Value a = vm_stack_.top();
                 vm_stack_.pop();
 
-                vm_stack_.push(value::BoolVal(value::ValuesEqual(a, b)));
+                vm_stack_.push(val::BoolVal(val::ValuesEqual(a, b)));
                 break;
             }
             case Chunk::OpCode::kOpGreater:
             case Chunk::OpCode::kOpLess:
-                BinaryOp<bool>(value::BoolVal,
+                BinaryOp<bool>(val::BoolVal,
                                static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpNot: {
                 bool is_falsey = IsFalsey(vm_stack_.top());
                 vm_stack_.pop();
-                vm_stack_.push(value::BoolVal(is_falsey));
+                vm_stack_.push(val::BoolVal(is_falsey));
                 break;
             }
             case Chunk::OpCode::kOpNegate: {
-                value::Value val = vm_stack_.top();
-                if (!value::IsNumber(val)) {
+                val::Value val = vm_stack_.top();
+                if (!val::IsNumber(val)) {
                     RuntimeError("Operand must be a number.");
                     return InterpretResult::kInterpretRuntimeError;
                 }
                 vm_stack_.pop();
-                vm_stack_.push(value::NumberVal(-value::AsNumber(val)));
+                vm_stack_.push(val::NumberVal(-val::AsNumber(val)));
                 break;
             }
             case Chunk::OpCode::kOpAdd: {
-                value::Value b = Peek(0);
-                value::Value a = Peek(1);
+                val::Value b = Peek(0);
+                val::Value a = Peek(1);
                 if (obj::IsString(a) && obj::IsString(b)) {
                     Concatenate();
-                } else if (value::IsNumber(a) && value::IsNumber(b)) {
-                    BinaryOp<double>(value::NumberVal,
+                } else if (val::IsNumber(a) && val::IsNumber(b)) {
+                    BinaryOp<double>(val::NumberVal,
                                      static_cast<Chunk::OpCode>(instruction));
                 } else {
                     RuntimeError(
@@ -148,11 +148,11 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             case Chunk::OpCode::kOpSubtract:
             case Chunk::OpCode::kOpMultiply:
             case Chunk::OpCode::kOpDivide:
-                BinaryOp<double>(value::NumberVal,
+                BinaryOp<double>(val::NumberVal,
                                  static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpReturn:
-                value::PrintValue(vm_stack_.top());
+                val::PrintValue(vm_stack_.top());
                 vm_stack_.pop();
                 std::printf("\n");
                 return InterpretResult::kInterpretOk;

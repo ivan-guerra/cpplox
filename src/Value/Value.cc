@@ -6,7 +6,7 @@
 
 namespace lox
 {
-namespace value
+namespace val
 {
 Value BoolVal(bool value)
     { return {ValueType::kBool, value}; }
@@ -78,5 +78,5 @@ void PrintValue(const Value& value)
             break;
     }
 }
-} // end value
+} // end val
 } // end lox

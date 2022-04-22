@@ -108,7 +108,7 @@ private:
      * \brief Compile value into a bytecode constant.
      * \return The index of \a value in #chunk_'s constant array.
      */
-    uint8_t MakeConstant(const value::Value& value);
+    uint8_t MakeConstant(const val::Value& value);
 
     /*!
      * \brief Print error info to STDOUT.
@@ -147,7 +147,7 @@ private:
     /*!
      * \brief Wrtie a constant instruction to #chunk_.
      */
-    void EmitConstant(const value::Value& value)
+    void EmitConstant(const val::Value& value)
         { EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(value)); }
 
     /*!

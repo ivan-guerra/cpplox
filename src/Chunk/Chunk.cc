@@ -65,7 +65,7 @@ std::size_t Chunk::DisassembleConstantInstruction(const std::string& name,
 {
     uint8_t constant = code_[offset + 1];
     std::printf("%-16s %4d '", name.c_str(), constant);
-    value::PrintValue(constants_[constant]);
+    val::PrintValue(constants_[constant]);
     std::printf("'\n");
 
     /* Note we add 2 not 1 on return because the constant instruction is
@@ -84,7 +84,7 @@ void Chunk::Write(uint8_t byte, int line)
     }
 }
 
-int Chunk::AddConstant(const value::Value& value)
+int Chunk::AddConstant(const val::Value& value)
 {
     try {
         constants_.push_back(value);

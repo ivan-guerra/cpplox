@@ -7,28 +7,28 @@ namespace lox
 {
 namespace obj
 {
-ObjType GetType(const value::Value& value)
+ObjType GetType(const val::Value& value)
     { return AsObj(value)->type; }
 
-value::Value ObjVal(std::shared_ptr<Obj> value)
-    { return value::Value{value::ValueType::kObj, value}; }
+val::Value ObjVal(std::shared_ptr<Obj> value)
+    { return val::Value{val::ValueType::kObj, value}; }
 
-std::shared_ptr<Obj> AsObj(const value::Value& value)
+std::shared_ptr<Obj> AsObj(const val::Value& value)
     { return std::get<std::shared_ptr<Obj>>(value.as); }
 
-std::shared_ptr<ObjString> AsString(const value::Value& value)
+std::shared_ptr<ObjString> AsString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value)); }
 
-std::string AsStdString(const value::Value& value)
+std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
-bool IsObject(const value::Value& value)
-    { return (value.type == value::ValueType::kObj); }
+bool IsObject(const val::Value& value)
+    { return (value.type == val::ValueType::kObj); }
 
-bool IsObjType(const value::Value& value, ObjType type)
+bool IsObjType(const val::Value& value, ObjType type)
     { return (IsObject(value) && AsObj(value)->type == type); }
 
-bool IsString(const value::Value& value)
+bool IsString(const val::Value& value)
     { return IsObjType(value, ObjType::kObjString); }
 
 std::shared_ptr<ObjString> CopyString(const std::string& str)

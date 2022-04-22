@@ -13,7 +13,7 @@ namespace obj
     typedef struct ObjString ObjString;
 } // end obj
 
-namespace value
+namespace val
 {
     /*!
      * \enum ValueType
@@ -91,5 +91,5 @@ namespace value
      * \brief Print \a val to STDOUT.
      */
     void PrintValue(const Value& value);
-} // end value
+} // end val
 } // end lox

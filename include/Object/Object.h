@@ -42,42 +42,42 @@ struct ObjString :
 /*!
  * \brief Return the ObjType of the object contained within \a value.
  */
-ObjType GetType(const value::Value& value);
+ObjType GetType(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a Value with obj type info and data.
  */
-value::Value ObjVal(std::shared_ptr<Obj> value);
+val::Value ObjVal(std::shared_ptr<Obj> value);
 
 /*!
  * \brief Convert \a value to a Lox object pointer.
  */
-std::shared_ptr<Obj> AsObj(const value::Value& value);
+std::shared_ptr<Obj> AsObj(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a Lox ObjString.
  */
-std::shared_ptr<ObjString> AsString(const value::Value& value);
+std::shared_ptr<ObjString> AsString(const val::Value& value);
 
 /*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
-std::string AsStdString(const value::Value& value);
+std::string AsStdString(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value represents a Lox object.
  */
-bool IsObject(const value::Value& value);
+bool IsObject(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an Object with type \a type.
  */
-bool IsObjType(const value::Value& value, ObjType type);
+bool IsObjType(const val::Value& value, ObjType type);
 
 /*!
  * \brief Return \c true if \a value is an ObjString object.
  */
-bool IsString(const value::Value& value);
+bool IsString(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
