@@ -31,11 +31,19 @@ bool IsObjType(const val::Value& value, ObjType type)
 bool IsString(const val::Value& value)
     { return IsObjType(value, ObjType::kObjString); }
 
-std::shared_ptr<ObjString> CopyString(const std::string& str)
+std::shared_ptr<ObjString> CopyString(
+    const std::string& str,
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>> strs)
 {
+    if (strs->find(str) != strs->end())
+        return strs->at(str);
+
     std::shared_ptr<ObjString> str_obj = std::make_shared<ObjString>();
     str_obj->type  = ObjType::kObjString;
     str_obj->chars = str;
+
+    /* Insert the newly formed ObjString into the intern string table. */
+    (*strs)[str] = str_obj;
 
     return str_obj;
 }

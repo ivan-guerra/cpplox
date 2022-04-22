@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "Value.h"
+#include "Object.h"
 #include "Chunk.h"
 #include "Scanner.h"
 
@@ -19,6 +20,9 @@ namespace lox
 class Compiler
 {
 public:
+    using InternedStrings = std::shared_ptr<
+        std::unordered_map<std::string, std::shared_ptr<obj::ObjString>>>;
+
     Compiler();
     ~Compiler() = default;
 
@@ -33,10 +37,12 @@ public:
      * \param source Lox source text.
      * \param chunk Chunk object used to store the bytecode representation of
      *              \a source.
+     * \param strings Pointer to a map containing all interned strings.
      * \return \c true if \a source compiles without error.
      */
     bool Compile(const std::string& source,
-                 std::shared_ptr<Chunk> chunk);
+                 std::shared_ptr<Chunk> chunk,
+                 InternedStrings strings);
 
 private:
     using ParseFn = std::function<void(Compiler*)>;
@@ -188,5 +194,6 @@ private:
     Scanner                scanner_; /*!< Token scanner. */
     std::shared_ptr<Chunk> chunk_;   /*!< Chunk storing compiled bytecode. */
     Parser                 parser_;  /*!< Handle to the Parser. */
+    InternedStrings        strings_; /*!< Collection of interned strings. */
 }; // end Compiler
 } // end lox

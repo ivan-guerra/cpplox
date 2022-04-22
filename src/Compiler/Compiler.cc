@@ -277,7 +277,7 @@ void Compiler::String()
 
     /* Trim off the '"' marks on either end of the lexeme before copying. */
     std::shared_ptr<obj::Obj> str_obj =
-        obj::CopyString(lexeme.substr(1, lexeme.size() - 2));
+        obj::CopyString(lexeme.substr(1, lexeme.size() - 2), strings_);
 
     EmitConstant(obj::ObjVal(str_obj));
 }
@@ -290,11 +290,14 @@ Compiler::Compiler() :
     parser_.panic_mode = false;
 }
 
-bool Compiler::Compile(const std::string& source,
-                       std::shared_ptr<Chunk> chunk)
+bool Compiler::Compile(
+    const std::string& source,
+    std::shared_ptr<Chunk> chunk,
+    InternedStrings strings)
 {
     chunk_   = chunk;
     scanner_ = lox::Scanner(source);
+    strings_ = strings;
 
     Advance();
     Expression();

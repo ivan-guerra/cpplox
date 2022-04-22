@@ -2,11 +2,14 @@
 
 #include <stack>
 #include <memory>
+#include <string>
 #include <functional>
+#include <unordered_map>
 #include <cstddef>
 #include <cstdint>
 
 #include "Value.h"
+#include "Object.h"
 #include "Chunk.h"
 #include "Compiler.h"
 
@@ -44,6 +47,10 @@ public:
     InterpretResult Interpret(const std::string& source);
 
 private:
+    using LoxStringMap =
+        std::unordered_map<std::string, std::shared_ptr<obj::ObjString>>;
+    using InternedStrings = std::shared_ptr<LoxStringMap>;
+
     /*!
      * \brief Helper function used to peek at the ith index in #vm_stack_.
      *
@@ -128,6 +135,7 @@ private:
 
     std::size_t            ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
     std::shared_ptr<Chunk> chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
+    InternedStrings        strings_;  /*!< Collection of interned strings. */
     std::stack<val::Value> vm_stack_; /*!< The value stack. */
     lox::Compiler          compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine

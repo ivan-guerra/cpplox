@@ -35,7 +35,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Chunk
         Value
-        Scanner
-    PRIVATE
         Object
+        Scanner
 )

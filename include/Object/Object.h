@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 #include "Value.h"
 
@@ -82,6 +83,8 @@ bool IsString(const val::Value& value);
 /*!
  * \brief Construct an ObjString initialized with \a str data.
  */
-std::shared_ptr<ObjString> CopyString(const std::string& str);
+std::shared_ptr<ObjString> CopyString(
+    const std::string& str,
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>> strs);
 } // end obj
 } // end lox

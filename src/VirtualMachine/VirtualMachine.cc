@@ -162,7 +162,8 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 
 VirtualMachine::VirtualMachine() :
     ip_(0),
-    chunk_(std::make_shared<Chunk>())
+    chunk_(std::make_shared<Chunk>()),
+    strings_(std::make_shared<LoxStringMap>())
 {
 
 }
@@ -170,7 +171,7 @@ VirtualMachine::VirtualMachine() :
 VirtualMachine::InterpretResult VirtualMachine::Interpret(
     const std::string& source)
 {
-    if (!compiler_.Compile(source, chunk_))
+    if (!compiler_.Compile(source, chunk_, strings_))
         return InterpretResult::kInterpretCompileError;
 
     /* Set the instruction pointer to point to the start of the chunk. */

@@ -30,7 +30,7 @@ bool ValuesEqual(const Value& a, const Value& b)
         case ValueType::kNumber:
             return (AsNumber(a) == AsNumber(b));
         case ValueType::kObj:
-            return (obj::AsStdString(a) == obj::AsStdString(b));
+            return (obj::AsObj(a) == obj::AsObj(b));
         default:
             /* Unreachable */
             return false;
