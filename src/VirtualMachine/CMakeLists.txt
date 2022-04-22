@@ -37,4 +37,6 @@ target_link_libraries(${PROJECT_NAME}
         Chunk
         Value
         Compiler
+    PRIVATE
+        Object
 )

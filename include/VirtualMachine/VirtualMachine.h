@@ -45,6 +45,19 @@ public:
 
 private:
     /*!
+     * \brief Helper function used to peek at the ith index in #vm_stack_.
+     *
+     * If \a i is out of bounds or invalid, Peek()'s behavior will be
+     * undefined.
+     *
+     * \param i Index from the top of the stack where the desired Value
+     *          resides.
+     *
+     * \return The Value object at the ith index in #vm_stack_.
+     */
+    value::Value Peek(int i);
+
+    /*!
      * \brief Print #vm_stack_ to STDOUT.
      *
      * This is a simple VM debug utility method.
@@ -83,6 +96,11 @@ private:
      */
     value::Value ReadConstant()
         { return chunk_->GetConstants()[ReadByte()]; }
+
+    /*!
+     * \brief Concatenate the two string objects at the top of the stack.
+     */
+    void Concatenate();
 
     /*!
      * \brief Helper function used to evaluate binary operations.

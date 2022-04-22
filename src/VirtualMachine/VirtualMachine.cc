@@ -1,4 +1,5 @@
 #include <stack>
+#include <queue>
 #include <memory>
 #include <cstdio>
 #include <cstdarg>
@@ -6,10 +7,31 @@
 
 #include "Chunk.h"
 #include "Value.h"
+#include "Object.h"
 #include "VirtualMachine.h"
 
 namespace lox
 {
+value::Value VirtualMachine::Peek(int i)
+{
+    if (0 == i)
+        return vm_stack_.top();
+
+    std::queue<value::Value> aux;
+    while (i--) {
+        aux.push(vm_stack_.top());
+        vm_stack_.pop();
+    }
+
+    value::Value ret = vm_stack_.top();
+
+    while (!aux.empty()) {
+        vm_stack_.push(aux.front());
+        aux.pop();
+    }
+    return ret;
+}
+
 void VirtualMachine::PrintVmStack()
 {
     std::stack<value::Value> aux;
@@ -42,6 +64,19 @@ void VirtualMachine::RuntimeError(const char* format, ...)
     int line = chunk_->GetLines().at(instruction);
     std::fprintf(stderr, "[line %d] in script\n", line);
     vm_stack_ = {};
+}
+
+void VirtualMachine::Concatenate()
+{
+    std::shared_ptr<obj::ObjString> b = obj::AsString(vm_stack_.top());
+    vm_stack_.pop();
+    std::shared_ptr<obj::ObjString> a = obj::AsString(vm_stack_.top());
+    vm_stack_.pop();
+
+    std::shared_ptr<obj::ObjString> result = std::make_shared<obj::ObjString>();
+    result->type = obj::ObjType::kObjString;
+    result->chars = a->chars + b->chars;
+    vm_stack_.push(ObjVal(result));
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Run()
@@ -95,7 +130,21 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 vm_stack_.push(value::NumberVal(-value::AsNumber(val)));
                 break;
             }
-            case Chunk::OpCode::kOpAdd:
+            case Chunk::OpCode::kOpAdd: {
+                value::Value b = Peek(0);
+                value::Value a = Peek(1);
+                if (obj::IsString(a) && obj::IsString(b)) {
+                    Concatenate();
+                } else if (value::IsNumber(a) && value::IsNumber(b)) {
+                    BinaryOp<double>(value::NumberVal,
+                                     static_cast<Chunk::OpCode>(instruction));
+                } else {
+                    RuntimeError(
+                        "Operands must be two numbers or two strings.");
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+                break;
+            }
             case Chunk::OpCode::kOpSubtract:
             case Chunk::OpCode::kOpMultiply:
             case Chunk::OpCode::kOpDivide:
