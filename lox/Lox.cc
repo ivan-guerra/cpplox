@@ -10,7 +10,7 @@
 static lox::VirtualMachine::InterpretResult Interpret(
     const std::string& source)
 {
-    lox::VirtualMachine vm;
+    static lox::VirtualMachine vm;
     return vm.Interpret(source);
 }
 
