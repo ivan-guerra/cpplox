@@ -151,10 +151,43 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 BinaryOp<double>(val::NumberVal,
                                  static_cast<Chunk::OpCode>(instruction));
                 break;
-            case Chunk::OpCode::kOpReturn:
-                val::PrintValue(vm_stack_.top());
+            case Chunk::OpCode::kOpPrint:
+                PrintValue(vm_stack_.top());
                 vm_stack_.pop();
                 std::printf("\n");
+                break;
+            case Chunk::OpCode::kOpPop:
+                vm_stack_.pop();
+                break;
+            case Chunk::OpCode::kOpDefineGlobal: {
+                LoxString name = obj::AsString(ReadConstant());
+                globals_[name] = vm_stack_.top();
+                vm_stack_.pop();
+                break;
+            }
+            case Chunk::OpCode::kOpGetGlobal: {
+                LoxString name = obj::AsString(ReadConstant());
+                if (globals_.find(name) == globals_.end()) {
+                    RuntimeError(
+                        "Undefined variable '%s'.",
+                        name->chars.c_str());
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+                vm_stack_.push(globals_[name]);
+                break;
+            }
+            case Chunk::OpCode::kOpSetGlobal: {
+                LoxString name = obj::AsString(ReadConstant());
+                if (globals_.find(name) == globals_.end()) {
+                    RuntimeError(
+                        "Undefined variable '%s'.",
+                        name->chars.c_str());
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+                globals_[name] = Peek(0);
+                break;
+            }
+            case Chunk::OpCode::kOpReturn:
                 return InterpretResult::kInterpretOk;
         }
     }
@@ -173,9 +206,6 @@ VirtualMachine::InterpretResult VirtualMachine::Interpret(
 {
     if (!compiler_.Compile(source, chunk_, strings_))
         return InterpretResult::kInterpretCompileError;
-
-    /* Set the instruction pointer to point to the start of the chunk. */
-    ip_ = 0;
 
     return Run();
 }

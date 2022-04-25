@@ -47,9 +47,12 @@ public:
     InterpretResult Interpret(const std::string& source);
 
 private:
-    using LoxStringMap =
-        std::unordered_map<std::string, std::shared_ptr<obj::ObjString>>;
+    using LoxString       = std::shared_ptr<obj::ObjString>;
+    using LoxStringMap    =
+        std::unordered_map<std::string, LoxString>;
     using InternedStrings = std::shared_ptr<LoxStringMap>;
+    using Globals         =
+        std::unordered_map<LoxString, val::Value>;
 
     /*!
      * \brief Helper function used to peek at the ith index in #vm_stack_.
@@ -136,6 +139,8 @@ private:
     std::size_t            ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
     std::shared_ptr<Chunk> chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
     InternedStrings        strings_;  /*!< Collection of interned strings. */
+    Globals                globals_;  /*!< Map of global variable names to their associated Value. */
+
     std::stack<val::Value> vm_stack_; /*!< The value stack. */
     lox::Compiler          compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine

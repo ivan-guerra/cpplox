@@ -50,7 +50,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kLessEqual,
         {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
     {Token::TokenType::kIdentifier,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Variable, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kString,
         {&Compiler::String, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kNumber,
@@ -102,13 +102,72 @@ void Compiler::ParsePrecedence(Precedence precedence)
         Error("Expect expression.");
         return;
     }
-    prefix_rule(this);
+    bool can_assign = precedence <= Precedence::kPrecAssignment;
+    prefix_rule(this, can_assign);
 
     while (precedence <= rules_[parser_.current.GetType()].precedence) {
         Advance();
         ParseFn infix_rule = rules_[parser_.previous.GetType()].infix;
-        infix_rule(this);
+        infix_rule(this, can_assign);
     }
+
+    if (can_assign && Match(Token::TokenType::kEqual))
+        Error("Invalid assignment target.");
+}
+
+uint8_t Compiler::ParseVariable(const std::string& error_message)
+{
+    Consume(Token::TokenType::kIdentifier, error_message);
+    return IdentifierConstant(parser_.previous);
+}
+
+void Compiler::Statement()
+{
+    if (Match(Token::TokenType::kPrint))
+        PrintStatement();
+    else
+        ExpressionStatement();
+}
+
+void Compiler::PrintStatement()
+{
+    Expression();
+    Consume(Token::TokenType::kSemicolon,
+            "Expect ';' after value");
+    EmitByte(Chunk::OpCode::kOpPrint);
+}
+
+void Compiler::ExpressionStatement()
+{
+    Expression();
+    Consume(Token::TokenType::kSemicolon,
+            "Expect ';' after expression.");
+    EmitByte(Chunk::OpCode::kOpPop);
+}
+
+void Compiler::Declaration()
+{
+    if (Match(Token::TokenType::kVar))
+        VarDeclaration();
+    else
+        Statement();
+
+    if (parser_.panic_mode)
+        Synchronize();
+}
+
+void Compiler::VarDeclaration()
+{
+    uint8_t global = ParseVariable("Expect variable name.");
+    if (Match(Token::TokenType::kEqual))
+        Expression();
+    else
+        EmitByte(Chunk::OpCode::kOpNil);
+
+    Consume(Token::TokenType::kSemicolon,
+            "Expect ';' after variable declaration.");
+
+    DefineVariable(global);
 }
 
 void Compiler::Advance()
@@ -120,6 +179,32 @@ void Compiler::Advance()
             break;
 
         ErrorAtCurrent(parser_.current.GetLexeme());
+    }
+}
+
+bool Compiler::Match(Token::TokenType type)
+{
+    if (!Check(type))
+        return false;
+
+    Advance();
+    return true;
+}
+
+uint8_t Compiler::IdentifierConstant(const Token& name)
+{
+    return MakeConstant(obj::ObjVal(
+                obj::CopyString(name.GetLexeme(), strings_)));
+}
+
+void Compiler::NamedVariable(const Token& name, bool can_assign)
+{
+    uint8_t arg = IdentifierConstant(name);
+    if (can_assign && Match(Token::TokenType::kEqual)) {
+        Expression();
+        EmitBytes(Chunk::OpCode::kOpSetGlobal, arg);
+    } else {
+        EmitBytes(Chunk::OpCode::kOpGetGlobal, arg);
     }
 }
 
@@ -163,6 +248,32 @@ void Compiler::ErrorAt(const Token& error, const std::string& message)
     parser_.had_error = true;
 }
 
+void Compiler::Synchronize()
+{
+    parser_.panic_mode = false;
+
+    while (parser_.current.GetType() != Token::TokenType::kEof) {
+        if (parser_.previous.GetType() ==
+            Token::TokenType::kSemicolon)
+            return;
+        switch(parser_.current.GetType()) {
+            case Token::TokenType::kClass:
+            case Token::TokenType::kFun:
+            case Token::TokenType::kVar:
+            case Token::TokenType::kFor:
+            case Token::TokenType::kIf:
+            case Token::TokenType::kWhile:
+            case Token::TokenType::kPrint:
+            case Token::TokenType::kReturn:
+                return;
+            default:
+                /* Do nothing. */
+                ;
+        }
+        Advance();
+    }
+}
+
 void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
 {
     EmitByte(byte1);
@@ -178,19 +289,19 @@ void Compiler::EndCompiler()
 #endif
 }
 
-void Compiler::Number()
+void Compiler::Number([[maybe_unused]]bool can_assign)
 {
     double value = std::stod(parser_.previous.GetLexeme());
     EmitConstant(val::NumberVal(value));
 }
 
-void Compiler::Grouping()
+void Compiler::Grouping([[maybe_unused]]bool can_assign)
 {
     Expression();
     Consume(Token::TokenType::kRightParen, "Expect ')' after expression.");
 }
 
-void Compiler::Unary()
+void Compiler::Unary([[maybe_unused]]bool can_assign)
 {
     Token::TokenType operator_type = parser_.previous.GetType();
 
@@ -211,7 +322,7 @@ void Compiler::Unary()
     }
 }
 
-void Compiler::Binary()
+void Compiler::Binary([[maybe_unused]]bool can_assign)
 {
     Token::TokenType operator_type = parser_.previous.GetType();
     ParsePrecedence(
@@ -254,7 +365,7 @@ void Compiler::Binary()
     }
 }
 
-void Compiler::Literal()
+void Compiler::Literal([[maybe_unused]]bool can_assign)
 {
     switch (parser_.previous.GetType()) {
         case Token::TokenType::kFalse:
@@ -271,7 +382,7 @@ void Compiler::Literal()
     }
 }
 
-void Compiler::String()
+void Compiler::String([[maybe_unused]]bool can_assign)
 {
     std::string lexeme = parser_.previous.GetLexeme();
 
@@ -300,8 +411,8 @@ bool Compiler::Compile(
     strings_ = strings;
 
     Advance();
-    Expression();
-    Consume(Token::TokenType::kEof, "Expect end of expression.");
+    while (!Match(Token::TokenType::kEof))
+        Declaration();
 
     EndCompiler();
 

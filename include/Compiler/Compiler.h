@@ -45,7 +45,7 @@ public:
                  InternedStrings strings);
 
 private:
-    using ParseFn = std::function<void(Compiler*)>;
+    using ParseFn = std::function<void(Compiler*, bool)>;
 
     /*!
      * \enum Precedence
@@ -93,6 +93,54 @@ private:
 
     void ParsePrecedence(Precedence precedence);
 
+    /*!
+     * \brief Compile a variable statement.
+     */
+    uint8_t ParseVariable(const std::string& error_message);
+
+    /*!
+     * \brief Emit bytecode for a variable definition.
+     */
+    void DefineVariable(uint8_t global)
+        { return EmitBytes(Chunk::OpCode::kOpDefineGlobal, global); }
+
+    /*!
+     * \brief Parse a Lox statement.
+     */
+    void Statement();
+
+    /*!
+     * \brief Compile a Lox print statement.
+     */
+    void PrintStatement();
+
+    /*!
+     * \brief Compile an expression statement.
+     */
+    void ExpressionStatement();
+
+    /*!
+     * \brief Top level parse rule for parsing declarations.
+     */
+    void Declaration();
+
+    /*!
+     * \brief Parse any variable declaration.
+     */
+    void VarDeclaration();
+
+    /*!
+     * \brief Method called by the parser to handle variables.
+     *
+     * \param can_assign Flag indicating whether the variable in question
+     *                   can be assigned to.
+     */
+    void Variable(bool can_assign)
+        { NamedVariable(parser_.previous, can_assign); }
+
+    /*!
+     * \brief Method called by the parser to handle expressions.
+     */
     void Expression()
         { ParsePrecedence(Precedence::kPrecAssignment); }
 
@@ -100,6 +148,30 @@ private:
      * \brief Advance the parser to the next Token.
      */
     void Advance();
+
+    /*!
+     * \brief Return \c true if the #parser_'s current token type equals \a type.
+     */
+    bool Check(Token::TokenType type) const
+        { return (parser_.current.GetType() == type); }
+
+    /*!
+     * \brief Return \c true if \a type matches the #parser_'s current token type.
+     *
+     * Match() has the side effect of advancing to the parser to the next token
+     * via a call to Advance() if the types match.
+     */
+    bool Match(Token::TokenType type);
+
+    /*!
+     * \brief Compile the identifier represented by \a name.
+     */
+    uint8_t IdentifierConstant(const Token& name);
+
+    /*!
+     * \brief Reference or assign to a named variable.
+     */
+    void NamedVariable(const Token& name, bool can_assign);
 
     /*!
      * \brief Consume the current Token if its type matches \a type.
@@ -115,6 +187,11 @@ private:
      * \return The index of \a value in #chunk_'s constant array.
      */
     uint8_t MakeConstant(const val::Value& value);
+
+    /*!
+     * \brief Synchronize the parser on the next statement following an error.
+     */
+    void Synchronize();
 
     /*!
      * \brief Print error info to STDOUT.
@@ -164,32 +241,32 @@ private:
     /*!
      * \brief Compile a number.
      */
-    void Number();
+    void Number([[maybe_unused]]bool can_assign);
 
     /*!
      * \brief Consume grouping tokens and compile the inner expression.
      */
-    void Grouping();
+    void Grouping([[maybe_unused]]bool can_assign);
 
     /*!
      * \brief Compile a unary expression.
      */
-    void Unary();
+    void Unary([[maybe_unused]]bool can_assign);
 
     /*!
      * \brief Compile a binary expression.
      */
-    void Binary();
+    void Binary([[maybe_unused]]bool can_assign);
 
     /*!
      * \brief Compile a literal expression.
      */
-    void Literal();
+    void Literal([[maybe_unused]]bool can_assign);
 
     /*!
      * \brief Compile a string literal.
      */
-    void String();
+    void String([[maybe_unused]]bool can_assign);
 
     Scanner                scanner_; /*!< Token scanner. */
     std::shared_ptr<Chunk> chunk_;   /*!< Chunk storing compiled bytecode. */
