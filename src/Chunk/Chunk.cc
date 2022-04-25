@@ -47,6 +47,19 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleSimpleInstruction("OP_MULTIPLY", offset);
         case OpCode::kOpDivide:
             return DisassembleSimpleInstruction("OP_DIVIDE", offset);
+        case OpCode::kOpPrint:
+            return DisassembleSimpleInstruction("OP_PRINT", offset);
+        case OpCode::kOpPop:
+            return DisassembleSimpleInstruction("OP_POP", offset);
+        case OpCode::kOpDefineGlobal:
+            return DisassembleConstantInstruction("OP_DEFINE_GLOBAL",
+                        offset);
+        case OpCode::kOpGetGlobal:
+           return DisassembleConstantInstruction("OP_GET_GLOBAL",
+                        offset);
+        case OpCode::kOpSetGlobal:
+            return DisassembleConstantInstruction("OP_SET_GLOBAL",
+                        offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);

@@ -35,7 +35,12 @@ public:
         kOpAdd,
         kOpSubtract,
         kOpMultiply,
-        kOpDivide
+        kOpDivide,
+        kOpPrint,
+        kOpPop,
+        kOpDefineGlobal,
+        kOpGetGlobal,
+        kOpSetGlobal
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
