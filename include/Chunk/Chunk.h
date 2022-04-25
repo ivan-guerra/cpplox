@@ -40,7 +40,9 @@ public:
         kOpPop,
         kOpDefineGlobal,
         kOpGetGlobal,
-        kOpSetGlobal
+        kOpSetGlobal,
+        kOpGetLocal,
+        kOpSetLocal
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
@@ -129,6 +131,9 @@ private:
      */
     std::size_t DisassembleConstantInstruction(const std::string& name,
                                                int offset) const;
+
+    std::size_t DisassembleByteInstruction(const std::string& name,
+                                           int offset) const;
 
     std::vector<uint8_t>    code_;      /*!< Vector of compiled bytecode instructions. */
     std::vector<val::Value> constants_; /*!< Vector of constants parsed from the source text. */

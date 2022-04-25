@@ -68,6 +68,14 @@ private:
     val::Value Peek(int i);
 
     /*!
+     * \brief Set the \a ith Value in #vm_stack_.
+     *
+     * If \a i is out of bounds or invalid, SetStackItem()'s behavior will be
+     * undefined.
+     */
+    void SetStackItem(int i, const val::Value& value);
+
+    /*!
      * \brief Print #vm_stack_ to STDOUT.
      *
      * This is a simple VM debug utility method.

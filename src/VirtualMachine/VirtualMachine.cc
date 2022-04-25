@@ -1,5 +1,4 @@
 #include <stack>
-#include <queue>
 #include <memory>
 #include <cstdio>
 #include <cstdarg>
@@ -17,7 +16,7 @@ val::Value VirtualMachine::Peek(int i)
     if (0 == i)
         return vm_stack_.top();
 
-    std::queue<val::Value> aux;
+    std::stack<val::Value> aux;
     while (i--) {
         aux.push(vm_stack_.top());
         vm_stack_.pop();
@@ -26,10 +25,31 @@ val::Value VirtualMachine::Peek(int i)
     val::Value ret = vm_stack_.top();
 
     while (!aux.empty()) {
-        vm_stack_.push(aux.front());
+        vm_stack_.push(aux.top());
         aux.pop();
     }
     return ret;
+}
+
+void VirtualMachine::SetStackItem(int i, const val::Value& value)
+{
+    if (0 == i) {
+        vm_stack_.top() = value;
+        return;
+    }
+
+    std::stack<val::Value> aux;
+    while (i--) {
+        aux.push(vm_stack_.top());
+        vm_stack_.pop();
+    }
+
+    vm_stack_.top() = value;
+
+    while (!aux.empty()) {
+        vm_stack_.push(aux.top());
+        aux.pop();
+    }
 }
 
 void VirtualMachine::PrintVmStack()
@@ -185,6 +205,16 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                     return InterpretResult::kInterpretRuntimeError;
                 }
                 globals_[name] = Peek(0);
+                break;
+            }
+            case Chunk::OpCode::kOpGetLocal: {
+                uint8_t slot = ReadByte();
+                vm_stack_.push(Peek(slot));
+                break;
+            }
+            case Chunk::OpCode::kOpSetLocal: {
+                uint8_t slot = ReadByte();
+                SetStackItem(slot, Peek(0));
                 break;
             }
             case Chunk::OpCode::kOpReturn:

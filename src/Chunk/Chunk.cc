@@ -60,6 +60,10 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
         case OpCode::kOpSetGlobal:
             return DisassembleConstantInstruction("OP_SET_GLOBAL",
                         offset);
+        case OpCode::kOpGetLocal:
+            return DisassembleByteInstruction("OP_GET_LOCAL", offset);
+        case OpCode::kOpSetLocal:
+            return DisassembleByteInstruction("OP_SET_LOCAL", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);
@@ -86,6 +90,13 @@ std::size_t Chunk::DisassembleConstantInstruction(const std::string& name,
     return (offset + 2);
 }
 
+std::size_t Chunk::DisassembleByteInstruction(const std::string& name,
+                                              int offset) const
+{
+    uint8_t slot = code_[offset + 1];
+    std::printf("%-16s %4d\n", name.c_str(), slot);
+    return (offset + 2);
+}
 void Chunk::Write(uint8_t byte, int line)
 {
     try {

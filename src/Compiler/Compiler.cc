@@ -118,15 +118,35 @@ void Compiler::ParsePrecedence(Precedence precedence)
 uint8_t Compiler::ParseVariable(const std::string& error_message)
 {
     Consume(Token::TokenType::kIdentifier, error_message);
+
+    DeclareVariable();
+    if (compiler_.scope_depth > 0)
+        return 0;
+
     return IdentifierConstant(parser_.previous);
+}
+
+void Compiler::DefineVariable(uint8_t global)
+{
+    if (compiler_.scope_depth > 0) {
+        MarkInitialized();
+        return;
+    }
+
+    EmitBytes(Chunk::OpCode::kOpDefineGlobal, global);
 }
 
 void Compiler::Statement()
 {
-    if (Match(Token::TokenType::kPrint))
+    if (Match(Token::TokenType::kPrint)) {
         PrintStatement();
-    else
+    } else if (Match(Token::TokenType::kLeftBrace)) {
+        BeginScope();
+        Block();
+        EndScope();
+    } else {
         ExpressionStatement();
+    }
 }
 
 void Compiler::PrintStatement()
@@ -170,6 +190,69 @@ void Compiler::VarDeclaration()
     DefineVariable(global);
 }
 
+void Compiler::AddLocal(const Token& name)
+{
+    if (compiler_.local_count == (UINT8_MAX + 1)) {
+        Error("Too many local variables in function.");
+        return;
+    }
+
+    Local local = {.name=name, .depth=-1};
+    compiler_.locals[compiler_.local_count] = local;
+    compiler_.local_count++;
+}
+
+void Compiler::DeclareVariable()
+{
+    if (compiler_.scope_depth == 0)
+        return;
+
+    Token name = parser_.previous;
+    for (int i = compiler_.local_count - 1; i >= 0; --i) {
+        Local local = compiler_.locals[i];
+        if ((local.depth != -1) && (local.depth < compiler_.scope_depth))
+            break;
+
+        if (IdentifiersEqual(name, local.name))
+            Error("Already a variable with this name in this scope.");
+    }
+    AddLocal(name);
+}
+
+int Compiler::ResolveLocal(const Token& name)
+{
+    for (int i = compiler_.local_count - 1; i >= 0; --i) {
+        Local local = compiler_.locals[i];
+        if (IdentifiersEqual(name, local.name)) {
+            if (local.depth == -1)
+                Error("Can't read local variable in its own intializer.");
+            return i;
+        }
+    }
+    return -1;
+}
+
+void Compiler::EndScope()
+{
+    compiler_.scope_depth--;
+
+    while ((compiler_.local_count > 0) &&
+           (compiler_.locals[compiler_.local_count - 1].depth >
+            compiler_.scope_depth)) {
+        EmitByte(Chunk::OpCode::kOpPop);
+        compiler_.local_count--;
+    }
+}
+
+void Compiler::Block()
+{
+    while (!Check(Token::TokenType::kRightBrace) &&
+           !Check(Token::TokenType::kEof)) {
+        Declaration();
+    }
+    Consume(Token::TokenType::kRightBrace, "Expect '}' after block.");
+}
+
 void Compiler::Advance()
 {
     parser_.previous = parser_.current;
@@ -199,12 +282,23 @@ uint8_t Compiler::IdentifierConstant(const Token& name)
 
 void Compiler::NamedVariable(const Token& name, bool can_assign)
 {
-    uint8_t arg = IdentifierConstant(name);
+    uint8_t get_op = 0;
+    uint8_t set_op = 0;
+    int arg = ResolveLocal(name);
+    if (arg != -1) {
+        get_op = Chunk::OpCode::kOpGetLocal;
+        set_op = Chunk::OpCode::kOpSetLocal;
+    } else {
+        arg = IdentifierConstant(name);
+        get_op = Chunk::OpCode::kOpGetGlobal;
+        set_op = Chunk::OpCode::kOpSetGlobal;
+    }
+
     if (can_assign && Match(Token::TokenType::kEqual)) {
         Expression();
-        EmitBytes(Chunk::OpCode::kOpSetGlobal, arg);
+        EmitBytes(set_op, arg);
     } else {
-        EmitBytes(Chunk::OpCode::kOpGetGlobal, arg);
+        EmitBytes(get_op, arg);
     }
 }
 
@@ -397,8 +491,10 @@ Compiler::Compiler() :
     scanner_(""),
     chunk_(nullptr)
 {
-    parser_.had_error  = false;
-    parser_.panic_mode = false;
+    parser_.had_error     = false;
+    parser_.panic_mode    = false;
+    compiler_.local_count = 0;
+    compiler_.scope_depth = 0;
 }
 
 bool Compiler::Compile(

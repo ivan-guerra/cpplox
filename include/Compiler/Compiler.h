@@ -89,6 +89,27 @@ private:
         Precedence precedence; /*!< Parse rule precedence */
     }; // end ParseRule
 
+    /*!
+     * \struct Local
+     * \brief The Local struct wraps local variable name and stack data.
+     */
+    struct Local
+    {
+        Token name;
+        int   depth;
+    }; // end Local
+
+    /*!
+     * \struct CompilerData
+     * \brief The CompilerData struct tracks local variable info.
+     */
+    struct CompilerData
+    {
+        Local locals[UINT8_MAX + 1];
+        int   local_count;
+        int   scope_depth;
+    }; // end CompilerData
+
     static std::unordered_map<Token::TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
 
     void ParsePrecedence(Precedence precedence);
@@ -101,8 +122,7 @@ private:
     /*!
      * \brief Emit bytecode for a variable definition.
      */
-    void DefineVariable(uint8_t global)
-        { return EmitBytes(Chunk::OpCode::kOpDefineGlobal, global); }
+    void DefineVariable(uint8_t global);
 
     /*!
      * \brief Parse a Lox statement.
@@ -138,11 +158,48 @@ private:
     void Variable(bool can_assign)
         { NamedVariable(parser_.previous, can_assign); }
 
+    bool IdentifiersEqual(const Token& a, const Token& b) const
+        { return (a.GetLexeme() == b.GetLexeme()); }
+
+    void AddLocal(const Token& name);
+
+    void DeclareVariable();
+
     /*!
      * \brief Method called by the parser to handle expressions.
      */
     void Expression()
         { ParsePrecedence(Precedence::kPrecAssignment); }
+
+    /*!
+     * \brief Mark a local variable as initialized.
+     */
+    void MarkInitialized()
+        { compiler_.locals[compiler_.local_count - 1].depth = compiler_.scope_depth; }
+
+    /*!
+     * \brief Attempt to resolve a local variable by name.
+     * \return The index of local variable's value in the stack is returned
+     *         if \a name could be resolved. -1 is returned if the variable
+     *         could not be resolved.
+     */
+    int ResolveLocal(const Token& name);
+
+    /*!
+     * \brief Open a new block or scope.
+     */
+    void BeginScope()
+        { compiler_.scope_depth++; }
+
+    /*!
+     * \brief Teardown a block/scope.
+     */
+    void EndScope();
+
+    /*!
+     * \brief Compile a code block.
+     */
+    void Block();
 
     /*!
      * \brief Advance the parser to the next Token.
@@ -268,9 +325,10 @@ private:
      */
     void String([[maybe_unused]]bool can_assign);
 
-    Scanner                scanner_; /*!< Token scanner. */
-    std::shared_ptr<Chunk> chunk_;   /*!< Chunk storing compiled bytecode. */
-    Parser                 parser_;  /*!< Handle to the Parser. */
-    InternedStrings        strings_; /*!< Collection of interned strings. */
+    Scanner                scanner_;  /*!< Token scanner. */
+    std::shared_ptr<Chunk> chunk_;    /*!< Chunk storing compiled bytecode. */
+    Parser                 parser_;   /*!< Handle to the Parser. */
+    InternedStrings        strings_;  /*!< Collection of interned strings. */
+    CompilerData           compiler_; /*!< Compiler local var data. */
 }; // end Compiler
 } // end lox
