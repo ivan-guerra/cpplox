@@ -129,6 +129,14 @@ private:
      */
     void Statement();
 
+    void IfStatement();
+
+    void WhileStatement();
+
+    void ForStatement();
+
+    void PatchJump(int offset);
+
     /*!
      * \brief Compile a Lox print statement.
      */
@@ -284,6 +292,10 @@ private:
     void EmitReturn()
         { EmitByte(Chunk::OpCode::kOpReturn); }
 
+    int EmitJump(uint8_t instruction);
+
+    void EmitLoop(int loop_start);
+
     /*!
      * \brief Wrtie a constant instruction to #chunk_.
      */
@@ -324,6 +336,10 @@ private:
      * \brief Compile a string literal.
      */
     void String([[maybe_unused]]bool can_assign);
+
+    void And([[maybe_unused]]bool can_assign);
+
+    void Or([[maybe_unused]]bool can_assign);
 
     Scanner                scanner_;  /*!< Token scanner. */
     std::shared_ptr<Chunk> chunk_;    /*!< Chunk storing compiled bytecode. */

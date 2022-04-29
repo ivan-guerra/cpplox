@@ -56,7 +56,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kNumber,
         {&Compiler::Number, nullptr,  Precedence::kPrecNone}},
     {Token::TokenType::kAnd,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::And, Precedence::kPrecAnd}},
     {Token::TokenType::kClass,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kElse,
@@ -72,7 +72,7 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
     {Token::TokenType::kNil,
         {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kOr,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Or, Precedence::kPrecOr}},
     {Token::TokenType::kPrint,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kReturn,
@@ -144,9 +144,110 @@ void Compiler::Statement()
         BeginScope();
         Block();
         EndScope();
+    } else if (Match(Token::TokenType::kIf)) {
+        IfStatement();
+    } else if (Match(Token::TokenType::kWhile)) {
+        WhileStatement();
+    } else if (Match(Token::TokenType::kFor)) {
+        ForStatement();
     } else {
         ExpressionStatement();
     }
+}
+
+void Compiler::IfStatement()
+{
+    Consume(Token::TokenType::kLeftParen, "Expect '(' after if.");
+    Expression();
+    Consume(Token::TokenType::kRightParen, "Expect ')' after condition.");
+
+    int then_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
+    EmitByte(Chunk::OpCode::kOpPop);
+
+    Statement();
+
+    int else_jump = EmitJump(Chunk::OpCode::kOpJump);
+
+    PatchJump(then_jump);
+    EmitByte(Chunk::OpCode::kOpPop);
+
+    if (Match(Token::TokenType::kElse))
+        Statement();
+
+    PatchJump(else_jump);
+}
+
+void Compiler::WhileStatement()
+{
+    int loop_start = chunk_->GetCode().size();
+    Consume(Token::TokenType::kLeftParen, "Expect '(' after 'while'.");
+    Expression();
+    Consume(Token::TokenType::kRightParen, "Expect ')' after condition.");
+
+    int exit_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
+    EmitByte(Chunk::OpCode::kOpPop);
+    Statement();
+    EmitLoop(loop_start);
+
+    PatchJump(exit_jump);
+    EmitByte(Chunk::OpCode::kOpPop);
+}
+
+void Compiler::ForStatement()
+{
+    BeginScope();
+    Consume(Token::TokenType::kLeftParen, "Expect '(' after 'for'.");
+
+    if (Match(Token::TokenType::kSemicolon)) {
+        /* No initializer. */
+    } else if (Match(Token::TokenType::kVar)) {
+        VarDeclaration();
+    } else {
+        ExpressionStatement();
+    }
+
+    int loop_start = chunk_->GetCode().size();
+    int exit_jump  = -1;
+    if (!Match(Token::TokenType::kSemicolon)) {
+        Expression();
+        Consume(Token::TokenType::kSemicolon,
+                "Expect ';' after loop condition.");
+
+        exit_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
+        EmitByte(Chunk::OpCode::kOpPop);
+    }
+
+    if (!Match(Token::TokenType::kRightParen)) {
+        int body_jump       = EmitJump(Chunk::OpCode::kOpJump);
+        int increment_start = chunk_->GetCode().size();
+        Expression();
+        EmitByte(Chunk::OpCode::kOpPop);
+        Consume(Token::TokenType::kRightParen,
+                "Expect ')' after for clauses.");
+
+        EmitLoop(loop_start);
+        loop_start = increment_start;
+        PatchJump(body_jump);
+    }
+
+    Statement();
+    EmitLoop(loop_start);
+
+    if (exit_jump != -1) {
+        PatchJump(exit_jump);
+        EmitByte(Chunk::OpCode::kOpPop);
+    }
+    EndScope();
+}
+
+void Compiler::PatchJump(int offset)
+{
+    int jump = static_cast<int>(chunk_->GetCode().size()) - offset - 2;
+    if (jump > UINT16_MAX)
+        Error("Too much code to jump over.");
+
+    chunk_->GetCode()[offset] = (jump >> 8) & 0xFF;
+    chunk_->GetCode()[offset + 1] = jump & 0xff;
 }
 
 void Compiler::PrintStatement()
@@ -374,6 +475,27 @@ void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
     EmitByte(byte2);
 }
 
+int Compiler::EmitJump(uint8_t instruction)
+{
+    EmitByte(instruction);
+    EmitByte(0xFF);
+    EmitByte(0xFF);
+
+    return (static_cast<int>(chunk_->GetCode().size()) - 2);
+}
+
+void Compiler::EmitLoop(int loop_start)
+{
+    EmitByte(Chunk::OpCode::kOpLoop);
+
+    int offset = static_cast<int>(chunk_->GetCode().size()) - loop_start + 2;
+    if (offset > UINT16_MAX)
+        Error("Loop body too large.");
+
+    EmitByte((offset >> 8) & 0xFF);
+    EmitByte(offset & 0xFF);
+}
+
 void Compiler::EndCompiler()
 {
     EmitReturn();
@@ -485,6 +607,28 @@ void Compiler::String([[maybe_unused]]bool can_assign)
         obj::CopyString(lexeme.substr(1, lexeme.size() - 2), strings_);
 
     EmitConstant(obj::ObjVal(str_obj));
+}
+
+void Compiler::And([[maybe_unused]]bool can_assign)
+{
+    int end_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
+
+    EmitByte(Chunk::OpCode::kOpPop);
+    ParsePrecedence(Precedence::kPrecAnd);
+
+    PatchJump(end_jump);
+}
+
+void Compiler::Or([[maybe_unused]]bool can_assign)
+{
+    int else_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
+    int end_jump  = EmitJump(Chunk::OpCode::kOpJump);
+
+    PatchJump(else_jump);
+    EmitByte(Chunk::OpCode::kOpPop);
+
+    ParsePrecedence(Precedence::kPrecOr);
+    PatchJump(end_jump);
 }
 
 Compiler::Compiler() :

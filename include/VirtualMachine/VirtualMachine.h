@@ -115,6 +115,8 @@ private:
     val::Value ReadConstant()
         { return chunk_->GetConstants()[ReadByte()]; }
 
+    uint16_t ReadShort();
+
     /*!
      * \brief Concatenate the two string objects at the top of the stack.
      */

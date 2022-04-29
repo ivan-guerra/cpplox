@@ -33,18 +33,24 @@ val::Value VirtualMachine::Peek(int i)
 
 void VirtualMachine::SetStackItem(int i, const val::Value& value)
 {
-    if (0 == i) {
-        vm_stack_.top() = value;
-        return;
-    }
-
+    // TODO: Is i indicating from top or bottom...
     std::stack<val::Value> aux;
-    while (i--) {
+    while (!vm_stack_.empty()) {
         aux.push(vm_stack_.top());
         vm_stack_.pop();
     }
 
-    vm_stack_.top() = value;
+    if (0 == i) {
+        aux.top() = value;
+    } else {
+        while(i--) {
+            vm_stack_.push(aux.top());
+            aux.pop();
+        }
+
+        vm_stack_.push(value);
+        aux.pop();
+    }
 
     while (!aux.empty()) {
         vm_stack_.push(aux.top());
@@ -83,7 +89,14 @@ void VirtualMachine::RuntimeError(const char* format, ...)
     size_t instruction = chunk_->GetCode().size() - ip_ - 1;
     int line = chunk_->GetLines().at(instruction);
     std::fprintf(stderr, "[line %d] in script\n", line);
+
     vm_stack_ = {};
+}
+
+uint16_t VirtualMachine::ReadShort()
+{
+    ip_ += 2;
+    return ((chunk_->GetCode()[ip_ - 2] << 8) | chunk_->GetCode()[ip_ - 1]);
 }
 
 void VirtualMachine::Concatenate()
@@ -215,6 +228,22 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             case Chunk::OpCode::kOpSetLocal: {
                 uint8_t slot = ReadByte();
                 SetStackItem(slot, Peek(0));
+                break;
+            }
+            case Chunk::OpCode::kOpJumpIfFalse: {
+                uint16_t offset = ReadShort();
+                if (IsFalsey(Peek(0)))
+                    ip_ += offset;
+                break;
+            }
+            case Chunk::OpCode::kOpJump: {
+                uint16_t offset = ReadShort();
+                ip_ += offset;
+                break;
+            }
+            case Chunk::OpCode::kOpLoop: {
+                uint16_t offset = ReadShort();
+                ip_ -= offset;
                 break;
             }
             case Chunk::OpCode::kOpReturn:

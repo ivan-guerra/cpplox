@@ -22,8 +22,8 @@ public:
      */
     enum OpCode
     {
-        kOpReturn,
         kOpConstant,
+        kOpReturn,
         kOpNil,
         kOpTrue,
         kOpFalse,
@@ -42,7 +42,10 @@ public:
         kOpGetGlobal,
         kOpSetGlobal,
         kOpGetLocal,
-        kOpSetLocal
+        kOpSetLocal,
+        kOpJumpIfFalse,
+        kOpJump,
+        kOpLoop
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
@@ -54,9 +57,11 @@ public:
     Chunk& operator=(Chunk&&) = default;
 
     /*!
-     * \brief Return a read only view of the Chunk's bytecode.
+     * \brief Return a reference to this Chunk's bytecode vector.
      */
     const std::vector<uint8_t>& GetCode() const
+        { return code_; }
+    std::vector<uint8_t>& GetCode()
         { return code_; }
 
     /*!
@@ -134,6 +139,9 @@ private:
 
     std::size_t DisassembleByteInstruction(const std::string& name,
                                            int offset) const;
+
+    std::size_t DisassembleJumpInstruction(const std::string& name,
+                                           int sign, int offset) const;
 
     std::vector<uint8_t>    code_;      /*!< Vector of compiled bytecode instructions. */
     std::vector<val::Value> constants_; /*!< Vector of constants parsed from the source text. */

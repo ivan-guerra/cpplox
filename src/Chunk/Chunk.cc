@@ -64,6 +64,12 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleByteInstruction("OP_GET_LOCAL", offset);
         case OpCode::kOpSetLocal:
             return DisassembleByteInstruction("OP_SET_LOCAL", offset);
+        case OpCode::kOpJumpIfFalse:
+            return DisassembleJumpInstruction("OP_JUMP_IF_FALSE", 1, offset);
+        case OpCode::kOpJump:
+            return DisassembleJumpInstruction("OP_JUMP", 1, offset);
+        case OpCode::kOpLoop:
+            return DisassembleJumpInstruction("OP_LOOP", -1, offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);
@@ -96,6 +102,16 @@ std::size_t Chunk::DisassembleByteInstruction(const std::string& name,
     uint8_t slot = code_[offset + 1];
     std::printf("%-16s %4d\n", name.c_str(), slot);
     return (offset + 2);
+}
+
+std::size_t Chunk::DisassembleJumpInstruction(const std::string& name,
+                                              int sign, int offset) const
+{
+    uint16_t jump = static_cast<uint16_t>(code_[offset + 1] << 8);
+    jump |= code_[offset + 2];
+    std::printf("%-16s %4d -> %d\n", name.c_str(), offset,
+                offset + 3 + sign * jump);
+    return offset + 3;
 }
 void Chunk::Write(uint8_t byte, int line)
 {
