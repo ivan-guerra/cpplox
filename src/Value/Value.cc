@@ -52,7 +52,7 @@ bool IsNil(const Value& value)
 bool IsNumber(const Value& value)
     { return (value.type == ValueType::kNumber); }
 
-void PrintObject([[maybe_unused]]const Value& value)
+void PrintObject(const Value& value)
 {
     switch (obj::GetType(value)) {
         case obj::ObjType::kObjString:

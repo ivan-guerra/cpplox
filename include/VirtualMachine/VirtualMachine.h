@@ -103,7 +103,7 @@ private:
      * the next instruction in the chunk_.
      */
     uint8_t ReadByte()
-        { return chunk_->GetCode()[ip_++]; }
+        { return chunk_->GetInstruction(ip_++); }
 
     /*!
      * \brief Return a constant in #chunk_.
@@ -115,6 +115,9 @@ private:
     val::Value ReadConstant()
         { return chunk_->GetConstants()[ReadByte()]; }
 
+    /*!
+     * \brief Return the 16-bit operand at the current IP location.
+     */
     uint16_t ReadShort();
 
     /*!

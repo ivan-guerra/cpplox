@@ -57,12 +57,22 @@ public:
     Chunk& operator=(Chunk&&) = default;
 
     /*!
-     * \brief Return a reference to this Chunk's bytecode vector.
+     * \brief Return a const reference to this Chunk's bytecode vector.
      */
     const std::vector<uint8_t>& GetCode() const
         { return code_; }
-    std::vector<uint8_t>& GetCode()
-        { return code_; }
+
+    /*!
+     * \brief Return the instruction at the \a ith position in the Chunk.
+     */
+    uint8_t GetInstruction(int i) const
+        { return code_[i]; }
+
+    /*!
+     * \brief Set the \a ith instruction in the Chunk to \a instruction.
+     */
+    void SetInstruction(int i, uint8_t instruction)
+        { code_[i] = instruction; }
 
     /*!
      * \brief Return a read only view of the Chunk's constants.
@@ -79,8 +89,7 @@ public:
     /*!
      * \brief Write a raw byte to the Chunk.
      *
-     * \param byte A byte representing an opcode or some other piece of
-     *             information that needs to be added to the Chunk.
+     * \param byte A byte representing an opcode or opcode argument.
      * \param line The line number in the source text associated with this
      *             bytecode.
      */
@@ -89,7 +98,7 @@ public:
     /*!
      * \brief Add a new Lox constant value to the Chunk.
      *
-     * \param value A constant value parsed from the source text.
+     * \param value A constant Value parsed from the source text.
      *
      * \return The index of \a value in the Chunk's underlying constants
      *         array. This index is valuable when constructing a
@@ -101,17 +110,16 @@ public:
     /*!
      * \brief Disassemble all instructions in this Chunk.
      *
-     * \param name A label that is printed to STDOUT prior the printing of
-     *             decoded instructions to STDOUT.
+     * \param name A label that is printed to STDOUT prior to the printing of
+     *             the decoded instruction(s) to STDOUT.
      */
     void Disassemble(const std::string& name) const;
 
     /*!
      * \brief Disassemble an instruction at offset \a offset within this Chunk.
-     *
-     * If \a offset is out of bounds, Disassemble() will immediately return.
      */
-    void Disassemble(int offset) const;
+    void Disassemble(int offset) const
+        { DisassembleInstruction(offset); }
 
 private:
     /*!
@@ -137,9 +145,19 @@ private:
     std::size_t DisassembleConstantInstruction(const std::string& name,
                                                int offset) const;
 
+    /*!
+     * \brief Print a byte instruction to STDOUT.
+     */
     std::size_t DisassembleByteInstruction(const std::string& name,
                                            int offset) const;
 
+    /*!
+     * \brief Print a jump instruction to STDOUT.
+     *
+     * \param name Instruction label.
+     * \param sign Integer indicating the direction of the jump.
+     * \param offset Offset of instruction in the Chunk's bytecode vector.
+     */
     std::size_t DisassembleJumpInstruction(const std::string& name,
                                            int sign, int offset) const;
 

@@ -7,10 +7,29 @@
 
 #include "VirtualMachine.h"
 
+/*!
+ * \enum LoxExitCode
+ * \brief The LoxExitCode enum defines the possible interpreter exit codes.
+ */
+enum LoxExitCode
+{
+    kSuccess           = 0,  /*!< Indicates the interpreter exists gracefully. */
+    kInvalidUsage      = 64, /*!< Indicates the interpreter was called with invalid arguments. */
+    kInvalidScriptPath = 74, /*!< Indicates a nonexistent/invalid script path was specified by the User. */
+    kCompileError      = 65, /*!< Indicates a compile time error. */
+    kRuntimeError      = 70  /*!< Indicates a runtime error. */
+};
+
 static lox::VirtualMachine::InterpretResult Interpret(
     const std::string& source)
 {
+    /* The VM is a static object meaning its state persists throughout the life
+       of the interpreter program. The latter is intentional and useful
+       especially in the case of the REPL where we interpret lines of source
+       code one at a time (i.e., call Interpret() repeatedly with the
+       expectation the VM 'remembers' the code last executed). */
     static lox::VirtualMachine vm;
+
     return vm.Interpret(source);
 }
 
@@ -32,7 +51,7 @@ static void RunFile(const std::string& script)
     if (!script_fd.is_open()) {
         std::fprintf(stderr, "error: unable to open script '%s'\n",
                      script.c_str());
-        exit(74);
+        exit(LoxExitCode::kInvalidScriptPath);
     }
 
     /* Read the User script in one fell swoop. */
@@ -42,9 +61,9 @@ static void RunFile(const std::string& script)
     using InterpretResult = lox::VirtualMachine::InterpretResult;
     InterpretResult result = Interpret(buffer.str());
     if (InterpretResult::kInterpretCompileError == result)
-        exit(65);
+        exit(LoxExitCode::kCompileError);
     if (InterpretResult::kInterpretRuntimeError == result)
-        exit(70);
+        exit(LoxExitCode::kRuntimeError);
 }
 
 int main(int argc, char** argv)
@@ -55,8 +74,7 @@ int main(int argc, char** argv)
         RunFile(argv[1]);
     } else {
         std::fprintf(stderr, "usage: lox [script_path]\n");
-        exit(64);
+        exit(LoxExitCode::kInvalidUsage);
     }
-
-    exit(EXIT_SUCCESS);
+    exit(LoxExitCode::kSuccess);
 }

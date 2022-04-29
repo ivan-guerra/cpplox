@@ -82,6 +82,15 @@ bool IsString(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
+ *
+ * CopyString() will create a ObjString pointer and register it with \a strs
+ * if \a str does not already exist in \a strs. Otherwise, a copy of \a str
+ * is not performed an instead the existing pointer in \a strs is returned.
+ *
+ * \param str A string object identified by the Compiler.
+ * \param strs Pointer to a map of std::string objects to
+ *             std::shared_ptr<ObjString>. The \a strs map is used to identify
+ *             whether \a str is already being tracked by the interpreter.
  */
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,

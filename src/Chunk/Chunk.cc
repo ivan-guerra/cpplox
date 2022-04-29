@@ -52,14 +52,11 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
         case OpCode::kOpPop:
             return DisassembleSimpleInstruction("OP_POP", offset);
         case OpCode::kOpDefineGlobal:
-            return DisassembleConstantInstruction("OP_DEFINE_GLOBAL",
-                        offset);
+            return DisassembleConstantInstruction("OP_DEFINE_GLOBAL", offset);
         case OpCode::kOpGetGlobal:
-           return DisassembleConstantInstruction("OP_GET_GLOBAL",
-                        offset);
+           return DisassembleConstantInstruction("OP_GET_GLOBAL", offset);
         case OpCode::kOpSetGlobal:
-            return DisassembleConstantInstruction("OP_SET_GLOBAL",
-                        offset);
+            return DisassembleConstantInstruction("OP_SET_GLOBAL", offset);
         case OpCode::kOpGetLocal:
             return DisassembleByteInstruction("OP_GET_LOCAL", offset);
         case OpCode::kOpSetLocal:
@@ -101,6 +98,7 @@ std::size_t Chunk::DisassembleByteInstruction(const std::string& name,
 {
     uint8_t slot = code_[offset + 1];
     std::printf("%-16s %4d\n", name.c_str(), slot);
+    /* We add 2 not 1 on return because byte instructions are 2 bytes long. */
     return (offset + 2);
 }
 
@@ -113,6 +111,7 @@ std::size_t Chunk::DisassembleJumpInstruction(const std::string& name,
                 offset + 3 + sign * jump);
     return offset + 3;
 }
+
 void Chunk::Write(uint8_t byte, int line)
 {
     try {
@@ -140,14 +139,5 @@ void Chunk::Disassemble(const std::string& name) const
     std::printf("== %s ==\n", name.c_str());
     for (std::size_t offset = 0; offset < code_.size();)
         offset = DisassembleInstruction(offset);
-}
-
-void Chunk::Disassemble(int offset) const
-{
-    if (offset < 0 || offset > static_cast<int>(code_.size()))
-        /* NOOP on invalid offsets. */
-        return;
-
-    DisassembleInstruction(offset);
 }
 } // end lox

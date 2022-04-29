@@ -33,7 +33,6 @@ val::Value VirtualMachine::Peek(int i)
 
 void VirtualMachine::SetStackItem(int i, const val::Value& value)
 {
-    // TODO: Is i indicating from top or bottom...
     std::stack<val::Value> aux;
     while (!vm_stack_.empty()) {
         aux.push(vm_stack_.top());
@@ -96,7 +95,8 @@ void VirtualMachine::RuntimeError(const char* format, ...)
 uint16_t VirtualMachine::ReadShort()
 {
     ip_ += 2;
-    return ((chunk_->GetCode()[ip_ - 2] << 8) | chunk_->GetCode()[ip_ - 1]);
+    return ((chunk_->GetInstruction(ip_ - 2) << 8) |
+             chunk_->GetInstruction(ip_ - 1));
 }
 
 void VirtualMachine::Concatenate()

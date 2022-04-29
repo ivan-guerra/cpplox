@@ -32,7 +32,7 @@ public:
     Compiler& operator=(Compiler&&) = delete;
 
     /*!
-     * \brief Compile \a source to bytecode stored in \a chunk.
+     * \brief Compile \a source code to bytecode.
      *
      * \param source Lox source text.
      * \param chunk Chunk object used to store the bytecode representation of
@@ -105,13 +105,16 @@ private:
      */
     struct CompilerData
     {
-        Local locals[UINT8_MAX + 1];
-        int   local_count;
-        int   scope_depth;
+        Local locals[UINT8_MAX + 1]; /*!< Array of local variable data. */
+        int   local_count;           /*!< Length of locals array. */
+        int   scope_depth;           /*!< Active scope depth (global=0). */
     }; // end CompilerData
 
     static std::unordered_map<Token::TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
 
+    /*!
+     * \brief Parse statements at the current precedence level or higher.
+     */
     void ParsePrecedence(Precedence precedence);
 
     /*!
@@ -129,12 +132,29 @@ private:
      */
     void Statement();
 
+    /*!
+     * \brief Compile an if statement.
+     */
     void IfStatement();
 
+    /*!
+     * \brief Compile a while statement.
+     */
     void WhileStatement();
 
+    /*!
+     * \brief Compile a for statement.
+     */
     void ForStatement();
 
+    /*!
+     * \brief Replace the operand of the jump instruction at \a offset.
+     *
+     * A jump instruction takes an operand telling it where to jump.
+     * PatchJump() is used to patch the jump instruction's operand at
+     * \a offset. The operand is updated using the current location in
+     * the code.
+     */
     void PatchJump(int offset);
 
     /*!
@@ -166,18 +186,16 @@ private:
     void Variable(bool can_assign)
         { NamedVariable(parser_.previous, can_assign); }
 
+    /*!
+     * \brief Return \c true if \a a and \a b have identical lexemes.
+     */
     bool IdentifiersEqual(const Token& a, const Token& b) const
         { return (a.GetLexeme() == b.GetLexeme()); }
 
-    void AddLocal(const Token& name);
-
-    void DeclareVariable();
-
     /*!
-     * \brief Method called by the parser to handle expressions.
+     * \brief Adds a new local variable with name \a name to the current scope.
      */
-    void Expression()
-        { ParsePrecedence(Precedence::kPrecAssignment); }
+    void AddLocal(const Token& name);
 
     /*!
      * \brief Mark a local variable as initialized.
@@ -192,6 +210,17 @@ private:
      *         could not be resolved.
      */
     int ResolveLocal(const Token& name);
+
+    /*!
+     * \brief Declare a variable (local or global).
+     */
+    void DeclareVariable();
+
+    /*!
+     * \brief Method called by the parser to handle expressions.
+     */
+    void Expression()
+        { ParsePrecedence(Precedence::kPrecAssignment); }
 
     /*!
      * \brief Open a new block or scope.
@@ -292,8 +321,14 @@ private:
     void EmitReturn()
         { EmitByte(Chunk::OpCode::kOpReturn); }
 
+    /*!
+     * \brief Write a jump instruction to #chunk_.
+     */
     int EmitJump(uint8_t instruction);
 
+    /*!
+     * \brief Write a loop instruction to #chunk_.
+     */
     void EmitLoop(int loop_start);
 
     /*!
@@ -337,8 +372,14 @@ private:
      */
     void String([[maybe_unused]]bool can_assign);
 
+    /*!
+     * \brief Compile a logical and statement.
+     */
     void And([[maybe_unused]]bool can_assign);
 
+    /*!
+     * \brief Compile a logical or statement.
+     */
     void Or([[maybe_unused]]bool can_assign);
 
     Scanner                scanner_;  /*!< Token scanner. */

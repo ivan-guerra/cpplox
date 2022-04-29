@@ -246,8 +246,8 @@ void Compiler::PatchJump(int offset)
     if (jump > UINT16_MAX)
         Error("Too much code to jump over.");
 
-    chunk_->GetCode()[offset] = (jump >> 8) & 0xFF;
-    chunk_->GetCode()[offset + 1] = jump & 0xff;
+    chunk_->SetInstruction(offset, (jump >> 8) & 0xFF);
+    chunk_->SetInstruction(offset + 1, jump & 0xff);
 }
 
 void Compiler::PrintStatement()
