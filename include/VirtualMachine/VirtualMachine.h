@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stack>
 #include <memory>
 #include <string>
 #include <functional>
@@ -8,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "Stack.h"
 #include "Value.h"
 #include "Object.h"
 #include "Chunk.h"
@@ -53,34 +53,6 @@ private:
     using InternedStrings = std::shared_ptr<LoxStringMap>;
     using Globals         =
         std::unordered_map<LoxString, val::Value>;
-
-    /*!
-     * \brief Helper function used to peek at the ith index in #vm_stack_.
-     *
-     * If \a i is out of bounds or invalid, Peek()'s behavior will be
-     * undefined.
-     *
-     * \param i Index from the top of the stack where the desired Value
-     *          resides.
-     *
-     * \return The Value object at the ith index in #vm_stack_.
-     */
-    val::Value Peek(int i);
-
-    /*!
-     * \brief Set the \a ith Value in #vm_stack_.
-     *
-     * If \a i is out of bounds or invalid, SetStackItem()'s behavior will be
-     * undefined.
-     */
-    void SetStackItem(int i, const val::Value& value);
-
-    /*!
-     * \brief Print #vm_stack_ to STDOUT.
-     *
-     * This is a simple VM debug utility method.
-     */
-    void PrintVmStack();
 
     /*!
      * \brief Print a runtime error message to STDOUT.
@@ -154,7 +126,7 @@ private:
     InternedStrings        strings_;  /*!< Collection of interned strings. */
     Globals                globals_;  /*!< Map of global variable names to their associated Value. */
 
-    std::stack<val::Value> vm_stack_; /*!< The value stack. */
+    lox::Stack<val::Value> vm_stack_; /*!< The value stack. */
     lox::Compiler          compiler_; /*!< Bytecode compiler. */
 }; // end VirtualMachine
 
@@ -163,33 +135,32 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
     std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
-    if (!val::IsNumber(Peek(0)) || !val::IsNumber(Peek(1))) {
+    if (!val::IsNumber(vm_stack_.Peek(0)) ||
+        !val::IsNumber(vm_stack_.Peek(1))) {
         RuntimeError("Operands must be numbers.");
         return InterpretResult::kInterpretRuntimeError;
     }
 
-    double b = val::AsNumber(vm_stack_.top());
-    vm_stack_.pop();
-    double a = val::AsNumber(vm_stack_.top());
-    vm_stack_.pop();
+    double b = val::AsNumber(vm_stack_.Pop());
+    double a = val::AsNumber(vm_stack_.Pop());
     switch (op) {
         case Chunk::OpCode::kOpAdd:
-            vm_stack_.push(value_type(a + b));
+            vm_stack_.Push(value_type(a + b));
             break;
         case Chunk::OpCode::kOpSubtract:
-            vm_stack_.push(value_type(a - b));
+            vm_stack_.Push(value_type(a - b));
             break;
         case Chunk::OpCode::kOpMultiply:
-            vm_stack_.push(value_type(a * b));
+            vm_stack_.Push(value_type(a * b));
             break;
         case Chunk::OpCode::kOpDivide:
-            vm_stack_.push(value_type(a / b));
+            vm_stack_.Push(value_type(a / b));
             break;
         case Chunk::OpCode::kOpGreater:
-            vm_stack_.push(value_type(a > b));
+            vm_stack_.Push(value_type(a > b));
             break;
         case Chunk::OpCode::kOpLess:
-            vm_stack_.push(value_type(a < b));
+            vm_stack_.Push(value_type(a < b));
             break;
         default:
             RuntimeError("Unknown opcode");
