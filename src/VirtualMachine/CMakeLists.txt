@@ -4,7 +4,7 @@ project(VirtualMachine DESCRIPTION "Virtual machine executing lox bytecode"
                        LANGUAGES   CXX
 )
 
-add_library(${PROJECT_NAME} STATIC VirtualMachine.cc)
+add_library(${PROJECT_NAME} STATIC VirtualMachine.cc Stack.cc)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
