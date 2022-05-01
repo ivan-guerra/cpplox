@@ -67,6 +67,10 @@ std::shared_ptr<ObjFunction> NewFunction()
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)
 {
+    if (!function->name) {
+        std::printf("<script>");
+        return;
+    }
     std::printf("<fn %s", function->name->chars.c_str());
 }
 } // end obj
