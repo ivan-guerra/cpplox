@@ -24,7 +24,7 @@ class VirtualMachine
 public:
     /*!
      * \enum InterpretResult
-     * \brief The InterpretResult enum captures the interpretation result of the executed instruction.
+     * \brief The InterpretResult enum captures the bytecode interpretation result.
      */
     enum class InterpretResult
     {
@@ -54,6 +54,20 @@ private:
     using Globals         =
         std::unordered_map<LoxString, val::Value>;
 
+    static constexpr int kFramesMax = 64;                           /*!< Max number of call frames. */
+    static constexpr int kStackMax  = kFramesMax * (UINT8_MAX + 1); /*!< Max number of values allowed on the VM stack. */
+
+    /*!
+     * \struct CallFrame
+     * \brief The CallFrame struct represents a function call frame.
+     */
+    struct CallFrame
+    {
+        std::shared_ptr<obj::ObjFunction> function; /*!< Lox function object representation. */
+        int          ip;    /*!< Instruction pointer. */
+        val::Value*  slots; /*!< Call frame starting point on the VM value stack. */
+    }; // end CallFrame
+
     /*!
      * \brief Print a runtime error message to STDOUT.
      */
@@ -69,26 +83,24 @@ private:
         { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
 
     /*!
-     * \brief Return the next byte in #chunk_.
+     * \brief Return the next byte in the active frame's chunk.
      *
-     * ReadByte() has the side effect of always incrementing #ip_ to point to
-     * the next instruction in the chunk_.
+     * ReadByte() has the side effect of always incrementing the frame's ip to
+     * point to the next instruction in the chunk.
      */
-    uint8_t ReadByte()
-        { return chunk_->GetInstruction(ip_++); }
+    uint8_t ReadByte();
 
     /*!
-     * \brief Return a constant in #chunk_.
+     * \brief Return a constant in the active frame's chunk.
      *
      * ReadConstant() relies on ReadByte() to fetch the a constant. Undefined
      * behavior can arise when ReadConstant() is called when not parsing a
      * constant instruction's argument.
      */
-    val::Value ReadConstant()
-        { return chunk_->GetConstants()[ReadByte()]; }
+    val::Value ReadConstant();
 
     /*!
-     * \brief Return the 16-bit operand at the current IP location.
+     * \brief Return the 16-bit operand at the current frame's IP location.
      */
     uint16_t ReadShort();
 
@@ -100,7 +112,7 @@ private:
     /*!
      * \brief Helper function used to evaluate binary operations.
      *
-     * BinaryOp() pops the two values at the top of #vm_stack_ and applies
+     * BinaryOp() pops the two values at the top of #stack_ and applies
      * the binary operation specified by \a op taking care to order the
      * operands correctly. If the values at the top of the stack are invalid
      * operands, a runtime error is reported.
@@ -121,13 +133,10 @@ private:
      */
     InterpretResult Run();
 
-    std::size_t            ip_;       /*!< Instruction pointer always pointing to the next, unprocessed instruction. */
-    std::shared_ptr<Chunk> chunk_;    /*!< Chunk of bytecode this VM will be interpreting. */
-    InternedStrings        strings_;  /*!< Collection of interned strings. */
-    Globals                globals_;  /*!< Map of global variable names to their associated Value. */
-
-    lox::Stack<val::Value> vm_stack_; /*!< The value stack. */
-    lox::Compiler          compiler_; /*!< Bytecode compiler. */
+    InternedStrings        strings_; /*!< Collection of interned strings. */
+    Globals                globals_; /*!< Map of global names to their associated Value. */
+    lox::Stack<CallFrame>  frames_;  /*!< Stack of function call frames. */
+    lox::Stack<val::Value> stack_;   /*!< The value stack. */
 }; // end VirtualMachine
 
 template <typename T>
@@ -135,32 +144,32 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
     std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
-    if (!val::IsNumber(vm_stack_.Peek(0)) ||
-        !val::IsNumber(vm_stack_.Peek(1))) {
+    if (!val::IsNumber(stack_.Peek(0)) ||
+        !val::IsNumber(stack_.Peek(1))) {
         RuntimeError("Operands must be numbers.");
         return InterpretResult::kInterpretRuntimeError;
     }
 
-    double b = val::AsNumber(vm_stack_.Pop());
-    double a = val::AsNumber(vm_stack_.Pop());
+    double b = val::AsNumber(stack_.Pop());
+    double a = val::AsNumber(stack_.Pop());
     switch (op) {
         case Chunk::OpCode::kOpAdd:
-            vm_stack_.Push(value_type(a + b));
+            stack_.Push(value_type(a + b));
             break;
         case Chunk::OpCode::kOpSubtract:
-            vm_stack_.Push(value_type(a - b));
+            stack_.Push(value_type(a - b));
             break;
         case Chunk::OpCode::kOpMultiply:
-            vm_stack_.Push(value_type(a * b));
+            stack_.Push(value_type(a * b));
             break;
         case Chunk::OpCode::kOpDivide:
-            vm_stack_.Push(value_type(a / b));
+            stack_.Push(value_type(a / b));
             break;
         case Chunk::OpCode::kOpGreater:
-            vm_stack_.Push(value_type(a > b));
+            stack_.Push(value_type(a > b));
             break;
         case Chunk::OpCode::kOpLess:
-            vm_stack_.Push(value_type(a < b));
+            stack_.Push(value_type(a < b));
             break;
         default:
             RuntimeError("Unknown opcode");

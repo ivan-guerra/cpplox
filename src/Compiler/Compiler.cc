@@ -93,6 +93,16 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
         {nullptr, nullptr, Precedence::kPrecNone}}
 };
 
+
+void Compiler::InitCompiler(FunctionType type)
+{
+    compiler_.function        = obj::NewFunction();
+    compiler_.type            = type;
+    compiler_.locals[0].depth = 0;
+    compiler_.local_count     = 1;
+    compiler_.scope_depth     = 0;
+}
+
 void Compiler::ParsePrecedence(Precedence precedence)
 {
     Advance();
@@ -179,7 +189,7 @@ void Compiler::IfStatement()
 
 void Compiler::WhileStatement()
 {
-    int loop_start = chunk_->GetCode().size();
+    int loop_start = CurrentChunk().GetCode().size();
     Consume(Token::TokenType::kLeftParen, "Expect '(' after 'while'.");
     Expression();
     Consume(Token::TokenType::kRightParen, "Expect ')' after condition.");
@@ -206,7 +216,7 @@ void Compiler::ForStatement()
         ExpressionStatement();
     }
 
-    int loop_start = chunk_->GetCode().size();
+    int loop_start = CurrentChunk().GetCode().size();
     int exit_jump  = -1;
     if (!Match(Token::TokenType::kSemicolon)) {
         Expression();
@@ -219,7 +229,7 @@ void Compiler::ForStatement()
 
     if (!Match(Token::TokenType::kRightParen)) {
         int body_jump       = EmitJump(Chunk::OpCode::kOpJump);
-        int increment_start = chunk_->GetCode().size();
+        int increment_start = CurrentChunk().GetCode().size();
         Expression();
         EmitByte(Chunk::OpCode::kOpPop);
         Consume(Token::TokenType::kRightParen,
@@ -242,12 +252,12 @@ void Compiler::ForStatement()
 
 void Compiler::PatchJump(int offset)
 {
-    int jump = static_cast<int>(chunk_->GetCode().size()) - offset - 2;
+    int jump = static_cast<int>(CurrentChunk().GetCode().size()) - offset - 2;
     if (jump > UINT16_MAX)
         Error("Too much code to jump over.");
 
-    chunk_->SetInstruction(offset, (jump >> 8) & 0xFF);
-    chunk_->SetInstruction(offset + 1, jump & 0xff);
+    CurrentChunk().SetInstruction(offset, (jump >> 8) & 0xFF);
+    CurrentChunk().SetInstruction(offset + 1, jump & 0xff);
 }
 
 void Compiler::PrintStatement()
@@ -414,7 +424,7 @@ void Compiler::Consume(Token::TokenType type, const std::string& message)
 
 uint8_t Compiler::MakeConstant(const val::Value& value)
 {
-    int constant = chunk_->AddConstant(value);
+    int constant = CurrentChunk().AddConstant(value);
     if (constant > UINT8_MAX) {
         Error("Too many constants in one chunk.");
         return 0;
@@ -481,14 +491,15 @@ int Compiler::EmitJump(uint8_t instruction)
     EmitByte(0xFF);
     EmitByte(0xFF);
 
-    return (static_cast<int>(chunk_->GetCode().size()) - 2);
+    return (static_cast<int>(CurrentChunk().GetCode().size()) - 2);
 }
 
 void Compiler::EmitLoop(int loop_start)
 {
     EmitByte(Chunk::OpCode::kOpLoop);
 
-    int offset = static_cast<int>(chunk_->GetCode().size()) - loop_start + 2;
+    int offset =
+        static_cast<int>(CurrentChunk().GetCode().size()) - loop_start + 2;
     if (offset > UINT16_MAX)
         Error("Loop body too large.");
 
@@ -496,13 +507,17 @@ void Compiler::EmitLoop(int loop_start)
     EmitByte(offset & 0xFF);
 }
 
-void Compiler::EndCompiler()
+std::shared_ptr<obj::ObjFunction> Compiler::EndCompiler()
 {
     EmitReturn();
+    std::shared_ptr<obj::ObjFunction> function = compiler_.function;
 #ifdef DEBUG_PRINT_CODE
-    if (!parser_.had_error)
-        chunk_->Disassemble("code");
+    if (!parser_.had_error) {
+        CurrentChunk().Disassemble(
+            function->name ? function->name->chars : "<script>");
+    }
 #endif
+    return function;
 }
 
 void Compiler::Number([[maybe_unused]]bool can_assign)
@@ -632,21 +647,18 @@ void Compiler::Or([[maybe_unused]]bool can_assign)
 }
 
 Compiler::Compiler() :
-    scanner_(""),
-    chunk_(nullptr)
+    scanner_("")
 {
     parser_.had_error     = false;
     parser_.panic_mode    = false;
-    compiler_.local_count = 0;
-    compiler_.scope_depth = 0;
+
+    InitCompiler(FunctionType::kTypeScript);
 }
 
-bool Compiler::Compile(
+std::shared_ptr<obj::ObjFunction> Compiler::Compile(
     const std::string& source,
-    std::shared_ptr<Chunk> chunk,
     InternedStrings strings)
 {
-    chunk_   = chunk;
     scanner_ = lox::Scanner(source);
     strings_ = strings;
 
@@ -654,8 +666,7 @@ bool Compiler::Compile(
     while (!Match(Token::TokenType::kEof))
         Declaration();
 
-    EndCompiler();
-
-    return !parser_.had_error;
+    std::shared_ptr<obj::ObjFunction> function = EndCompiler();
+    return (parser_.had_error ? nullptr : function);
 }
 } // end lox

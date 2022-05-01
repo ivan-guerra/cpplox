@@ -35,14 +35,12 @@ public:
      * \brief Compile \a source code to bytecode.
      *
      * \param source Lox source text.
-     * \param chunk Chunk object used to store the bytecode representation of
-     *              \a source.
      * \param strings Pointer to a map containing all interned strings.
-     * \return \c true if \a source compiles without error.
+     * \return A pointer to the compiled Lox function object.
      */
-    bool Compile(const std::string& source,
-                 std::shared_ptr<Chunk> chunk,
-                 InternedStrings strings);
+    std::shared_ptr<obj::ObjFunction> Compile(
+        const std::string& source,
+        InternedStrings strings);
 
 private:
     using ParseFn = std::function<void(Compiler*, bool)>;
@@ -100,17 +98,43 @@ private:
     }; // end Local
 
     /*!
+     * \enum FunctionType
+     * \brief The FunctionType enum defines the type of a Lox function object.
+     */
+    enum FunctionType
+    {
+        kTypeFunction, /*!< User defined function. */
+        kTypeScript    /*!< Indicates a pseudo function representing the top level script. */
+    }; // end FunctionType
+
+    /*!
      * \struct CompilerData
      * \brief The CompilerData struct tracks local variable info.
      */
     struct CompilerData
     {
+        std::shared_ptr<obj::ObjFunction> function; /*! Function being compiled. */
+        FunctionType type; /*!< FunctionType of #function. */
+
         Local locals[UINT8_MAX + 1]; /*!< Array of local variable data. */
         int   local_count;           /*!< Length of locals array. */
         int   scope_depth;           /*!< Active scope depth (global=0). */
     }; // end CompilerData
 
     static std::unordered_map<Token::TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
+
+    /*!
+     * \brief Initialize #compiler_.
+     *
+     * \param type Type of the function being compiled.
+     */
+    void InitCompiler(FunctionType type);
+
+    /*!
+     * \brief Return a reference to the Chunk of the function being compiled.
+     */
+    Chunk& CurrentChunk()
+        { return compiler_.function->chunk; }
 
     /*!
      * \brief Parse statements at the current precedence level or higher.
@@ -278,7 +302,7 @@ private:
 
     /*!
      * \brief Compile value into a bytecode constant.
-     * \return The index of \a value in #chunk_'s constant array.
+     * \return The index of \a value in the current Chunk's constant array.
      */
     uint8_t MakeConstant(const val::Value& value);
 
@@ -305,34 +329,34 @@ private:
         { ErrorAt(parser_.previous, message); }
 
     /*!
-     * \brief Write \a byte to #chunk_.
+     * \brief Write \a byte to the current Chunk.
      */
     void EmitByte(uint8_t byte)
-        { chunk_->Write(byte, parser_.previous.GetLine()); }
+        { CurrentChunk().Write(byte, parser_.previous.GetLine()); }
 
     /*!
-     * \brief Write \a byte1 and \a byte2 in sequence to #chunk_.
+     * \brief Write \a byte1 and \a byte2 in sequence to the current Chunk.
      */
     void EmitBytes(uint8_t byte1, uint8_t byte2);
 
     /*!
-     * \brief Write a return instruction to #chunk_.
+     * \brief Write a return instruction to the current Chunk.
      */
     void EmitReturn()
         { EmitByte(Chunk::OpCode::kOpReturn); }
 
     /*!
-     * \brief Write a jump instruction to #chunk_.
+     * \brief Write a jump instruction to the current Chunk.
      */
     int EmitJump(uint8_t instruction);
 
     /*!
-     * \brief Write a loop instruction to #chunk_.
+     * \brief Write a loop instruction to the current Chunk.
      */
     void EmitLoop(int loop_start);
 
     /*!
-     * \brief Wrtie a constant instruction to #chunk_.
+     * \brief Write a constant instruction to the current Chunk.
      */
     void EmitConstant(const val::Value& value)
         { EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(value)); }
@@ -340,7 +364,7 @@ private:
     /*!
      * \brief End compilation.
      */
-    void EndCompiler();
+    std::shared_ptr<obj::ObjFunction> EndCompiler();
 
     /*!
      * \brief Compile a number.
@@ -382,10 +406,9 @@ private:
      */
     void Or([[maybe_unused]]bool can_assign);
 
-    Scanner                scanner_;  /*!< Token scanner. */
-    std::shared_ptr<Chunk> chunk_;    /*!< Chunk storing compiled bytecode. */
-    Parser                 parser_;   /*!< Handle to the Parser. */
-    InternedStrings        strings_;  /*!< Collection of interned strings. */
-    CompilerData           compiler_; /*!< Compiler local var data. */
+    Scanner         scanner_;  /*!< Token scanner. */
+    Parser          parser_;   /*!< Handle to the Parser. */
+    InternedStrings strings_;  /*!< Collection of interned strings. */
+    CompilerData    compiler_; /*!< Compiler local var data. */
 }; // end Compiler
 } // end lox
