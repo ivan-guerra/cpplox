@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <vector>
 #include <iostream>
 
@@ -38,9 +39,25 @@ public:
     Stack& operator=(Stack&&) = default;
 
     /*!
-     * \brief Return a read-only view of the item at the top of the stack.
+     * \brief Return the number of elements in the stack.
+     */
+    std::size_t Size() const
+        { return stack_top_; }
+
+    /*!
+     * \brief Return a pointer to the underlying array storing elements.
+     */
+    const T* Data() const
+        { return buffer_.data(); }
+    T* Data()
+        { return buffer_.data(); }
+
+    /*!
+     * \brief Return the item at the top of the stack.
      */
     const T& Top() const
+        { return buffer_[stack_top_ - 1]; }
+    T& Top()
         { return buffer_[stack_top_ - 1]; }
 
     /*!
