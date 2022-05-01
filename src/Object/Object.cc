@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <string>
 #include <variant>
 
@@ -19,6 +20,9 @@ std::shared_ptr<Obj> AsObj(const val::Value& value)
 std::shared_ptr<ObjString> AsString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value)); }
 
+std::shared_ptr<ObjFunction> AsFunction(const val::Value& value)
+    { return std::static_pointer_cast<ObjFunction>(AsObj(value)); }
+
 std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
@@ -30,6 +34,9 @@ bool IsObjType(const val::Value& value, ObjType type)
 
 bool IsString(const val::Value& value)
     { return IsObjType(value, ObjType::kObjString); }
+
+bool IsFunction(const val::Value& value)
+    { return IsObjType(value, ObjType::kObjFunction); }
 
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
@@ -46,6 +53,21 @@ std::shared_ptr<ObjString> CopyString(
     (*strs)[str] = str_obj;
 
     return str_obj;
+}
+
+std::shared_ptr<ObjFunction> NewFunction()
+{
+    std::shared_ptr<ObjFunction> function = std::make_shared<ObjFunction>();
+    function->type  = ObjType::kObjFunction;
+    function->arity = 0;
+    function->name  = nullptr;
+
+    return function;
+}
+
+void PrintFunction(std::shared_ptr<ObjFunction> function)
+{
+    std::printf("<fn %s", function->name->chars.c_str());
 }
 } // end obj
 } // end lox

@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "Value.h"
+#include "Chunk.h"
 
 namespace lox
 {
@@ -16,7 +17,8 @@ namespace obj
  */
 enum ObjType
 {
-    kObjString /*!< String type. */
+    kObjString,  /*!< String type. */
+    kObjFunction /*!< Function type. */
 }; // end ObjType
 
 /*!
@@ -37,8 +39,20 @@ struct Obj
 struct ObjString :
     public Obj
 {
-    std::string chars;
+    std::string chars; /*!< Character string wrapped by this ObjString. */
 }; // end ObjString
+
+/*!
+ * \struct ObjFunction
+ * \brief The ObjFunction struct represents Lox functions.
+ */
+struct ObjFunction :
+    public Obj
+{
+    int        arity; /*!< Number of arguments expected by the function. */
+    lox::Chunk chunk; /*!< Chunk of bytecode representing the function body. */
+    std::shared_ptr<ObjString> name; /*!< Source name of the function. */
+}; // end ObjFunction
 
 /*!
  * \brief Return the ObjType of the object contained within \a value.
@@ -61,6 +75,11 @@ std::shared_ptr<Obj> AsObj(const val::Value& value);
 std::shared_ptr<ObjString> AsString(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a Lox ObjFunction.
+ */
+std::shared_ptr<ObjFunction> AsFunction(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -81,6 +100,11 @@ bool IsObjType(const val::Value& value, ObjType type);
 bool IsString(const val::Value& value);
 
 /*!
+ * \brief Return \c true if \a value is an ObjFunction object.
+ */
+bool IsFunction(const val::Value& value);
+
+/*!
  * \brief Construct an ObjString initialized with \a str data.
  *
  * CopyString() will create a ObjString pointer and register it with \a strs
@@ -95,5 +119,15 @@ bool IsString(const val::Value& value);
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>> strs);
+
+/*!
+ * \brief Return a pointer to 'blank slate' Lox function object.
+ */
+std::shared_ptr<ObjFunction> NewFunction();
+
+/*!
+ * \brief Print the name of \a function to STDOUT.
+ */
+void PrintFunction(std::shared_ptr<ObjFunction> function);
 } // end obj
 } // end lox

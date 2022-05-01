@@ -58,6 +58,9 @@ void PrintObject(const Value& value)
         case obj::ObjType::kObjString:
             std::printf("%s", obj::AsStdString(value).c_str());
             break;
+        case obj::ObjType::kObjFunction:
+            obj::PrintFunction(obj::AsFunction(value));
+            break;
     }
 }
 
