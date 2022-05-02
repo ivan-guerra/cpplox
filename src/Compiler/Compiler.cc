@@ -93,14 +93,23 @@ std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
         {nullptr, nullptr, Precedence::kPrecNone}}
 };
 
-
-void Compiler::InitCompiler(FunctionType type)
+void Compiler::InitCompiler(
+        CompilerDataPtr enclosing,
+        CompilerDataPtr compiler,
+        FunctionType type)
 {
-    compiler_.function        = obj::NewFunction();
-    compiler_.type            = type;
-    compiler_.locals[0].depth = 0;
-    compiler_.local_count     = 1;
-    compiler_.scope_depth     = 0;
+    compiler_ = compiler;
+
+    compiler_->enclosing = enclosing;
+    compiler_->function  = obj::NewFunction();
+    compiler_->type      = type;
+    if (type != FunctionType::kTypeScript) {
+        compiler_->function->name =
+            obj::CopyString(parser_.previous.GetLexeme(), strings_);
+    }
+    compiler_->locals[0].depth = 0;
+    compiler_->local_count     = 1;
+    compiler_->scope_depth     = 0;
 }
 
 void Compiler::ParsePrecedence(Precedence precedence)
@@ -130,7 +139,7 @@ uint8_t Compiler::ParseVariable(const std::string& error_message)
     Consume(Token::TokenType::kIdentifier, error_message);
 
     DeclareVariable();
-    if (compiler_.scope_depth > 0)
+    if (compiler_->scope_depth > 0)
         return 0;
 
     return IdentifierConstant(parser_.previous);
@@ -138,7 +147,7 @@ uint8_t Compiler::ParseVariable(const std::string& error_message)
 
 void Compiler::DefineVariable(uint8_t global)
 {
-    if (compiler_.scope_depth > 0) {
+    if (compiler_->scope_depth > 0) {
         MarkInitialized();
         return;
     }
@@ -278,7 +287,9 @@ void Compiler::ExpressionStatement()
 
 void Compiler::Declaration()
 {
-    if (Match(Token::TokenType::kVar))
+    if (Match(Token::TokenType::kFun))
+        FunDeclaration();
+    else if (Match(Token::TokenType::kVar))
         VarDeclaration();
     else
         Statement();
@@ -301,27 +312,44 @@ void Compiler::VarDeclaration()
     DefineVariable(global);
 }
 
+void Compiler::FunDeclaration()
+{
+    uint8_t global = ParseVariable("Expect function name.");
+    MarkInitialized();
+    Function(FunctionType::kTypeFunction);
+    DefineVariable(global);
+}
+
 void Compiler::AddLocal(const Token& name)
 {
-    if (compiler_.local_count == (UINT8_MAX + 1)) {
+    if (compiler_->local_count == (UINT8_MAX + 1)) {
         Error("Too many local variables in function.");
         return;
     }
 
     Local local = {.name=name, .depth=-1};
-    compiler_.locals[compiler_.local_count] = local;
-    compiler_.local_count++;
+    compiler_->locals[compiler_->local_count] = local;
+    compiler_->local_count++;
+}
+
+void Compiler::MarkInitialized()
+{
+    if (0 == compiler_->scope_depth)
+        return;
+
+    compiler_->locals[compiler_->local_count - 1].depth =
+        compiler_->scope_depth;
 }
 
 void Compiler::DeclareVariable()
 {
-    if (compiler_.scope_depth == 0)
+    if (compiler_->scope_depth == 0)
         return;
 
     Token name = parser_.previous;
-    for (int i = compiler_.local_count - 1; i >= 0; --i) {
-        Local local = compiler_.locals[i];
-        if ((local.depth != -1) && (local.depth < compiler_.scope_depth))
+    for (int i = compiler_->local_count - 1; i >= 0; --i) {
+        Local local = compiler_->locals[i];
+        if ((local.depth != -1) && (local.depth < compiler_->scope_depth))
             break;
 
         if (IdentifiersEqual(name, local.name))
@@ -332,8 +360,8 @@ void Compiler::DeclareVariable()
 
 int Compiler::ResolveLocal(const Token& name)
 {
-    for (int i = compiler_.local_count - 1; i >= 0; --i) {
-        Local local = compiler_.locals[i];
+    for (int i = compiler_->local_count - 1; i >= 0; --i) {
+        Local local = compiler_->locals[i];
         if (IdentifiersEqual(name, local.name)) {
             if (local.depth == -1)
                 Error("Can't read local variable in its own intializer.");
@@ -345,13 +373,13 @@ int Compiler::ResolveLocal(const Token& name)
 
 void Compiler::EndScope()
 {
-    compiler_.scope_depth--;
+    compiler_->scope_depth--;
 
-    while ((compiler_.local_count > 0) &&
-           (compiler_.locals[compiler_.local_count - 1].depth >
-            compiler_.scope_depth)) {
+    while ((compiler_->local_count > 0) &&
+           (compiler_->locals[compiler_->local_count - 1].depth >
+            compiler_->scope_depth)) {
         EmitByte(Chunk::OpCode::kOpPop);
-        compiler_.local_count--;
+        compiler_->local_count--;
     }
 }
 
@@ -510,13 +538,14 @@ void Compiler::EmitLoop(int loop_start)
 std::shared_ptr<obj::ObjFunction> Compiler::EndCompiler()
 {
     EmitReturn();
-    std::shared_ptr<obj::ObjFunction> function = compiler_.function;
+    std::shared_ptr<obj::ObjFunction> function = compiler_->function;
 #ifdef DEBUG_PRINT_CODE
     if (!parser_.had_error) {
         CurrentChunk().Disassemble(
             function->name ? function->name->chars : "<script>");
     }
 #endif
+    compiler_ = compiler_->enclosing;
     return function;
 }
 
@@ -646,13 +675,39 @@ void Compiler::Or([[maybe_unused]]bool can_assign)
     PatchJump(end_jump);
 }
 
+void Compiler::Function(FunctionType type)
+{
+    CompilerDataPtr compiler = std::make_shared<CompilerData>();
+    InitCompiler(compiler_, compiler, type);
+    BeginScope();
+
+    Consume(Token::TokenType::kLeftParen, "Expect '(' after function name.");
+    if (!Check(Token::TokenType::kRightParen)) {
+        do {
+            compiler_->function->arity++;
+            if (compiler_->function->arity > 255)
+                ErrorAtCurrent("Can't have more than 255 parameters.");
+
+            uint8_t constant = ParseVariable("Expect paramater name.");
+            DefineVariable(constant);
+        } while (Match(Token::TokenType::kComma));
+    }
+    Consume(Token::TokenType::kRightParen, "Expect ')' after parameters.");
+    Consume(Token::TokenType::kLeftBrace, "Expect '{' before function body");
+    Block();
+
+    std::shared_ptr<obj::ObjFunction> function = EndCompiler();
+    EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(obj::ObjVal(function)));
+}
+
 Compiler::Compiler() :
-    scanner_("")
+    scanner_(""),
+    compiler_(std::make_shared<CompilerData>())
 {
     parser_.had_error     = false;
     parser_.panic_mode    = false;
 
-    InitCompiler(FunctionType::kTypeScript);
+    InitCompiler(nullptr, compiler_, FunctionType::kTypeScript);
 }
 
 std::shared_ptr<obj::ObjFunction> Compiler::Compile(

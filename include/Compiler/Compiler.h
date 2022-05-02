@@ -43,8 +43,6 @@ public:
         InternedStrings strings);
 
 private:
-    using ParseFn = std::function<void(Compiler*, bool)>;
-
     /*!
      * \enum Precedence
      * \brief The Precedence emum defines token precedence.
@@ -76,6 +74,7 @@ private:
         bool  panic_mode; /*!< Flag for handling cascading errors. */
     }; // end Parser
 
+    using ParseFn = std::function<void(Compiler*, bool)>;
     /*!
      * \struct ParseRule
      * \brief The ParseRule struct handles lookup into the parser action table.
@@ -113,28 +112,44 @@ private:
      */
     struct CompilerData
     {
-        std::shared_ptr<obj::ObjFunction> function; /*! Function being compiled. */
-        FunctionType type; /*!< FunctionType of #function. */
-
+        std::shared_ptr<CompilerData> enclosing; /*!< Metadata of the next compiler on the compiler stack. */
+        std::shared_ptr<obj::ObjFunction> function; /*!< Function being compiled. */
+        FunctionType type;                          /*!< FunctionType of #function. */
         Local locals[UINT8_MAX + 1]; /*!< Array of local variable data. */
         int   local_count;           /*!< Length of locals array. */
         int   scope_depth;           /*!< Active scope depth (global=0). */
     }; // end CompilerData
+    using CompilerDataPtr = std::shared_ptr<CompilerData>;
 
     static std::unordered_map<Token::TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
 
     /*!
      * \brief Initialize #compiler_.
      *
+     * InitCompiler() enables us to simulate a stack of CompilerData structs.
+     * Each Lox function call creates a new CompilerData instance. That
+     * CompilerData instance must point back to the current CompilerData
+     * instance (i.e., whatever #compiler_ points to at the time InitCompiler()
+     * is called). InitCompiler() sets \a compiler to point back to
+     * \a enclosing. InitCompiler() also initializes the other fields of
+     * \a compiler appropriately.
+     *
+     * \param enclosing Pointer to the CompilerData struct at the top of the
+     *                  CompilerData stack.
+     * \param compiler  Pointer to the CompilerData struct being added to the
+     *                  top of the stack.
      * \param type Type of the function being compiled.
      */
-    void InitCompiler(FunctionType type);
+    void InitCompiler(
+        CompilerDataPtr enclosing,
+        CompilerDataPtr compiler,
+        FunctionType type);
 
     /*!
      * \brief Return a reference to the Chunk of the function being compiled.
      */
     Chunk& CurrentChunk()
-        { return compiler_.function->chunk; }
+        { return compiler_->function->chunk; }
 
     /*!
      * \brief Parse statements at the current precedence level or higher.
@@ -201,6 +216,8 @@ private:
      */
     void VarDeclaration();
 
+    void FunDeclaration();
+
     /*!
      * \brief Method called by the parser to handle variables.
      *
@@ -224,8 +241,7 @@ private:
     /*!
      * \brief Mark a local variable as initialized.
      */
-    void MarkInitialized()
-        { compiler_.locals[compiler_.local_count - 1].depth = compiler_.scope_depth; }
+    void MarkInitialized();
 
     /*!
      * \brief Attempt to resolve a local variable by name.
@@ -250,7 +266,7 @@ private:
      * \brief Open a new block or scope.
      */
     void BeginScope()
-        { compiler_.scope_depth++; }
+        { compiler_->scope_depth++; }
 
     /*!
      * \brief Teardown a block/scope.
@@ -406,9 +422,14 @@ private:
      */
     void Or([[maybe_unused]]bool can_assign);
 
+    /*!
+     * \brief Compile a function.
+     */
+    void Function(FunctionType type);
+
     Scanner         scanner_;  /*!< Token scanner. */
     Parser          parser_;   /*!< Handle to the Parser. */
     InternedStrings strings_;  /*!< Collection of interned strings. */
-    CompilerData    compiler_; /*!< Compiler local var data. */
+    CompilerDataPtr compiler_; /*!< Compiler metadata list. */
 }; // end Compiler
 } // end lox
