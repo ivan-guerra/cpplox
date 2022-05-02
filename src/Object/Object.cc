@@ -71,7 +71,7 @@ void PrintFunction(std::shared_ptr<ObjFunction> function)
         std::printf("<script>");
         return;
     }
-    std::printf("<fn %s", function->name->chars.c_str());
+    std::printf("<fn %s>", function->name->chars.c_str());
 }
 } // end obj
 } // end lox
