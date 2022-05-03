@@ -54,9 +54,6 @@ private:
     using Globals         =
         std::unordered_map<LoxString, val::Value>;
 
-    static constexpr int kFramesMax = 64;                           /*!< Max number of call frames. */
-    static constexpr int kStackMax  = kFramesMax * (UINT8_MAX + 1); /*!< Max number of values allowed on the VM stack. */
-
     /*!
      * \struct CallFrame
      * \brief The CallFrame struct represents a function call frame.
@@ -82,27 +79,33 @@ private:
     bool IsFalsey(const val::Value& value) const
         { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
 
+    bool Call(std::shared_ptr<obj::ObjFunction> function, int arg_count);
+
+    bool CallValue(const val::Value& callee, int arg_count);
+
     /*!
-     * \brief Return the next byte in the active frame's chunk.
+     * \brief Return the next byte in \a frame's chunk.
      *
      * ReadByte() has the side effect of always incrementing the frame's ip to
      * point to the next instruction in the chunk.
      */
-    uint8_t ReadByte();
+    uint8_t ReadByte(CallFrame* frame)
+        { return frame->function->chunk.GetInstruction(frame->ip++); }
 
     /*!
-     * \brief Return a constant in the active frame's chunk.
+     * \brief Return a constant in the \a frame's chunk.
      *
      * ReadConstant() relies on ReadByte() to fetch the a constant. Undefined
      * behavior can arise when ReadConstant() is called when not parsing a
      * constant instruction's argument.
      */
-    val::Value ReadConstant();
+    val::Value ReadConstant(CallFrame* frame)
+        { return frame->function->chunk.GetConstants()[ReadByte(frame)]; }
 
     /*!
-     * \brief Return the 16-bit operand at the current frame's IP location.
+     * \brief Return the 16-bit operand at \a frame's IP location.
      */
-    uint16_t ReadShort();
+    uint16_t ReadShort(CallFrame* frame);
 
     /*!
      * \brief Concatenate the two string objects at the top of the stack.
@@ -112,7 +115,7 @@ private:
     /*!
      * \brief Helper function used to evaluate binary operations.
      *
-     * BinaryOp() pops the two values at the top of #stack_ and applies
+     * BinaryOp() pops the two values at the top of #vm_stack and applies
      * the binary operation specified by \a op taking care to order the
      * operands correctly. If the values at the top of the stack are invalid
      * operands, a runtime error is reported.
@@ -133,10 +136,10 @@ private:
      */
     InterpretResult Run();
 
-    InternedStrings        strings_; /*!< Collection of interned strings. */
-    Globals                globals_; /*!< Map of global names to their associated Value. */
-    lox::Stack<CallFrame>  frames_;  /*!< Stack of function call frames. */
-    lox::Stack<val::Value> stack_;   /*!< The value stack. */
+    InternedStrings  strings_; /*!< Collection of interned strings. */
+    Globals          globals_; /*!< Map of global names to their associated Value. */
+    struct CallFrame frames_[lox::kFramesMax];  /*!< Stack of function call frames. */
+    int              frame_count;
 }; // end VirtualMachine
 
 template <typename T>
@@ -144,32 +147,32 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
     std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
-    if (!val::IsNumber(stack_.Peek(0)) ||
-        !val::IsNumber(stack_.Peek(1))) {
+    if (!val::IsNumber(Peek(&vm_stack, 0)) ||
+        !val::IsNumber(Peek(&vm_stack, 1))) {
         RuntimeError("Operands must be numbers.");
         return InterpretResult::kInterpretRuntimeError;
     }
 
-    double b = val::AsNumber(stack_.Pop());
-    double a = val::AsNumber(stack_.Pop());
+    double b = val::AsNumber(Pop(&vm_stack));
+    double a = val::AsNumber(Pop(&vm_stack));
     switch (op) {
         case Chunk::OpCode::kOpAdd:
-            stack_.Push(value_type(a + b));
+            Push(&vm_stack, value_type(a + b));
             break;
         case Chunk::OpCode::kOpSubtract:
-            stack_.Push(value_type(a - b));
+            Push(&vm_stack, value_type(a - b));
             break;
         case Chunk::OpCode::kOpMultiply:
-            stack_.Push(value_type(a * b));
+            Push(&vm_stack, value_type(a * b));
             break;
         case Chunk::OpCode::kOpDivide:
-            stack_.Push(value_type(a / b));
+            Push(&vm_stack, value_type(a / b));
             break;
         case Chunk::OpCode::kOpGreater:
-            stack_.Push(value_type(a > b));
+            Push(&vm_stack, value_type(a > b));
             break;
         case Chunk::OpCode::kOpLess:
-            stack_.Push(value_type(a < b));
+            Push(&vm_stack, value_type(a < b));
             break;
         default:
             RuntimeError("Unknown opcode");

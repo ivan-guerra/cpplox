@@ -18,74 +18,105 @@ void VirtualMachine::RuntimeError(const char* format, ...)
     va_end(args);
     fputs("\n", stderr);
 
-    CallFrame& frame = frames_.Top();
-    size_t instruction = frame.ip - 1;
-    int line = frame.function->chunk.GetLines().at(instruction);
-    std::fprintf(stderr, "[line %d] in script\n", line);
+    for (int i = frame_count - 1; i >= 0; --i) {
+        CallFrame* frame = &frames_[i];
+        std::shared_ptr<obj::ObjFunction> function = frame->function;
+        std::size_t instruction = frame->ip - 1;
 
-    stack_.Reset();
+        std::fprintf(stderr, "[line %d] in ",
+                     function->chunk.GetLines()[instruction]);
+        if (!function->name)
+            std::fprintf(stderr, "script\n");
+        else
+            std::fprintf(stderr, "%s()\n", function->name->chars.c_str());
+    }
+    ResetStack(&vm_stack);
 }
 
-
-uint8_t VirtualMachine::ReadByte()
+bool VirtualMachine::Call(
+    std::shared_ptr<obj::ObjFunction> function,
+    int arg_count)
 {
-    CallFrame& frame = frames_.Top();
-    return frame.function->chunk.GetInstruction(frame.ip++);
+    if (arg_count != function->arity) {
+        RuntimeError("Expected %d arguments but got %d.",
+                     function->arity, arg_count);
+        return false;
+    }
+
+    if (frame_count == kFramesMax) {
+        RuntimeError("Stack overflow.");
+        return false;
+    }
+
+    CallFrame* frame = &frames_[frame_count++];
+    frame->function = function;
+    frame->ip       = 0;
+    frame->slots    = vm_stack.stack_top - arg_count - 1;
+
+    return true;
 }
 
-
-val::Value VirtualMachine::ReadConstant()
+bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
 {
-    CallFrame& frame = frames_.Top();
-    return frame.function->chunk.GetConstants()[ReadByte()];
+    if (obj::IsObject(callee)) {
+        switch (obj::GetType(callee)) {
+            case obj::ObjType::kObjFunction:
+                return Call(obj::AsFunction(callee), arg_count);
+                break;
+            default:
+                /* Non-callable object type. */
+                break;
+        }
+    }
+    RuntimeError("Can only call functions and classes.");
+    return false;
 }
 
-uint16_t VirtualMachine::ReadShort()
+uint16_t VirtualMachine::ReadShort(CallFrame* frame)
 {
-    CallFrame& frame = frames_.Top();
-    frame.ip += 2;
-    return ((frame.function->chunk.GetInstruction(frame.ip - 2) << 8) |
-             frame.function->chunk.GetInstruction(frame.ip - 1));
+    frame->ip += 2;
+    return ((frame->function->chunk.GetInstruction(frame->ip - 2) << 8) |
+             frame->function->chunk.GetInstruction(frame->ip - 1));
 }
 
 void VirtualMachine::Concatenate()
 {
-    std::shared_ptr<obj::ObjString> b = obj::AsString(stack_.Pop());
-    std::shared_ptr<obj::ObjString> a = obj::AsString(stack_.Pop());
+    std::shared_ptr<obj::ObjString> b = obj::AsString(Pop(&vm_stack));
+    std::shared_ptr<obj::ObjString> a = obj::AsString(Pop(&vm_stack));
 
     std::shared_ptr<obj::ObjString> result = std::make_shared<obj::ObjString>();
     result->type = obj::ObjType::kObjString;
     result->chars = a->chars + b->chars;
-    stack_.Push(ObjVal(result));
+    Push(&vm_stack, ObjVal(result));
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Run()
 {
-    CallFrame& frame = frames_.Top();
+    CallFrame* frame = &frames_[frame_count - 1];
 
     while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
-        stack_.Print();
-        frame.function->chunk.Disassemble(frame.ip);
+        PrintStack(&vm_stack);
+        frame->function->chunk.Disassemble(frame->ip);
 #endif
-        uint8_t instruction = ReadByte();
+        uint8_t instruction = ReadByte(frame);
         switch (instruction) {
             case Chunk::OpCode::kOpConstant:
-                stack_.Push(ReadConstant());
+                Push(&vm_stack, ReadConstant(frame));
                 break;
             case Chunk::OpCode::kOpNil:
-                stack_.Push(val::NilVal());
+                Push(&vm_stack, val::NilVal());
                 break;
             case Chunk::OpCode::kOpTrue:
-                stack_.Push(val::BoolVal(true));
+                Push(&vm_stack, val::BoolVal(true));
                 break;
             case Chunk::OpCode::kOpFalse:
-                stack_.Push(val::BoolVal(false));
+                Push(&vm_stack, val::BoolVal(false));
                 break;
             case Chunk::OpCode::KOpEqual: {
-                val::Value b = stack_.Pop();
-                val::Value a = stack_.Pop();
-                stack_.Push(val::BoolVal(val::ValuesEqual(a, b)));
+                val::Value b = Pop(&vm_stack);
+                val::Value a = Pop(&vm_stack);
+                Push(&vm_stack, val::BoolVal(val::ValuesEqual(a, b)));
                 break;
             }
             case Chunk::OpCode::kOpGreater:
@@ -94,23 +125,23 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                                static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpNot: {
-                bool is_falsey = IsFalsey(stack_.Pop());
-                stack_.Push(val::BoolVal(is_falsey));
+                bool is_falsey = IsFalsey(Pop(&vm_stack));
+                Push(&vm_stack, val::BoolVal(is_falsey));
                 break;
             }
             case Chunk::OpCode::kOpNegate: {
-                val::Value val = stack_.Top();
+                val::Value val = Peek(&vm_stack, 0);
                 if (!val::IsNumber(val)) {
                     RuntimeError("Operand must be a number.");
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                stack_.Pop();
-                stack_.Push(val::NumberVal(-val::AsNumber(val)));
+                Pop(&vm_stack);
+                Push(&vm_stack, val::NumberVal(-val::AsNumber(val)));
                 break;
             }
             case Chunk::OpCode::kOpAdd: {
-                val::Value b = stack_.Peek(0);
-                val::Value a = stack_.Peek(1);
+                val::Value b = Peek(&vm_stack, 0);
+                val::Value a = Peek(&vm_stack, 1);
                 if (obj::IsString(a) && obj::IsString(b)) {
                     Concatenate();
                 } else if (val::IsNumber(a) && val::IsNumber(b)) {
@@ -130,77 +161,95 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                                  static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpPrint:
-                PrintValue(stack_.Pop());
+                PrintValue(Pop(&vm_stack));
                 std::printf("\n");
                 break;
             case Chunk::OpCode::kOpPop:
-                stack_.Pop();
+                Pop(&vm_stack);
                 break;
             case Chunk::OpCode::kOpDefineGlobal: {
-                LoxString name = obj::AsString(ReadConstant());
-                globals_[name] = stack_.Pop();
+                LoxString name = obj::AsString(ReadConstant(frame));
+                globals_[name] = Pop(&vm_stack);
                 break;
             }
             case Chunk::OpCode::kOpGetGlobal: {
-                LoxString name = obj::AsString(ReadConstant());
+                LoxString name = obj::AsString(ReadConstant(frame));
                 if (globals_.find(name) == globals_.end()) {
                     RuntimeError(
                         "Undefined variable '%s'.",
                         name->chars.c_str());
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                stack_.Push(globals_[name]);
+                Push(&vm_stack, globals_[name]);
                 break;
             }
             case Chunk::OpCode::kOpSetGlobal: {
-                LoxString name = obj::AsString(ReadConstant());
+                LoxString name = obj::AsString(ReadConstant(frame));
                 if (globals_.find(name) == globals_.end()) {
                     RuntimeError(
                         "Undefined variable '%s'.",
                         name->chars.c_str());
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                globals_[name] = stack_.Peek(0);
+                globals_[name] = Peek(&vm_stack, 0);
                 break;
             }
             case Chunk::OpCode::kOpGetLocal: {
-                uint8_t slot = ReadByte();
-                stack_.Push(frame.slots[slot]);
+                uint8_t slot = ReadByte(frame);
+                Push(&vm_stack, frame->slots[slot]);
                 break;
             }
             case Chunk::OpCode::kOpSetLocal: {
-                uint8_t slot = ReadByte();
-                frame.slots[slot] = stack_.Peek(0);
+                uint8_t slot = ReadByte(frame);
+                frame->slots[slot] = Peek(&vm_stack, 0);
                 break;
             }
             case Chunk::OpCode::kOpJumpIfFalse: {
-                uint16_t offset = ReadShort();
-                if (IsFalsey(stack_.Top()))
-                    frame.ip += offset;
+                uint16_t offset = ReadShort(frame);
+                if (IsFalsey(Peek(&vm_stack, 0)))
+                    frame->ip += offset;
                 break;
             }
             case Chunk::OpCode::kOpJump: {
-                uint16_t offset = ReadShort();
-                frame.ip += offset;
+                uint16_t offset = ReadShort(frame);
+                frame->ip += offset;
                 break;
             }
             case Chunk::OpCode::kOpLoop: {
-                uint16_t offset = ReadShort();
-                frame.ip -= offset;
+                uint16_t offset = ReadShort(frame);
+                frame->ip -= offset;
                 break;
             }
-            case Chunk::OpCode::kOpReturn:
-                return InterpretResult::kInterpretOk;
+            case Chunk::OpCode::kOpCall: {
+                int arg_count = ReadByte(frame);
+                if (!CallValue(Peek(&vm_stack, arg_count), arg_count))
+                    return InterpretResult::kInterpretRuntimeError;
+
+                frame = &frames_[frame_count - 1];
+                break;
+            }
+            case Chunk::OpCode::kOpReturn: {
+                val::Value result = Pop(&vm_stack);
+                frame_count--;
+                if (0 == frame_count) {
+                    Pop(&vm_stack);
+                    return InterpretResult::kInterpretOk;
+                }
+
+                vm_stack.stack_top = frame->slots;
+                Push(&vm_stack, result);
+                frame = &frames_[frame_count - 1];
+                break;
+            }
         }
     }
 }
 
 VirtualMachine::VirtualMachine() :
     strings_(std::make_shared<LoxStringMap>()),
-    frames_(kFramesMax),
-    stack_(kStackMax)
+    frame_count(0)
 {
-
+    ResetStack(&vm_stack);
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Interpret(
@@ -213,9 +262,8 @@ VirtualMachine::InterpretResult VirtualMachine::Interpret(
     if (!function)
         return InterpretResult::kInterpretCompileError;
 
-    stack_.Push(obj::ObjVal(function));
-    CallFrame frame = {.function=function, .ip=0, .slots=stack_.Data()};
-    frames_.Push(frame);
+    Push(&vm_stack, obj::ObjVal(function));
+    Call(function, 0);
 
     return Run();
 }

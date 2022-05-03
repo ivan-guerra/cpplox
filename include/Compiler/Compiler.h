@@ -206,6 +206,8 @@ private:
      */
     void ExpressionStatement();
 
+    void ReturnStatement();
+
     /*!
      * \brief Top level parse rule for parsing declarations.
      */
@@ -277,6 +279,13 @@ private:
      * \brief Compile a code block.
      */
     void Block();
+
+    /*!
+     * \brief Compile a function.
+     */
+    void Function(FunctionType type);
+
+    uint8_t ArgumentList();
 
     /*!
      * \brief Advance the parser to the next Token.
@@ -358,8 +367,7 @@ private:
     /*!
      * \brief Write a return instruction to the current Chunk.
      */
-    void EmitReturn()
-        { EmitByte(Chunk::OpCode::kOpReturn); }
+    void EmitReturn();
 
     /*!
      * \brief Write a jump instruction to the current Chunk.
@@ -422,10 +430,7 @@ private:
      */
     void Or([[maybe_unused]]bool can_assign);
 
-    /*!
-     * \brief Compile a function.
-     */
-    void Function(FunctionType type);
+    void Call([[maybe_unused]]bool can_assign);
 
     Scanner         scanner_;  /*!< Token scanner. */
     Parser          parser_;   /*!< Handle to the Parser. */

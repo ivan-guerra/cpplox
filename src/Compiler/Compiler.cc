@@ -12,7 +12,7 @@ namespace lox
 std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
 {
     {Token::TokenType::kLeftParen,
-        {&Compiler::Grouping, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Grouping, &Compiler::Call, Precedence::kPrecCall}},
     {Token::TokenType::kRightParen,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {Token::TokenType::kLeftBrace,
@@ -169,6 +169,8 @@ void Compiler::Statement()
         WhileStatement();
     } else if (Match(Token::TokenType::kFor)) {
         ForStatement();
+    } else if (Match(Token::TokenType::kReturn)) {
+        ReturnStatement();
     } else {
         ExpressionStatement();
     }
@@ -285,6 +287,20 @@ void Compiler::ExpressionStatement()
     EmitByte(Chunk::OpCode::kOpPop);
 }
 
+void Compiler::ReturnStatement()
+{
+    if (compiler_->type == FunctionType::kTypeScript)
+        Error("Can't return from top-level code.");
+
+    if (Match(Token::TokenType::kSemicolon)) {
+        EmitReturn();
+    } else {
+        Expression();
+        Consume(Token::TokenType::kSemicolon, "Expect ';' after return value.");
+        EmitByte(Chunk::OpCode::kOpReturn);
+    }
+}
+
 void Compiler::Declaration()
 {
     if (Match(Token::TokenType::kFun))
@@ -390,6 +406,47 @@ void Compiler::Block()
         Declaration();
     }
     Consume(Token::TokenType::kRightBrace, "Expect '}' after block.");
+}
+
+void Compiler::Function(FunctionType type)
+{
+    CompilerDataPtr compiler = std::make_shared<CompilerData>();
+    InitCompiler(compiler_, compiler, type);
+    BeginScope();
+
+    Consume(Token::TokenType::kLeftParen, "Expect '(' after function name.");
+    if (!Check(Token::TokenType::kRightParen)) {
+        do {
+            compiler_->function->arity++;
+            if (compiler_->function->arity > 255)
+                ErrorAtCurrent("Can't have more than 255 parameters.");
+
+            uint8_t constant = ParseVariable("Expect paramater name.");
+            DefineVariable(constant);
+        } while (Match(Token::TokenType::kComma));
+    }
+    Consume(Token::TokenType::kRightParen, "Expect ')' after parameters.");
+    Consume(Token::TokenType::kLeftBrace, "Expect '{' before function body");
+    Block();
+
+    std::shared_ptr<obj::ObjFunction> function = EndCompiler();
+    EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(obj::ObjVal(function)));
+}
+
+uint8_t Compiler::ArgumentList()
+{
+    uint8_t arg_count = 0;
+    if (!Check(Token::TokenType::kRightParen)) {
+        do {
+            Expression();
+            if (255 == arg_count)
+                Error("Can't have more than 255 arguments.");
+
+            arg_count++;
+        } while (Match(Token::TokenType::kComma));
+    }
+    Consume(Token::TokenType::kRightParen, "Expect ')' after arguments.");
+    return arg_count;
 }
 
 void Compiler::Advance()
@@ -511,6 +568,12 @@ void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
 {
     EmitByte(byte1);
     EmitByte(byte2);
+}
+
+void Compiler::EmitReturn()
+{
+    EmitByte(Chunk::OpCode::kOpNil);
+    EmitByte(Chunk::OpCode::kOpReturn);
 }
 
 int Compiler::EmitJump(uint8_t instruction)
@@ -675,29 +738,10 @@ void Compiler::Or([[maybe_unused]]bool can_assign)
     PatchJump(end_jump);
 }
 
-void Compiler::Function(FunctionType type)
+void Compiler::Call([[maybe_unused]]bool can_assign)
 {
-    CompilerDataPtr compiler = std::make_shared<CompilerData>();
-    InitCompiler(compiler_, compiler, type);
-    BeginScope();
-
-    Consume(Token::TokenType::kLeftParen, "Expect '(' after function name.");
-    if (!Check(Token::TokenType::kRightParen)) {
-        do {
-            compiler_->function->arity++;
-            if (compiler_->function->arity > 255)
-                ErrorAtCurrent("Can't have more than 255 parameters.");
-
-            uint8_t constant = ParseVariable("Expect paramater name.");
-            DefineVariable(constant);
-        } while (Match(Token::TokenType::kComma));
-    }
-    Consume(Token::TokenType::kRightParen, "Expect ')' after parameters.");
-    Consume(Token::TokenType::kLeftBrace, "Expect '{' before function body");
-    Block();
-
-    std::shared_ptr<obj::ObjFunction> function = EndCompiler();
-    EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(obj::ObjVal(function)));
+    uint8_t arg_count = ArgumentList();
+    EmitBytes(Chunk::OpCode::kOpCall, arg_count);
 }
 
 Compiler::Compiler() :
