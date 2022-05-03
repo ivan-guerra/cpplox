@@ -67,6 +67,8 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleJumpInstruction("OP_JUMP", 1, offset);
         case OpCode::kOpLoop:
             return DisassembleJumpInstruction("OP_LOOP", -1, offset);
+        case OpCode::kOpCall:
+            return DisassembleByteInstruction("OP_CALL", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);

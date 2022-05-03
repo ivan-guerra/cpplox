@@ -45,7 +45,8 @@ public:
         kOpSetLocal,
         kOpJumpIfFalse,
         kOpJump,
-        kOpLoop
+        kOpLoop,
+        kOpCall
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
