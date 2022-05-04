@@ -9,6 +9,8 @@
 
 namespace lox
 {
+namespace cl
+{
 std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
 {
     {Token::TokenType::kLeftParen,
@@ -768,4 +770,5 @@ std::shared_ptr<obj::ObjFunction> Compiler::Compile(
     std::shared_ptr<obj::ObjFunction> function = EndCompiler();
     return (parser_.had_error ? nullptr : function);
 }
+} // end cl
 } // end lox

@@ -13,6 +13,8 @@
 
 namespace lox
 {
+namespace cl
+{
 /*!
  * \class Compiler
  * \brief Compile source text to bytecode.
@@ -446,4 +448,5 @@ private:
     InternedStrings strings_;  /*!< Collection of interned strings. */
     CompilerDataPtr compiler_; /*!< Compiler metadata list. */
 }; // end Compiler
+} // end cl
 } // end lox
