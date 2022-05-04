@@ -206,6 +206,9 @@ private:
      */
     void ExpressionStatement();
 
+    /*!
+     * \brief Compile a return statement.
+     */
     void ReturnStatement();
 
     /*!
@@ -218,6 +221,9 @@ private:
      */
     void VarDeclaration();
 
+    /*!
+     * \brief Parse a function declaration.
+     */
     void FunDeclaration();
 
     /*!
@@ -430,6 +436,9 @@ private:
      */
     void Or([[maybe_unused]]bool can_assign);
 
+    /*!
+     * \brief Compile a function, method, etc. call.
+     */
     void Call([[maybe_unused]]bool can_assign);
 
     Scanner         scanner_;  /*!< Token scanner. */
