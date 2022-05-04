@@ -7,6 +7,8 @@
 
 namespace lox
 {
+namespace scanr
+{
 /*!
  * \class Token
  * \brief The Token class wraps token data read by the Scanner.
@@ -241,4 +243,5 @@ private:
     uint32_t    line_;    /*!< Current line number. */
     std::string source_;  /*!< Source code string. */
 }; // end Scanner
+} // end scanr
 } // end lox
