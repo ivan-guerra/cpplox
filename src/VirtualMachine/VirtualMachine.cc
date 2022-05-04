@@ -30,7 +30,7 @@ void VirtualMachine::RuntimeError(const char* format, ...)
 
     for (int i = frame_count - 1; i >= 0; --i) {
         CallFrame* frame = &frames_[i];
-        std::shared_ptr<obj::ObjFunction> function = frame->function;
+        std::shared_ptr<obj::ObjFunction> function = frame->closure->function;
         std::size_t instruction = frame->ip - 1;
 
         std::fprintf(stderr, "[line %d] in ",
@@ -44,12 +44,12 @@ void VirtualMachine::RuntimeError(const char* format, ...)
 }
 
 bool VirtualMachine::Call(
-    std::shared_ptr<obj::ObjFunction> function,
+    std::shared_ptr<obj::ObjClosure> closure,
     int arg_count)
 {
-    if (arg_count != function->arity) {
+    if (arg_count != closure->function->arity) {
         RuntimeError("Expected %d arguments but got %d.",
-                     function->arity, arg_count);
+                     closure->function->arity, arg_count);
         return false;
     }
 
@@ -59,9 +59,9 @@ bool VirtualMachine::Call(
     }
 
     CallFrame* frame = &frames_[frame_count++];
-    frame->function = function;
-    frame->ip       = 0;
-    frame->slots    = vm_stack.stack_top - arg_count - 1;
+    frame->closure = closure;
+    frame->ip      = 0;
+    frame->slots   = vm_stack.stack_top - arg_count - 1;
 
     return true;
 }
@@ -70,8 +70,8 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
 {
     if (obj::IsObject(callee)) {
         switch (obj::GetType(callee)) {
-            case obj::ObjType::kObjFunction:
-                return Call(obj::AsFunction(callee), arg_count);
+            case obj::ObjType::kObjClosure:
+                return Call(obj::AsClosure(callee), arg_count);
                 break;
             case obj::ObjType::kObjNative: {
                 obj::NativeFn native = obj::AsNative(callee);
@@ -94,8 +94,8 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
 uint16_t VirtualMachine::ReadShort(CallFrame* frame)
 {
     frame->ip += 2;
-    return ((frame->function->chunk.GetInstruction(frame->ip - 2) << 8) |
-             frame->function->chunk.GetInstruction(frame->ip - 1));
+    return ((frame->closure->function->chunk.GetInstruction(frame->ip - 2) << 8) |
+             frame->closure->function->chunk.GetInstruction(frame->ip - 1));
 }
 
 void VirtualMachine::Concatenate()
@@ -127,7 +127,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
     while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
         PrintStack();
-        frame->function->chunk.Disassemble(frame->ip);
+        frame->closure->function->chunk.Disassemble(frame->ip);
 #endif
         uint8_t instruction = ReadByte(frame);
         switch (instruction) {
@@ -271,6 +271,14 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 frame = &frames_[frame_count - 1];
                 break;
             }
+            case Chunk::OpCode::kOpClosure: {
+                std::shared_ptr<obj::ObjFunction> function =
+                    obj::AsFunction(ReadConstant(frame));
+                std::shared_ptr<obj::ObjClosure> closure =
+                    obj::NewClosure(function);
+                Push(obj::ObjVal(closure));
+                break;
+            }
         }
     }
 }
@@ -294,7 +302,10 @@ VirtualMachine::InterpretResult VirtualMachine::Interpret(
         return InterpretResult::kInterpretCompileError;
 
     Push(obj::ObjVal(function));
-    Call(function, 0);
+    std::shared_ptr<obj::ObjClosure> closure = obj::NewClosure(function);
+    Pop();
+    Push(obj::ObjVal(closure));
+    Call(closure, 0);
 
     return Run();
 }

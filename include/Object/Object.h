@@ -20,7 +20,8 @@ enum ObjType
 {
     kObjString,   /*!< String type. */
     kObjFunction, /*!< Function type. */
-    kObjNative    /*!< Lox native function type. */
+    kObjNative,   /*!< Lox native function type. */
+    kObjClosure
 }; // end ObjType
 
 /*!
@@ -55,6 +56,12 @@ struct ObjFunction :
     lox::Chunk chunk; /*!< Chunk of bytecode representing the function body. */
     std::shared_ptr<ObjString> name; /*!< Source name of the function. */
 }; // end ObjFunction
+
+struct ObjClosure :
+    public Obj
+{
+    std::shared_ptr<ObjFunction> function;
+}; // end ObjClosure
 
 using NativeFn = std::function<val::Value(int,val::Value*)>;
 
@@ -99,6 +106,11 @@ std::shared_ptr<ObjFunction> AsFunction(const val::Value& value);
 NativeFn AsNative(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a ObjClosure object.
+ */
+std::shared_ptr<ObjClosure> AsClosure(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -123,7 +135,15 @@ bool IsString(const val::Value& value);
  */
 bool IsFunction(const val::Value& value);
 
+/*!
+ * \brief Return \c true if \a value is an ObjNative object.
+ */
 bool IsNative(const val::Value& value);
+
+/*!
+ * \brief Return \c true if \a value is an ObjClosure object.
+ */
+bool IsClosure(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
@@ -150,6 +170,11 @@ std::shared_ptr<ObjFunction> NewFunction();
  * \brief Return a pointer to a new native function.
  */
 std::shared_ptr<ObjNative> NewNative(NativeFn function);
+
+/*!
+ * \brief Return a pointer to a new ObjClosure object.
+ */
+std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function);
 
 /*!
  * \brief Print the name of \a function to STDOUT.

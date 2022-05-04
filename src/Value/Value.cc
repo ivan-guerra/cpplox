@@ -64,6 +64,9 @@ void PrintObject(const Value& value)
         case obj::ObjType::kObjNative:
             std::printf("<native fn>");
             break;
+        case obj::ObjType::kObjClosure:
+            obj::PrintFunction(obj::AsClosure(value)->function);
+            break;
     }
 }
 

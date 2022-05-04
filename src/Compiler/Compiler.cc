@@ -433,7 +433,7 @@ void Compiler::Function(FunctionType type)
     Block();
 
     std::shared_ptr<obj::ObjFunction> function = EndCompiler();
-    EmitBytes(Chunk::OpCode::kOpConstant, MakeConstant(obj::ObjVal(function)));
+    EmitBytes(Chunk::OpCode::kOpClosure, MakeConstant(obj::ObjVal(function)));
 }
 
 uint8_t Compiler::ArgumentList()

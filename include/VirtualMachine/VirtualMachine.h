@@ -62,7 +62,7 @@ private:
      */
     struct CallFrame
     {
-        std::shared_ptr<obj::ObjFunction> function; /*!< Lox function object representation. */
+        std::shared_ptr<obj::ObjClosure> closure; /*!< Lox closure object representation. */
         int          ip;    /*!< Instruction pointer. */
         val::Value*  slots; /*!< Call frame starting point on the VM value stack. */
     }; // end CallFrame
@@ -85,7 +85,7 @@ private:
     /*!
      * \brief Construct a new CallFrame and add it to the #frames_ stack.
      */
-    bool Call(std::shared_ptr<obj::ObjFunction> function, int arg_count);
+    bool Call(std::shared_ptr<obj::ObjClosure> closure, int arg_count);
 
     /*!
      * \brief Forward the \a callee to the appropriate call handler.
@@ -103,7 +103,7 @@ private:
      * point to the next instruction in the chunk.
      */
     uint8_t ReadByte(CallFrame* frame)
-        { return frame->function->chunk.GetInstruction(frame->ip++); }
+        { return frame->closure->function->chunk.GetInstruction(frame->ip++); }
 
     /*!
      * \brief Return a constant in the \a frame's chunk.
@@ -113,7 +113,7 @@ private:
      * constant instruction's argument.
      */
     val::Value ReadConstant(CallFrame* frame)
-        { return frame->function->chunk.GetConstants()[ReadByte(frame)]; }
+        { return frame->closure->function->chunk.GetConstants()[ReadByte(frame)]; }
 
     /*!
      * \brief Return the 16-bit operand at \a frame's IP location.
