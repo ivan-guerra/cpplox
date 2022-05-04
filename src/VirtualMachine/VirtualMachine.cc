@@ -286,7 +286,7 @@ VirtualMachine::VirtualMachine() :
 VirtualMachine::InterpretResult VirtualMachine::Interpret(
     const std::string& source)
 {
-    Compiler compiler;
+    lox::cl::Compiler compiler;
     std::shared_ptr<obj::ObjFunction> function =
         compiler.Compile(source, strings_);
 
