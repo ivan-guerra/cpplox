@@ -1,7 +1,8 @@
-#include <memory>
+#include <ctime>
 #include <cstdio>
 #include <cstdarg>
 #include <cstdint>
+#include <memory>
 
 #include "Chunk.h"
 #include "Value.h"
@@ -10,6 +11,13 @@
 
 namespace lox
 {
+static val::Value ClockNative(
+    [[maybe_unused]]int arg_count,
+    [[maybe_unused]]val::Value* args)
+{
+    return val::NumberVal(static_cast<double>(clock()) / CLOCKS_PER_SEC);
+}
+
 void VirtualMachine::RuntimeError(const char* format, ...)
 {
     va_list args;
@@ -63,6 +71,15 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
             case obj::ObjType::kObjFunction:
                 return Call(obj::AsFunction(callee), arg_count);
                 break;
+            case obj::ObjType::kObjNative: {
+                obj::NativeFn native = obj::AsNative(callee);
+                val::Value result = native(arg_count,
+                                           vm_stack.stack_top - arg_count);
+                vm_stack.stack_top -= arg_count + 1;
+                Push(&vm_stack, result);
+                return true;
+                break;
+            }
             default:
                 /* Non-callable object type. */
                 break;
@@ -88,6 +105,17 @@ void VirtualMachine::Concatenate()
     result->type = obj::ObjType::kObjString;
     result->chars = a->chars + b->chars;
     Push(&vm_stack, ObjVal(result));
+}
+
+void VirtualMachine::DefineNative(
+    const std::string& name,
+    obj::NativeFn function)
+{
+    Push(&vm_stack, obj::ObjVal(obj::CopyString(name, strings_)));
+    Push(&vm_stack, obj::ObjVal(obj::NewNative(function)));
+    globals_[obj::AsString(vm_stack.stack[0])] = vm_stack.stack[1];
+    Pop(&vm_stack);
+    Pop(&vm_stack);
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Run()
@@ -250,6 +278,7 @@ VirtualMachine::VirtualMachine() :
     frame_count(0)
 {
     ResetStack(&vm_stack);
+    DefineNative("clock", ClockNative);
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Interpret(
