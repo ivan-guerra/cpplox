@@ -6,6 +6,8 @@
 
 namespace lox
 {
+namespace scanr
+{
 const std::unordered_map<Token::TokenType, std::string>
 Token::kTokenToStr_ =
 {
@@ -242,5 +244,5 @@ Token Scanner::ScanToken()
     }
     return ErrorToken("Unexpected character.");
 }
-
+} // end scanr
 } // end lox

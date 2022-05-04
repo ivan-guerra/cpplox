@@ -11,87 +11,88 @@ namespace lox
 {
 namespace cl
 {
-std::unordered_map<Token::TokenType, Compiler::ParseRule> Compiler::rules_ =
+std::unordered_map<lox::scanr::Token::TokenType, Compiler::ParseRule>
+Compiler::rules_ =
 {
-    {Token::TokenType::kLeftParen,
+    {TokenType::kLeftParen,
         {&Compiler::Grouping, &Compiler::Call, Precedence::kPrecCall}},
-    {Token::TokenType::kRightParen,
+    {TokenType::kRightParen,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kLeftBrace,
+    {TokenType::kLeftBrace,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kRightBrace,
+    {TokenType::kRightBrace,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kComma,
+    {TokenType::kComma,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kDot,
+    {TokenType::kDot,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kMinus,
+    {TokenType::kMinus,
         {&Compiler::Unary, &Compiler::Binary, Precedence::kPrecTerm}},
-    {Token::TokenType::kPlus,
+    {TokenType::kPlus,
         {nullptr, &Compiler::Binary, Precedence::kPrecTerm}},
-    {Token::TokenType::kSemicolon,
+    {TokenType::kSemicolon,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kSlash,
+    {TokenType::kSlash,
         {nullptr, &Compiler::Binary, Precedence::kPrecFactor}},
-    {Token::TokenType::kStar,
+    {TokenType::kStar,
         {nullptr, &Compiler::Binary, Precedence::kPrecFactor}},
-    {Token::TokenType::kBang,
+    {TokenType::kBang,
         {&Compiler::Unary, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kBangEqual,
+    {TokenType::kBangEqual,
         {nullptr, &Compiler::Binary, Precedence::kPrecEquality}},
-    {Token::TokenType::kEqual,
+    {TokenType::kEqual,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kEqualEqual,
+    {TokenType::kEqualEqual,
         {nullptr, &Compiler::Binary, Precedence::kPrecEquality}},
-    {Token::TokenType::kGreater,
+    {TokenType::kGreater,
         {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
-    {Token::TokenType::kGreaterEqual,
+    {TokenType::kGreaterEqual,
         {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
-    {Token::TokenType::kLess,
+    {TokenType::kLess,
         {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
-    {Token::TokenType::kLessEqual,
+    {TokenType::kLessEqual,
         {nullptr, &Compiler::Binary, Precedence::kPrecComparison}},
-    {Token::TokenType::kIdentifier,
+    {TokenType::kIdentifier,
         {&Compiler::Variable, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kString,
+    {TokenType::kString,
         {&Compiler::String, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kNumber,
+    {TokenType::kNumber,
         {&Compiler::Number, nullptr,  Precedence::kPrecNone}},
-    {Token::TokenType::kAnd,
+    {TokenType::kAnd,
         {nullptr, &Compiler::And, Precedence::kPrecAnd}},
-    {Token::TokenType::kClass,
+    {TokenType::kClass,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kElse,
+    {TokenType::kElse,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kFalse,
+    {TokenType::kFalse,
         {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kFun,
+    {TokenType::kFun,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kFor,
+    {TokenType::kFor,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kIf,
+    {TokenType::kIf,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kNil,
+    {TokenType::kNil,
         {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kOr,
+    {TokenType::kOr,
         {nullptr, &Compiler::Or, Precedence::kPrecOr}},
-    {Token::TokenType::kPrint,
+    {TokenType::kPrint,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kReturn,
+    {TokenType::kReturn,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kSuper,
+    {TokenType::kSuper,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kThis,
+    {TokenType::kThis,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kTrue,
+    {TokenType::kTrue,
         {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kVar,
+    {TokenType::kVar,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kWhile,
+    {TokenType::kWhile,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kError,
+    {TokenType::kError,
         {nullptr, nullptr, Precedence::kPrecNone}},
-    {Token::TokenType::kEof,
+    {TokenType::kEof,
         {nullptr, nullptr, Precedence::kPrecNone}}
 };
 
@@ -132,13 +133,13 @@ void Compiler::ParsePrecedence(Precedence precedence)
         infix_rule(this, can_assign);
     }
 
-    if (can_assign && Match(Token::TokenType::kEqual))
+    if (can_assign && Match(TokenType::kEqual))
         Error("Invalid assignment target.");
 }
 
 uint8_t Compiler::ParseVariable(const std::string& error_message)
 {
-    Consume(Token::TokenType::kIdentifier, error_message);
+    Consume(TokenType::kIdentifier, error_message);
 
     DeclareVariable();
     if (compiler_->scope_depth > 0)
@@ -159,19 +160,19 @@ void Compiler::DefineVariable(uint8_t global)
 
 void Compiler::Statement()
 {
-    if (Match(Token::TokenType::kPrint)) {
+    if (Match(TokenType::kPrint)) {
         PrintStatement();
-    } else if (Match(Token::TokenType::kLeftBrace)) {
+    } else if (Match(TokenType::kLeftBrace)) {
         BeginScope();
         Block();
         EndScope();
-    } else if (Match(Token::TokenType::kIf)) {
+    } else if (Match(TokenType::kIf)) {
         IfStatement();
-    } else if (Match(Token::TokenType::kWhile)) {
+    } else if (Match(TokenType::kWhile)) {
         WhileStatement();
-    } else if (Match(Token::TokenType::kFor)) {
+    } else if (Match(TokenType::kFor)) {
         ForStatement();
-    } else if (Match(Token::TokenType::kReturn)) {
+    } else if (Match(TokenType::kReturn)) {
         ReturnStatement();
     } else {
         ExpressionStatement();
@@ -180,9 +181,9 @@ void Compiler::Statement()
 
 void Compiler::IfStatement()
 {
-    Consume(Token::TokenType::kLeftParen, "Expect '(' after if.");
+    Consume(TokenType::kLeftParen, "Expect '(' after if.");
     Expression();
-    Consume(Token::TokenType::kRightParen, "Expect ')' after condition.");
+    Consume(TokenType::kRightParen, "Expect ')' after condition.");
 
     int then_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
     EmitByte(Chunk::OpCode::kOpPop);
@@ -194,7 +195,7 @@ void Compiler::IfStatement()
     PatchJump(then_jump);
     EmitByte(Chunk::OpCode::kOpPop);
 
-    if (Match(Token::TokenType::kElse))
+    if (Match(TokenType::kElse))
         Statement();
 
     PatchJump(else_jump);
@@ -203,9 +204,9 @@ void Compiler::IfStatement()
 void Compiler::WhileStatement()
 {
     int loop_start = CurrentChunk().GetCode().size();
-    Consume(Token::TokenType::kLeftParen, "Expect '(' after 'while'.");
+    Consume(TokenType::kLeftParen, "Expect '(' after 'while'.");
     Expression();
-    Consume(Token::TokenType::kRightParen, "Expect ')' after condition.");
+    Consume(TokenType::kRightParen, "Expect ')' after condition.");
 
     int exit_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
     EmitByte(Chunk::OpCode::kOpPop);
@@ -219,11 +220,11 @@ void Compiler::WhileStatement()
 void Compiler::ForStatement()
 {
     BeginScope();
-    Consume(Token::TokenType::kLeftParen, "Expect '(' after 'for'.");
+    Consume(TokenType::kLeftParen, "Expect '(' after 'for'.");
 
-    if (Match(Token::TokenType::kSemicolon)) {
+    if (Match(TokenType::kSemicolon)) {
         /* No initializer. */
-    } else if (Match(Token::TokenType::kVar)) {
+    } else if (Match(TokenType::kVar)) {
         VarDeclaration();
     } else {
         ExpressionStatement();
@@ -231,21 +232,21 @@ void Compiler::ForStatement()
 
     int loop_start = CurrentChunk().GetCode().size();
     int exit_jump  = -1;
-    if (!Match(Token::TokenType::kSemicolon)) {
+    if (!Match(TokenType::kSemicolon)) {
         Expression();
-        Consume(Token::TokenType::kSemicolon,
+        Consume(TokenType::kSemicolon,
                 "Expect ';' after loop condition.");
 
         exit_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
         EmitByte(Chunk::OpCode::kOpPop);
     }
 
-    if (!Match(Token::TokenType::kRightParen)) {
+    if (!Match(TokenType::kRightParen)) {
         int body_jump       = EmitJump(Chunk::OpCode::kOpJump);
         int increment_start = CurrentChunk().GetCode().size();
         Expression();
         EmitByte(Chunk::OpCode::kOpPop);
-        Consume(Token::TokenType::kRightParen,
+        Consume(TokenType::kRightParen,
                 "Expect ')' after for clauses.");
 
         EmitLoop(loop_start);
@@ -276,7 +277,7 @@ void Compiler::PatchJump(int offset)
 void Compiler::PrintStatement()
 {
     Expression();
-    Consume(Token::TokenType::kSemicolon,
+    Consume(TokenType::kSemicolon,
             "Expect ';' after value");
     EmitByte(Chunk::OpCode::kOpPrint);
 }
@@ -284,7 +285,7 @@ void Compiler::PrintStatement()
 void Compiler::ExpressionStatement()
 {
     Expression();
-    Consume(Token::TokenType::kSemicolon,
+    Consume(TokenType::kSemicolon,
             "Expect ';' after expression.");
     EmitByte(Chunk::OpCode::kOpPop);
 }
@@ -294,20 +295,20 @@ void Compiler::ReturnStatement()
     if (compiler_->type == FunctionType::kTypeScript)
         Error("Can't return from top-level code.");
 
-    if (Match(Token::TokenType::kSemicolon)) {
+    if (Match(TokenType::kSemicolon)) {
         EmitReturn();
     } else {
         Expression();
-        Consume(Token::TokenType::kSemicolon, "Expect ';' after return value.");
+        Consume(TokenType::kSemicolon, "Expect ';' after return value.");
         EmitByte(Chunk::OpCode::kOpReturn);
     }
 }
 
 void Compiler::Declaration()
 {
-    if (Match(Token::TokenType::kFun))
+    if (Match(TokenType::kFun))
         FunDeclaration();
-    else if (Match(Token::TokenType::kVar))
+    else if (Match(TokenType::kVar))
         VarDeclaration();
     else
         Statement();
@@ -319,12 +320,12 @@ void Compiler::Declaration()
 void Compiler::VarDeclaration()
 {
     uint8_t global = ParseVariable("Expect variable name.");
-    if (Match(Token::TokenType::kEqual))
+    if (Match(TokenType::kEqual))
         Expression();
     else
         EmitByte(Chunk::OpCode::kOpNil);
 
-    Consume(Token::TokenType::kSemicolon,
+    Consume(TokenType::kSemicolon,
             "Expect ';' after variable declaration.");
 
     DefineVariable(global);
@@ -403,11 +404,11 @@ void Compiler::EndScope()
 
 void Compiler::Block()
 {
-    while (!Check(Token::TokenType::kRightBrace) &&
-           !Check(Token::TokenType::kEof)) {
+    while (!Check(TokenType::kRightBrace) &&
+           !Check(TokenType::kEof)) {
         Declaration();
     }
-    Consume(Token::TokenType::kRightBrace, "Expect '}' after block.");
+    Consume(TokenType::kRightBrace, "Expect '}' after block.");
 }
 
 void Compiler::Function(FunctionType type)
@@ -416,8 +417,8 @@ void Compiler::Function(FunctionType type)
     InitCompiler(compiler_, compiler, type);
     BeginScope();
 
-    Consume(Token::TokenType::kLeftParen, "Expect '(' after function name.");
-    if (!Check(Token::TokenType::kRightParen)) {
+    Consume(TokenType::kLeftParen, "Expect '(' after function name.");
+    if (!Check(TokenType::kRightParen)) {
         do {
             compiler_->function->arity++;
             if (compiler_->function->arity > 255)
@@ -425,10 +426,10 @@ void Compiler::Function(FunctionType type)
 
             uint8_t constant = ParseVariable("Expect paramater name.");
             DefineVariable(constant);
-        } while (Match(Token::TokenType::kComma));
+        } while (Match(TokenType::kComma));
     }
-    Consume(Token::TokenType::kRightParen, "Expect ')' after parameters.");
-    Consume(Token::TokenType::kLeftBrace, "Expect '{' before function body");
+    Consume(TokenType::kRightParen, "Expect ')' after parameters.");
+    Consume(TokenType::kLeftBrace, "Expect '{' before function body");
     Block();
 
     std::shared_ptr<obj::ObjFunction> function = EndCompiler();
@@ -438,16 +439,16 @@ void Compiler::Function(FunctionType type)
 uint8_t Compiler::ArgumentList()
 {
     uint8_t arg_count = 0;
-    if (!Check(Token::TokenType::kRightParen)) {
+    if (!Check(TokenType::kRightParen)) {
         do {
             Expression();
             if (255 == arg_count)
                 Error("Can't have more than 255 arguments.");
 
             arg_count++;
-        } while (Match(Token::TokenType::kComma));
+        } while (Match(TokenType::kComma));
     }
-    Consume(Token::TokenType::kRightParen, "Expect ')' after arguments.");
+    Consume(TokenType::kRightParen, "Expect ')' after arguments.");
     return arg_count;
 }
 
@@ -456,14 +457,14 @@ void Compiler::Advance()
     parser_.previous = parser_.current;
     while (true) {
         parser_.current = scanner_.ScanToken();
-        if (parser_.current.GetType() != Token::TokenType::kError)
+        if (parser_.current.GetType() != TokenType::kError)
             break;
 
         ErrorAtCurrent(parser_.current.GetLexeme());
     }
 }
 
-bool Compiler::Match(Token::TokenType type)
+bool Compiler::Match(TokenType type)
 {
     if (!Check(type))
         return false;
@@ -492,7 +493,7 @@ void Compiler::NamedVariable(const Token& name, bool can_assign)
         set_op = Chunk::OpCode::kOpSetGlobal;
     }
 
-    if (can_assign && Match(Token::TokenType::kEqual)) {
+    if (can_assign && Match(TokenType::kEqual)) {
         Expression();
         EmitBytes(set_op, arg);
     } else {
@@ -500,7 +501,7 @@ void Compiler::NamedVariable(const Token& name, bool can_assign)
     }
 }
 
-void Compiler::Consume(Token::TokenType type, const std::string& message)
+void Compiler::Consume(TokenType type, const std::string& message)
 {
     if (parser_.current.GetType() == type) {
         Advance();
@@ -528,9 +529,9 @@ void Compiler::ErrorAt(const Token& error, const std::string& message)
 
     std::fprintf(stderr, "[line %d] Error", error.GetLine());
 
-    if (error.GetType() == Token::TokenType::kEof) {
+    if (error.GetType() == TokenType::kEof) {
         fprintf(stderr, " at end");
-    } else if (error.GetType() == Token::TokenType::kError) {
+    } else if (error.GetType() == TokenType::kError) {
         /* Do nothing. */
     } else {
         fprintf(stderr, " at %s", error.GetLexeme().c_str());
@@ -544,19 +545,19 @@ void Compiler::Synchronize()
 {
     parser_.panic_mode = false;
 
-    while (parser_.current.GetType() != Token::TokenType::kEof) {
+    while (parser_.current.GetType() != TokenType::kEof) {
         if (parser_.previous.GetType() ==
-            Token::TokenType::kSemicolon)
+            TokenType::kSemicolon)
             return;
         switch(parser_.current.GetType()) {
-            case Token::TokenType::kClass:
-            case Token::TokenType::kFun:
-            case Token::TokenType::kVar:
-            case Token::TokenType::kFor:
-            case Token::TokenType::kIf:
-            case Token::TokenType::kWhile:
-            case Token::TokenType::kPrint:
-            case Token::TokenType::kReturn:
+            case TokenType::kClass:
+            case TokenType::kFun:
+            case TokenType::kVar:
+            case TokenType::kFor:
+            case TokenType::kIf:
+            case TokenType::kWhile:
+            case TokenType::kPrint:
+            case TokenType::kReturn:
                 return;
             default:
                 /* Do nothing. */
@@ -623,22 +624,22 @@ void Compiler::Number([[maybe_unused]]bool can_assign)
 void Compiler::Grouping([[maybe_unused]]bool can_assign)
 {
     Expression();
-    Consume(Token::TokenType::kRightParen, "Expect ')' after expression.");
+    Consume(TokenType::kRightParen, "Expect ')' after expression.");
 }
 
 void Compiler::Unary([[maybe_unused]]bool can_assign)
 {
-    Token::TokenType operator_type = parser_.previous.GetType();
+    TokenType operator_type = parser_.previous.GetType();
 
     /* Compile the operand. */
     ParsePrecedence(Precedence::kPrecUnary);
 
     /* Emit the operator instruction. */
     switch (operator_type) {
-        case Token::TokenType::kBang:
+        case TokenType::kBang:
             EmitByte(Chunk::OpCode::kOpNot);
             break;
-        case Token::TokenType::kMinus:
+        case TokenType::kMinus:
             EmitByte(Chunk::OpCode::kOpNegate);
             break;
         default:
@@ -649,39 +650,39 @@ void Compiler::Unary([[maybe_unused]]bool can_assign)
 
 void Compiler::Binary([[maybe_unused]]bool can_assign)
 {
-    Token::TokenType operator_type = parser_.previous.GetType();
+    TokenType operator_type = parser_.previous.GetType();
     ParsePrecedence(
         static_cast<Precedence>(rules_[operator_type].precedence + 1));
 
     switch (operator_type) {
-        case Token::TokenType::kBangEqual:
+        case TokenType::kBangEqual:
             EmitBytes(Chunk::OpCode::KOpEqual, Chunk::OpCode::kOpNot);
             break;
-        case Token::TokenType::kEqualEqual:
+        case TokenType::kEqualEqual:
             EmitByte(Chunk::OpCode::KOpEqual);
             break;
-        case Token::TokenType::kGreater:
+        case TokenType::kGreater:
             EmitByte(Chunk::OpCode::kOpGreater);
             break;
-        case Token::TokenType::kGreaterEqual:
+        case TokenType::kGreaterEqual:
             EmitBytes(Chunk::OpCode::kOpLess, Chunk::OpCode::kOpNot);
             break;
-        case Token::TokenType::kLess:
+        case TokenType::kLess:
             EmitByte(Chunk::OpCode::kOpLess);
             break;
-        case Token::TokenType::kLessEqual:
+        case TokenType::kLessEqual:
             EmitBytes(Chunk::OpCode::kOpGreater, Chunk::OpCode::kOpNot);
             break;
-        case Token::TokenType::kPlus:
+        case TokenType::kPlus:
             EmitByte(Chunk::OpCode::kOpAdd);
             break;
-        case Token::TokenType::kMinus:
+        case TokenType::kMinus:
             EmitByte(Chunk::OpCode::kOpSubtract);
             break;
-        case Token::TokenType::kStar:
+        case TokenType::kStar:
             EmitByte(Chunk::OpCode::kOpMultiply);
             break;
-        case Token::TokenType::kSlash:
+        case TokenType::kSlash:
             EmitByte(Chunk::OpCode::kOpDivide);
             break;
         default:
@@ -693,13 +694,13 @@ void Compiler::Binary([[maybe_unused]]bool can_assign)
 void Compiler::Literal([[maybe_unused]]bool can_assign)
 {
     switch (parser_.previous.GetType()) {
-        case Token::TokenType::kFalse:
+        case TokenType::kFalse:
             EmitByte(Chunk::OpCode::kOpFalse);
             break;
-        case Token::TokenType::kTrue:
+        case TokenType::kTrue:
             EmitByte(Chunk::OpCode::kOpTrue);
             break;
-        case Token::TokenType::kNil:
+        case TokenType::kNil:
             EmitByte(Chunk::OpCode::kOpNil);
             break;
         default:
@@ -760,11 +761,11 @@ std::shared_ptr<obj::ObjFunction> Compiler::Compile(
     const std::string& source,
     InternedStrings strings)
 {
-    scanner_ = lox::Scanner(source);
+    scanner_ = lox::scanr::Scanner(source);
     strings_ = strings;
 
     Advance();
-    while (!Match(Token::TokenType::kEof))
+    while (!Match(TokenType::kEof))
         Declaration();
 
     std::shared_ptr<obj::ObjFunction> function = EndCompiler();

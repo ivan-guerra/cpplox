@@ -45,6 +45,8 @@ public:
         InternedStrings strings);
 
 private:
+    using Token     = lox::scanr::Token;
+    using TokenType = lox::scanr::Token::TokenType;
     /*!
      * \enum Precedence
      * \brief The Precedence emum defines token precedence.
@@ -123,7 +125,7 @@ private:
     }; // end CompilerData
     using CompilerDataPtr = std::shared_ptr<CompilerData>;
 
-    static std::unordered_map<Token::TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
+    static std::unordered_map<TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
 
     /*!
      * \brief Initialize #compiler_.
@@ -303,7 +305,7 @@ private:
     /*!
      * \brief Return \c true if the #parser_'s current token type equals \a type.
      */
-    bool Check(Token::TokenType type) const
+    bool Check(TokenType type) const
         { return (parser_.current.GetType() == type); }
 
     /*!
@@ -312,7 +314,7 @@ private:
      * Match() has the side effect of advancing to the parser to the next token
      * via a call to Advance() if the types match.
      */
-    bool Match(Token::TokenType type);
+    bool Match(TokenType type);
 
     /*!
      * \brief Compile the identifier represented by \a name.
@@ -331,7 +333,7 @@ private:
      * Token currently being processed by the parser, ErrorAt() is called
      * with message \a message.
      */
-    void Consume(Token::TokenType type, const std::string& message);
+    void Consume(TokenType type, const std::string& message);
 
     /*!
      * \brief Compile value into a bytecode constant.
@@ -443,10 +445,10 @@ private:
      */
     void Call([[maybe_unused]]bool can_assign);
 
-    Scanner         scanner_;  /*!< Token scanner. */
-    Parser          parser_;   /*!< Handle to the Parser. */
-    InternedStrings strings_;  /*!< Collection of interned strings. */
-    CompilerDataPtr compiler_; /*!< Compiler metadata list. */
+    lox::scanr::Scanner scanner_;  /*!< Token scanner. */
+    Parser              parser_;   /*!< Handle to the Parser. */
+    InternedStrings     strings_;  /*!< Collection of interned strings. */
+    CompilerDataPtr     compiler_; /*!< Compiler metadata list. */
 }; // end Compiler
 } // end cl
 } // end lox
