@@ -40,7 +40,7 @@ void VirtualMachine::RuntimeError(const char* format, ...)
         else
             std::fprintf(stderr, "%s()\n", function->name->chars.c_str());
     }
-    ResetStack(&vm_stack);
+    ResetStack();
 }
 
 bool VirtualMachine::Call(
@@ -78,7 +78,7 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
                 val::Value result = native(arg_count,
                                            vm_stack.stack_top - arg_count);
                 vm_stack.stack_top -= arg_count + 1;
-                Push(&vm_stack, result);
+                Push(result);
                 return true;
                 break;
             }
@@ -100,24 +100,24 @@ uint16_t VirtualMachine::ReadShort(CallFrame* frame)
 
 void VirtualMachine::Concatenate()
 {
-    std::shared_ptr<obj::ObjString> b = obj::AsString(Pop(&vm_stack));
-    std::shared_ptr<obj::ObjString> a = obj::AsString(Pop(&vm_stack));
+    std::shared_ptr<obj::ObjString> b = obj::AsString(Pop());
+    std::shared_ptr<obj::ObjString> a = obj::AsString(Pop());
 
     std::shared_ptr<obj::ObjString> result = std::make_shared<obj::ObjString>();
     result->type = obj::ObjType::kObjString;
     result->chars = a->chars + b->chars;
-    Push(&vm_stack, ObjVal(result));
+    Push(ObjVal(result));
 }
 
 void VirtualMachine::DefineNative(
     const std::string& name,
     obj::NativeFn function)
 {
-    Push(&vm_stack, obj::ObjVal(obj::CopyString(name, strings_)));
-    Push(&vm_stack, obj::ObjVal(obj::NewNative(function)));
+    Push(obj::ObjVal(obj::CopyString(name, strings_)));
+    Push(obj::ObjVal(obj::NewNative(function)));
     globals_[obj::AsString(vm_stack.stack[0])] = vm_stack.stack[1];
-    Pop(&vm_stack);
-    Pop(&vm_stack);
+    Pop();
+    Pop();
 }
 
 VirtualMachine::InterpretResult VirtualMachine::Run()
@@ -126,27 +126,27 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 
     while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
-        PrintStack(&vm_stack);
+        PrintStack();
         frame->function->chunk.Disassemble(frame->ip);
 #endif
         uint8_t instruction = ReadByte(frame);
         switch (instruction) {
             case Chunk::OpCode::kOpConstant:
-                Push(&vm_stack, ReadConstant(frame));
+                Push(ReadConstant(frame));
                 break;
             case Chunk::OpCode::kOpNil:
-                Push(&vm_stack, val::NilVal());
+                Push(val::NilVal());
                 break;
             case Chunk::OpCode::kOpTrue:
-                Push(&vm_stack, val::BoolVal(true));
+                Push(val::BoolVal(true));
                 break;
             case Chunk::OpCode::kOpFalse:
-                Push(&vm_stack, val::BoolVal(false));
+                Push(val::BoolVal(false));
                 break;
             case Chunk::OpCode::KOpEqual: {
-                val::Value b = Pop(&vm_stack);
-                val::Value a = Pop(&vm_stack);
-                Push(&vm_stack, val::BoolVal(val::ValuesEqual(a, b)));
+                val::Value b = Pop();
+                val::Value a = Pop();
+                Push(val::BoolVal(val::ValuesEqual(a, b)));
                 break;
             }
             case Chunk::OpCode::kOpGreater:
@@ -155,23 +155,23 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                                static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpNot: {
-                bool is_falsey = IsFalsey(Pop(&vm_stack));
-                Push(&vm_stack, val::BoolVal(is_falsey));
+                bool is_falsey = IsFalsey(Pop());
+                Push(val::BoolVal(is_falsey));
                 break;
             }
             case Chunk::OpCode::kOpNegate: {
-                val::Value val = Peek(&vm_stack, 0);
+                val::Value val = Peek(0);
                 if (!val::IsNumber(val)) {
                     RuntimeError("Operand must be a number.");
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                Pop(&vm_stack);
-                Push(&vm_stack, val::NumberVal(-val::AsNumber(val)));
+                Pop();
+                Push(val::NumberVal(-val::AsNumber(val)));
                 break;
             }
             case Chunk::OpCode::kOpAdd: {
-                val::Value b = Peek(&vm_stack, 0);
-                val::Value a = Peek(&vm_stack, 1);
+                val::Value b = Peek(0);
+                val::Value a = Peek(1);
                 if (obj::IsString(a) && obj::IsString(b)) {
                     Concatenate();
                 } else if (val::IsNumber(a) && val::IsNumber(b)) {
@@ -191,15 +191,15 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                                  static_cast<Chunk::OpCode>(instruction));
                 break;
             case Chunk::OpCode::kOpPrint:
-                PrintValue(Pop(&vm_stack));
+                PrintValue(Pop());
                 std::printf("\n");
                 break;
             case Chunk::OpCode::kOpPop:
-                Pop(&vm_stack);
+                Pop();
                 break;
             case Chunk::OpCode::kOpDefineGlobal: {
                 LoxString name = obj::AsString(ReadConstant(frame));
-                globals_[name] = Pop(&vm_stack);
+                globals_[name] = Pop();
                 break;
             }
             case Chunk::OpCode::kOpGetGlobal: {
@@ -210,7 +210,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                         name->chars.c_str());
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                Push(&vm_stack, globals_[name]);
+                Push(globals_[name]);
                 break;
             }
             case Chunk::OpCode::kOpSetGlobal: {
@@ -221,22 +221,22 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                         name->chars.c_str());
                     return InterpretResult::kInterpretRuntimeError;
                 }
-                globals_[name] = Peek(&vm_stack, 0);
+                globals_[name] = Peek(0);
                 break;
             }
             case Chunk::OpCode::kOpGetLocal: {
                 uint8_t slot = ReadByte(frame);
-                Push(&vm_stack, frame->slots[slot]);
+                Push(frame->slots[slot]);
                 break;
             }
             case Chunk::OpCode::kOpSetLocal: {
                 uint8_t slot = ReadByte(frame);
-                frame->slots[slot] = Peek(&vm_stack, 0);
+                frame->slots[slot] = Peek(0);
                 break;
             }
             case Chunk::OpCode::kOpJumpIfFalse: {
                 uint16_t offset = ReadShort(frame);
-                if (IsFalsey(Peek(&vm_stack, 0)))
+                if (IsFalsey(Peek(0)))
                     frame->ip += offset;
                 break;
             }
@@ -252,22 +252,22 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             }
             case Chunk::OpCode::kOpCall: {
                 int arg_count = ReadByte(frame);
-                if (!CallValue(Peek(&vm_stack, arg_count), arg_count))
+                if (!CallValue(Peek(arg_count), arg_count))
                     return InterpretResult::kInterpretRuntimeError;
 
                 frame = &frames_[frame_count - 1];
                 break;
             }
             case Chunk::OpCode::kOpReturn: {
-                val::Value result = Pop(&vm_stack);
+                val::Value result = Pop();
                 frame_count--;
                 if (0 == frame_count) {
-                    Pop(&vm_stack);
+                    Pop();
                     return InterpretResult::kInterpretOk;
                 }
 
                 vm_stack.stack_top = frame->slots;
-                Push(&vm_stack, result);
+                Push(result);
                 frame = &frames_[frame_count - 1];
                 break;
             }
@@ -279,7 +279,7 @@ VirtualMachine::VirtualMachine() :
     strings_(std::make_shared<LoxStringMap>()),
     frame_count(0)
 {
-    ResetStack(&vm_stack);
+    ResetStack();
     DefineNative("clock", ClockNative);
 }
 
@@ -293,7 +293,7 @@ VirtualMachine::InterpretResult VirtualMachine::Interpret(
     if (!function)
         return InterpretResult::kInterpretCompileError;
 
-    Push(&vm_stack, obj::ObjVal(function));
+    Push(obj::ObjVal(function));
     Call(function, 0);
 
     return Run();

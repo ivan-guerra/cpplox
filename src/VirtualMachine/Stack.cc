@@ -9,28 +9,29 @@ namespace vm
 {
 struct ValueStack vm_stack;
 
-void ResetStack(ValueStack* vs)
-    { vs->stack_top = vs->stack; }
+void ResetStack()
+    { vm_stack.stack_top = vm_stack.stack; }
 
-void Push(ValueStack* vs, const val::Value& value)
+void Push(const val::Value& value)
 {
-    *vs->stack_top = value;
-    vs->stack_top++;
+    *vm_stack.stack_top = value;
+    vm_stack.stack_top++;
 }
 
-val::Value Pop(ValueStack* vs)
+val::Value Pop()
 {
-    vs->stack_top--;
-    return *vs->stack_top;
+    vm_stack.stack_top--;
+    return *vm_stack.stack_top;
 }
 
-val::Value Peek(ValueStack* vs, int distance)
-    { return vs->stack_top[-1 - distance]; }
+val::Value Peek(int distance)
+    { return vm_stack.stack_top[-1 - distance]; }
 
-void PrintStack(ValueStack* vs)
+void PrintStack()
 {
     std::cout << "          ";
-    for (val::Value* slot = vs->stack; slot < vs->stack_top; slot++) {
+    for (val::Value* slot = vm_stack.stack; slot < vm_stack.stack_top; slot++)
+    {
         std::cout << "[ ";
         val::PrintValue(*slot);
         std::cout << " ]";

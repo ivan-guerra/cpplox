@@ -157,6 +157,9 @@ private:
      */
     InterpretResult Run();
 
+    /* Note, this is a stacked based virtual machine meaning values are
+       stored on a stack as the User program is executed. VirtualMachine
+       implements its stack and defines a handle to it in Stack.h */
     InternedStrings  strings_; /*!< Collection of interned strings. */
     Globals          globals_; /*!< Map of global names to their associated Value. */
     struct CallFrame frames_[kFramesMax];  /*!< Stack of function call frames. */
@@ -168,32 +171,32 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
     std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
-    if (!val::IsNumber(Peek(&vm_stack, 0)) ||
-        !val::IsNumber(Peek(&vm_stack, 1))) {
+    if (!val::IsNumber(Peek(0)) ||
+        !val::IsNumber(Peek(1))) {
         RuntimeError("Operands must be numbers.");
         return InterpretResult::kInterpretRuntimeError;
     }
 
-    double b = val::AsNumber(Pop(&vm_stack));
-    double a = val::AsNumber(Pop(&vm_stack));
+    double b = val::AsNumber(Pop());
+    double a = val::AsNumber(Pop());
     switch (op) {
         case Chunk::OpCode::kOpAdd:
-            Push(&vm_stack, value_type(a + b));
+            Push(value_type(a + b));
             break;
         case Chunk::OpCode::kOpSubtract:
-            Push(&vm_stack, value_type(a - b));
+            Push(value_type(a - b));
             break;
         case Chunk::OpCode::kOpMultiply:
-            Push(&vm_stack, value_type(a * b));
+            Push(value_type(a * b));
             break;
         case Chunk::OpCode::kOpDivide:
-            Push(&vm_stack, value_type(a / b));
+            Push(value_type(a / b));
             break;
         case Chunk::OpCode::kOpGreater:
-            Push(&vm_stack, value_type(a > b));
+            Push(value_type(a > b));
             break;
         case Chunk::OpCode::kOpLess:
-            Push(&vm_stack, value_type(a < b));
+            Push(value_type(a < b));
             break;
         default:
             RuntimeError("Unknown opcode");
