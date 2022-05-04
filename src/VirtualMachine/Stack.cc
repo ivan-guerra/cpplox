@@ -5,6 +5,8 @@
 
 namespace lox
 {
+namespace vm
+{
 struct ValueStack vm_stack;
 
 void ResetStack(ValueStack* vs)
@@ -35,4 +37,5 @@ void PrintStack(ValueStack* vs)
     }
     std::cout << std::endl;
 }
+} // end vm
 } // end lox

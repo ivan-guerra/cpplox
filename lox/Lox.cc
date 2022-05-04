@@ -20,7 +20,7 @@ enum LoxExitCode
     kRuntimeError      = 70  /*!< Indicates a runtime error. */
 };
 
-static lox::VirtualMachine::InterpretResult Interpret(
+static lox::vm::VirtualMachine::InterpretResult Interpret(
     const std::string& source)
 {
     /* The VM is a static object meaning its state persists throughout the life
@@ -28,7 +28,7 @@ static lox::VirtualMachine::InterpretResult Interpret(
        especially in the case of the REPL where we interpret lines of source
        code one at a time (i.e., call Interpret() repeatedly with the
        expectation the VM 'remembers' the code last executed). */
-    static lox::VirtualMachine vm;
+    static lox::vm::VirtualMachine vm;
 
     return vm.Interpret(source);
 }
@@ -58,7 +58,7 @@ static void RunFile(const std::string& script)
     std::stringstream buffer;
     buffer << script_fd.rdbuf();
 
-    using InterpretResult = lox::VirtualMachine::InterpretResult;
+    using InterpretResult = lox::vm::VirtualMachine::InterpretResult;
     InterpretResult result = Interpret(buffer.str());
     if (InterpretResult::kInterpretCompileError == result)
         exit(LoxExitCode::kCompileError);

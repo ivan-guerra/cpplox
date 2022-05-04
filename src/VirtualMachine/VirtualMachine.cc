@@ -11,6 +11,8 @@
 
 namespace lox
 {
+namespace vm
+{
 static val::Value ClockNative(
     [[maybe_unused]]int arg_count,
     [[maybe_unused]]val::Value* args)
@@ -296,4 +298,5 @@ VirtualMachine::InterpretResult VirtualMachine::Interpret(
 
     return Run();
 }
+} // end vm
 } // end lox
