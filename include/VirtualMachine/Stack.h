@@ -6,7 +6,8 @@
 
 namespace lox
 {
-
+namespace vm
+{
 static constexpr int kFramesMax = 64; /*!< Max number of call frames. */
 static constexpr int kStackMax  =
     kFramesMax * (UINT8_MAX + 1);     /*!< Max number of stack elements. */
@@ -30,4 +31,5 @@ val::Value Pop(ValueStack* vs);
 val::Value Peek(ValueStack* vs, int distance);
 
 void PrintStack(ValueStack* vs);
+} // end vm
 } // end lox

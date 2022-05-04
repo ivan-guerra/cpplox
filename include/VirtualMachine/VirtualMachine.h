@@ -15,6 +15,8 @@
 
 namespace lox
 {
+namespace vm
+{
 /*!
  * \class VirtualMachine
  * \brief The VirtualMachine class implements the bytecode executor.
@@ -157,7 +159,7 @@ private:
 
     InternedStrings  strings_; /*!< Collection of interned strings. */
     Globals          globals_; /*!< Map of global names to their associated Value. */
-    struct CallFrame frames_[lox::kFramesMax];  /*!< Stack of function call frames. */
+    struct CallFrame frames_[kFramesMax];  /*!< Stack of function call frames. */
     int              frame_count; /*!< Number of frames currently in the #frames_ array. */
 }; // end VirtualMachine
 
@@ -199,4 +201,5 @@ VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
     }
     return InterpretResult::kInterpretOk;
 }
+} // end vm
 } // end lox
