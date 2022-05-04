@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <functional>
 #include <unordered_map>
 
 #include "Value.h"
@@ -17,8 +18,9 @@ namespace obj
  */
 enum ObjType
 {
-    kObjString,  /*!< String type. */
-    kObjFunction /*!< Function type. */
+    kObjString,   /*!< String type. */
+    kObjFunction, /*!< Function type. */
+    kObjNative    /*!< Lox native function type. */
 }; // end ObjType
 
 /*!
@@ -54,6 +56,18 @@ struct ObjFunction :
     std::shared_ptr<ObjString> name; /*!< Source name of the function. */
 }; // end ObjFunction
 
+using NativeFn = std::function<val::Value(int,val::Value*)>;
+
+/*!
+ * \struct ObjNative
+ * \brief The ObjNative struct represent Lox native functions.
+ */
+struct ObjNative :
+    public Obj
+{
+    NativeFn function; /*!< Function implementing the native function. */
+}; // end ObjNative
+
 /*!
  * \brief Return the ObjType of the object contained within \a value.
  */
@@ -80,6 +94,11 @@ std::shared_ptr<ObjString> AsString(const val::Value& value);
 std::shared_ptr<ObjFunction> AsFunction(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a NativeFn function object.
+ */
+NativeFn AsNative(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -104,6 +123,8 @@ bool IsString(const val::Value& value);
  */
 bool IsFunction(const val::Value& value);
 
+bool IsNative(const val::Value& value);
+
 /*!
  * \brief Construct an ObjString initialized with \a str data.
  *
@@ -121,9 +142,14 @@ std::shared_ptr<ObjString> CopyString(
     std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>> strs);
 
 /*!
- * \brief Return a pointer to 'blank slate' Lox function object.
+ * \brief Return a pointer to a 'blank slate' Lox function object.
  */
 std::shared_ptr<ObjFunction> NewFunction();
+
+/*!
+ * \brief Return a pointer to a new native function.
+ */
+std::shared_ptr<ObjNative> NewNative(NativeFn function);
 
 /*!
  * \brief Print the name of \a function to STDOUT.

@@ -113,6 +113,14 @@ private:
     void Concatenate();
 
     /*!
+     * \brief Define a new native function.
+     *
+     * \param name Name of the new function.
+     * \param function NativeFn function object implementing the new behavior.
+     */
+    void DefineNative(const std::string& name, obj::NativeFn function);
+
+    /*!
      * \brief Helper function used to evaluate binary operations.
      *
      * BinaryOp() pops the two values at the top of #vm_stack and applies

@@ -23,6 +23,9 @@ std::shared_ptr<ObjString> AsString(const val::Value& value)
 std::shared_ptr<ObjFunction> AsFunction(const val::Value& value)
     { return std::static_pointer_cast<ObjFunction>(AsObj(value)); }
 
+NativeFn AsNative(const val::Value& value)
+    { return std::static_pointer_cast<ObjNative>(AsObj(value))->function; }
+
 std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
@@ -37,6 +40,9 @@ bool IsString(const val::Value& value)
 
 bool IsFunction(const val::Value& value)
     { return IsObjType(value, ObjType::kObjFunction); }
+
+bool IsNative(const val::Value& value)
+    { return IsObjType(value, ObjType::kObjNative); }
 
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
@@ -63,6 +69,15 @@ std::shared_ptr<ObjFunction> NewFunction()
     function->name  = nullptr;
 
     return function;
+}
+
+std::shared_ptr<ObjNative> NewNative(NativeFn function)
+{
+    std::shared_ptr<ObjNative> native = std::make_shared<ObjNative>();
+    native->type     = ObjType::kObjNative;
+    native->function = function;
+
+    return native;
 }
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)
