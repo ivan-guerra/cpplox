@@ -748,8 +748,8 @@ Compiler::Compiler() :
     scanner_(""),
     compiler_(std::make_shared<CompilerData>())
 {
-    parser_.had_error     = false;
-    parser_.panic_mode    = false;
+    parser_.had_error  = false;
+    parser_.panic_mode = false;
 
     InitCompiler(nullptr, compiler_, FunctionType::kTypeScript);
 }

@@ -79,8 +79,19 @@ private:
     bool IsFalsey(const val::Value& value) const
         { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
 
+
+    /*!
+     * \brief Construct a new CallFrame and add it to the #frames_ stack.
+     */
     bool Call(std::shared_ptr<obj::ObjFunction> function, int arg_count);
 
+    /*!
+     * \brief Forward the \a callee to the appropriate call handler.
+     *
+     * The callee can be a native function, standard function call, method,
+     * etc. CallValue() executes the appropriate handler type depending
+     * on the type of callable object represented by \a callee.
+     */
     bool CallValue(const val::Value& callee, int arg_count);
 
     /*!
@@ -147,7 +158,7 @@ private:
     InternedStrings  strings_; /*!< Collection of interned strings. */
     Globals          globals_; /*!< Map of global names to their associated Value. */
     struct CallFrame frames_[lox::kFramesMax];  /*!< Stack of function call frames. */
-    int              frame_count;
+    int              frame_count; /*!< Number of frames currently in the #frames_ array. */
 }; // end VirtualMachine
 
 template <typename T>
