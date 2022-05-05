@@ -101,6 +101,19 @@ private:
     }; // end Local
 
     /*!
+     * \struct Upvalue
+     * \brief The Upvalue represents a closure upvalue.
+     *
+     * Closure upvalues are local variables refrenced by the closure that are
+     * defined in one of the enclosing functions or global scope.
+     */
+    struct Upvalue
+    {
+        uint8_t index;    /*!< Tracks the closed-over local variables's slot index. */
+        bool    is_local; /*!< Tracks whether this upvalue was resolved locally. */
+    }; // end Upvalue
+
+    /*!
      * \enum FunctionType
      * \brief The FunctionType enum defines the type of a Lox function object.
      */
@@ -118,10 +131,11 @@ private:
     {
         std::shared_ptr<CompilerData> enclosing; /*!< Metadata of the next compiler on the compiler stack. */
         std::shared_ptr<obj::ObjFunction> function; /*!< Function being compiled. */
-        FunctionType type;                          /*!< FunctionType of #function. */
-        Local locals[UINT8_MAX + 1]; /*!< Array of local variable data. */
-        int   local_count;           /*!< Length of locals array. */
-        int   scope_depth;           /*!< Active scope depth (global=0). */
+        FunctionType type;                    /*!< FunctionType of #function. */
+        Local        locals[UINT8_MAX +1];    /*!< Array of local variable data. */
+        int          local_count;             /*!< Length of locals array. */
+        int          scope_depth;             /*!< Active scope depth (global=0). */
+        Upvalue      upvalues[UINT8_MAX + 1]; /*!< Array of closure upvalues. */
     }; // end CompilerData
     using CompilerDataPtr = std::shared_ptr<CompilerData>;
 
@@ -261,7 +275,11 @@ private:
      *         if \a name could be resolved. -1 is returned if the variable
      *         could not be resolved.
      */
-    int ResolveLocal(const Token& name);
+    int ResolveLocal(CompilerDataPtr compiler, const Token& name);
+
+    int ResolveUpvalue(CompilerDataPtr compiler, const Token& name);
+
+    int AddUpvalue(CompilerDataPtr compiler, uint8_t index, bool is_local);
 
     /*!
      * \brief Declare a variable (local or global).

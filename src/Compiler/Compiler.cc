@@ -377,10 +377,10 @@ void Compiler::DeclareVariable()
     AddLocal(name);
 }
 
-int Compiler::ResolveLocal(const Token& name)
+int Compiler::ResolveLocal(CompilerDataPtr compiler, const Token& name)
 {
-    for (int i = compiler_->local_count - 1; i >= 0; --i) {
-        Local local = compiler_->locals[i];
+    for (int i = compiler->local_count - 1; i >= 0; --i) {
+        Local local = compiler->locals[i];
         if (IdentifiersEqual(name, local.name)) {
             if (local.depth == -1)
                 Error("Can't read local variable in its own intializer.");
@@ -388,6 +388,45 @@ int Compiler::ResolveLocal(const Token& name)
         }
     }
     return -1;
+}
+
+int Compiler::ResolveUpvalue(CompilerDataPtr compiler, const Token& name)
+{
+    if (!compiler->enclosing)
+        return -1;
+
+    int local = ResolveLocal(compiler->enclosing, name);
+    if (-1 != local)
+        return AddUpvalue(compiler, static_cast<uint8_t>(local), true);
+
+    int upvalue = ResolveUpvalue(compiler->enclosing, name);
+    if (-1 != upvalue)
+        return AddUpvalue(compiler, static_cast<uint8_t>(upvalue), false);
+
+    return -1;
+}
+
+int Compiler::AddUpvalue(
+    CompilerDataPtr compiler,
+    uint8_t index,
+    bool is_local)
+{
+    int upvalue_count = compiler->function->upvalue_count;
+    for (int i = 0; i < upvalue_count; ++i) {
+        Upvalue* upvalue = &compiler->upvalues[i];
+        if ((upvalue->index == index) && (upvalue->is_local == is_local))
+            return i;
+    }
+
+    if ((UINT8_MAX + 1) == upvalue_count) {
+        Error("Too many closure variables in function.");
+        return 0;
+    }
+
+    compiler->upvalues[upvalue_count].is_local = is_local;
+    compiler->upvalues[upvalue_count].index    = index;
+
+    return compiler->function->upvalue_count++;
 }
 
 void Compiler::EndScope()
@@ -434,6 +473,11 @@ void Compiler::Function(FunctionType type)
 
     std::shared_ptr<obj::ObjFunction> function = EndCompiler();
     EmitBytes(Chunk::OpCode::kOpClosure, MakeConstant(obj::ObjVal(function)));
+
+    for (int i = 0; i < function->upvalue_count; ++i) {
+        EmitByte(compiler->upvalues[i].is_local ?  1 : 0);
+        EmitByte(compiler->upvalues[i].index);
+    }
 }
 
 uint8_t Compiler::ArgumentList()
@@ -483,10 +527,13 @@ void Compiler::NamedVariable(const Token& name, bool can_assign)
 {
     uint8_t get_op = 0;
     uint8_t set_op = 0;
-    int arg = ResolveLocal(name);
+    int arg = ResolveLocal(compiler_, name);
     if (arg != -1) {
         get_op = Chunk::OpCode::kOpGetLocal;
         set_op = Chunk::OpCode::kOpSetLocal;
+    } else if (-1 != (arg = ResolveUpvalue(compiler_, name))) {
+        get_op = Chunk::OpCode::kOpGetUpvalue;
+        set_op = Chunk::OpCode::kOpSetUpvalue;
     } else {
         arg = IdentifierConstant(name);
         get_op = Chunk::OpCode::kOpGetGlobal;

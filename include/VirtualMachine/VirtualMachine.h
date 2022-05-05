@@ -133,6 +133,9 @@ private:
      */
     void DefineNative(const std::string& name, obj::NativeFn function);
 
+    std::shared_ptr<obj::ObjUpvalue> CaptureUpvalue(val::Value* local)
+        { return obj::NewUpvalue(local); }
+
     /*!
      * \brief Helper function used to evaluate binary operations.
      *

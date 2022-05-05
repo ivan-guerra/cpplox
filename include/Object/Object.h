@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <memory>
 #include <functional>
 #include <unordered_map>
@@ -21,7 +22,8 @@ enum ObjType
     kObjString,   /*!< String type. */
     kObjFunction, /*!< Function type. */
     kObjNative,   /*!< Lox native function type. */
-    kObjClosure
+    kObjClosure,
+    kObjUpvalue
 }; // end ObjType
 
 /*!
@@ -53,14 +55,23 @@ struct ObjFunction :
     public Obj
 {
     int        arity; /*!< Number of arguments expected by the function. */
+    int        upvalue_count; /*!< Number of upvalues referenced. */
     lox::Chunk chunk; /*!< Chunk of bytecode representing the function body. */
     std::shared_ptr<ObjString> name; /*!< Source name of the function. */
 }; // end ObjFunction
+
+struct ObjUpvalue :
+    public Obj
+{
+    val::Value* location;
+}; // end ObjUpvalue
 
 struct ObjClosure :
     public Obj
 {
     std::shared_ptr<ObjFunction> function;
+    std::vector<std::shared_ptr<ObjUpvalue>> upvalues;
+    int upvalue_count;
 }; // end ObjClosure
 
 using NativeFn = std::function<val::Value(int,val::Value*)>;
@@ -175,6 +186,8 @@ std::shared_ptr<ObjNative> NewNative(NativeFn function);
  * \brief Return a pointer to a new ObjClosure object.
  */
 std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function);
+
+std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot);
 
 /*!
  * \brief Print the name of \a function to STDOUT.

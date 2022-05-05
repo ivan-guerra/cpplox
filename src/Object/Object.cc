@@ -70,9 +70,10 @@ std::shared_ptr<ObjString> CopyString(
 std::shared_ptr<ObjFunction> NewFunction()
 {
     std::shared_ptr<ObjFunction> function = std::make_shared<ObjFunction>();
-    function->type  = ObjType::kObjFunction;
-    function->arity = 0;
-    function->name  = nullptr;
+    function->type          = ObjType::kObjFunction;
+    function->arity         = 0;
+    function->upvalue_count = 0;
+    function->name          = nullptr;
 
     return function;
 }
@@ -91,8 +92,21 @@ std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function)
     std::shared_ptr<ObjClosure> closure = std::make_shared<ObjClosure>();
     closure->type     = ObjType::kObjClosure;
     closure->function = function;
+    closure->upvalues =
+        std::vector<std::shared_ptr<ObjUpvalue>>(
+            function->upvalue_count, std::make_shared<ObjUpvalue>());
+    closure->upvalue_count = function->upvalue_count;
 
     return closure;
+}
+
+std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot)
+{
+    std::shared_ptr<ObjUpvalue> upvalue = std::make_shared<ObjUpvalue>();
+    upvalue->type     = ObjType::kObjUpvalue;
+    upvalue->location = slot;
+
+    return upvalue;
 }
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)

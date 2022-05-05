@@ -277,6 +277,26 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 std::shared_ptr<obj::ObjClosure> closure =
                     obj::NewClosure(function);
                 Push(obj::ObjVal(closure));
+                for (int i = 0; i < closure->upvalue_count; ++i) {
+                    uint8_t is_local = ReadByte(frame);
+                    uint8_t index    = ReadByte(frame);
+                    if (is_local) {
+                        closure->upvalues[i] =
+                            CaptureUpvalue(frame->slots + index);
+                    } else {
+                        closure->upvalues[i] = frame->closure->upvalues[index];
+                    }
+                }
+                break;
+            }
+            case Chunk::OpCode::kOpGetUpvalue: {
+                uint8_t slot = ReadByte(frame);
+                Push(*frame->closure->upvalues[slot]->location);
+                break;
+            }
+            case Chunk::OpCode::kOpSetUpvalue: {
+                uint8_t slot = ReadByte(frame);
+                *frame->closure->upvalues[slot]->location = Peek(0);
                 break;
             }
         }

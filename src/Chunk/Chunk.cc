@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "Value.h"
+#include "Object.h"
 #include "Chunk.h"
 
 namespace lox
@@ -75,8 +76,21 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
              std::printf("%-16s %4d ", "OP_CLOSURE", constant);
              val::PrintValue(constants_[constant]);
              std::printf("\n");
+
+             std::shared_ptr<obj::ObjFunction> function =
+                obj::AsFunction(constants_[constant]);
+             for (int j = 0; j < function->upvalue_count; ++j) {
+                 int is_local = code_[offset++];
+                 int index    = code_[offset++];
+                 std::printf("%04d      |                     %s %d\n",
+                    offset - 2, is_local ? "local" : "upvalue", index);
+                }
              return offset;
         }
+        case OpCode::kOpGetUpvalue:
+            return DisassembleByteInstruction("OP_GET_UPVALUE", offset);
+        case OpCode::kOpSetUpvalue:
+            return DisassembleByteInstruction("OP_SET_UPVALUE", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);

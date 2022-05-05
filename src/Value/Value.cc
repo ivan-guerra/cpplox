@@ -67,6 +67,9 @@ void PrintObject(const Value& value)
         case obj::ObjType::kObjClosure:
             obj::PrintFunction(obj::AsClosure(value)->function);
             break;
+        case obj::ObjType::kObjUpvalue:
+            std::printf("upvalue");
+            break;
     }
 }
 
