@@ -98,6 +98,7 @@ private:
     {
         Token name;
         int   depth;
+        bool  is_captured;
     }; // end Local
 
     /*!
@@ -277,8 +278,17 @@ private:
      */
     int ResolveLocal(CompilerDataPtr compiler, const Token& name);
 
+    /*!
+     * \brief Attempt to resolve the upvalue referenced by \a name.
+     * \return The index of the upvalue in the stack is returned if \a name
+     *         can be resolved in the one of the enclosing scopes. -1 is
+     *         returned if the upvalue could not be resolved.
+     */
     int ResolveUpvalue(CompilerDataPtr compiler, const Token& name);
 
+    /*!
+     * \brief Add an upvalue to the parameter compiler's upvalue array.
+     */
     int AddUpvalue(CompilerDataPtr compiler, uint8_t index, bool is_local);
 
     /*!
@@ -313,6 +323,9 @@ private:
      */
     void Function(FunctionType type);
 
+    /*!
+     * \brief Compile a function or method's argument list.
+     */
     uint8_t ArgumentList();
 
     /*!

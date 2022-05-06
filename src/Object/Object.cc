@@ -105,6 +105,8 @@ std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot)
     std::shared_ptr<ObjUpvalue> upvalue = std::make_shared<ObjUpvalue>();
     upvalue->type     = ObjType::kObjUpvalue;
     upvalue->location = slot;
+    upvalue->closed   = val::NilVal();
+    upvalue->next     = nullptr;
 
     return upvalue;
 }

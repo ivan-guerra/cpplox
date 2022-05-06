@@ -55,6 +55,7 @@ private:
     using InternedStrings = std::shared_ptr<LoxStringMap>;
     using Globals         =
         std::unordered_map<LoxString, val::Value>;
+    using UpvaluePtr      = std::shared_ptr<obj::ObjUpvalue>;
 
     /*!
      * \struct CallFrame
@@ -80,7 +81,6 @@ private:
      */
     bool IsFalsey(const val::Value& value) const
         { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
-
 
     /*!
      * \brief Construct a new CallFrame and add it to the #frames_ stack.
@@ -133,8 +133,15 @@ private:
      */
     void DefineNative(const std::string& name, obj::NativeFn function);
 
-    std::shared_ptr<obj::ObjUpvalue> CaptureUpvalue(val::Value* local)
-        { return obj::NewUpvalue(local); }
+    /*!
+     * \brief Close on an upvalue.
+     */
+    void CloseUpvalues(val::Value* last);
+
+    /*!
+     * \brief Capture an upvalue on \a local.
+     */
+    std::shared_ptr<obj::ObjUpvalue> CaptureUpvalue(val::Value* local);
 
     /*!
      * \brief Helper function used to evaluate binary operations.
@@ -163,10 +170,11 @@ private:
     /* Note, this is a stacked based virtual machine meaning values are
        stored on a stack as the User program is executed. VirtualMachine
        implements its stack and defines a handle to it in Stack.h */
-    InternedStrings  strings_; /*!< Collection of interned strings. */
-    Globals          globals_; /*!< Map of global names to their associated Value. */
-    struct CallFrame frames_[kFramesMax];  /*!< Stack of function call frames. */
-    int              frame_count; /*!< Number of frames currently in the #frames_ array. */
+    InternedStrings strings_; /*!< Collection of interned strings. */
+    Globals         globals_; /*!< Map of global names to their associated Value. */
+    CallFrame       frames_[kFramesMax];  /*!< Stack of function call frames. */
+    int             frame_count; /*!< Number of frames currently in the #frames_ array. */
+    UpvaluePtr      open_upvalues_; /*!< Singly linked list of open upvalues. */
 }; // end VirtualMachine
 
 template <typename T>

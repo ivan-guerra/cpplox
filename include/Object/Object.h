@@ -54,24 +54,34 @@ struct ObjString :
 struct ObjFunction :
     public Obj
 {
-    int        arity; /*!< Number of arguments expected by the function. */
+    int        arity;         /*!< Number of arguments expected by the function. */
     int        upvalue_count; /*!< Number of upvalues referenced. */
-    lox::Chunk chunk; /*!< Chunk of bytecode representing the function body. */
+    lox::Chunk chunk;         /*!< Chunk of bytecode representing the function body. */
     std::shared_ptr<ObjString> name; /*!< Source name of the function. */
 }; // end ObjFunction
 
+/*!
+ * \struct ObjUpvalue
+ * \brief The ObjUpvalue struct represents a local variable in an enclosing function.
+ */
 struct ObjUpvalue :
     public Obj
 {
-    val::Value* location;
+    val::Value* location; /*!< Location of upvalue on the stack. */
+    val::Value  closed;   /*!< Copy of a closed upvalue. */
+    std::shared_ptr<ObjUpvalue> next; /*!< Pointer to the next closed upvalue on the head. */
 }; // end ObjUpvalue
 
+/*!
+ * \struct ObjClosure
+ * \brief The ObjClosure struct represents a function closure.
+ */
 struct ObjClosure :
     public Obj
 {
-    std::shared_ptr<ObjFunction> function;
-    std::vector<std::shared_ptr<ObjUpvalue>> upvalues;
-    int upvalue_count;
+    std::shared_ptr<ObjFunction>             function; /*!< Closed function. */
+    std::vector<std::shared_ptr<ObjUpvalue>> upvalues; /*!< Vector of upvalues referenced by this closure (see ObjUpvalue). */
+    int                                      upvalue_count; /*!< Number of upvalues referenced by this closure. */
 }; // end ObjClosure
 
 using NativeFn = std::function<val::Value(int,val::Value*)>;
@@ -187,6 +197,9 @@ std::shared_ptr<ObjNative> NewNative(NativeFn function);
  */
 std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function);
 
+/*!
+ * \brief Return a pointer to a new ObjUpvalue object.
+ */
 std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot);
 
 /*!

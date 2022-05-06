@@ -120,6 +120,39 @@ void VirtualMachine::DefineNative(
     Pop();
 }
 
+void VirtualMachine::CloseUpvalues(val::Value* last)
+{
+    while (open_upvalues_ && (open_upvalues_->location >= last)) {
+        UpvaluePtr upvalue = open_upvalues_;
+        upvalue->closed    = *upvalue->location;
+        upvalue->location  = &upvalue->closed;
+        open_upvalues_     = upvalue->next;
+    }
+}
+
+std::shared_ptr<obj::ObjUpvalue> VirtualMachine::CaptureUpvalue(
+    val::Value* local)
+{
+    UpvaluePtr prev_upvalue = nullptr;
+    UpvaluePtr upvalue = open_upvalues_;
+    while (upvalue && (upvalue->location > local)) {
+        prev_upvalue = upvalue;
+        upvalue = upvalue->next;
+    }
+
+    if (upvalue && (upvalue->location == local))
+        return upvalue;
+
+    UpvaluePtr created_upvalue = obj::NewUpvalue(local);
+    created_upvalue->next = upvalue;
+    if (!prev_upvalue)
+        open_upvalues_ = created_upvalue;
+    else
+        prev_upvalue->next = created_upvalue;
+
+    return created_upvalue;
+}
+
 VirtualMachine::InterpretResult VirtualMachine::Run()
 {
     CallFrame* frame = &frames_[frame_count - 1];
@@ -260,6 +293,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             }
             case Chunk::OpCode::kOpReturn: {
                 val::Value result = Pop();
+                CloseUpvalues(frame->slots);
                 frame_count--;
                 if (0 == frame_count) {
                     Pop();
@@ -299,13 +333,19 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 *frame->closure->upvalues[slot]->location = Peek(0);
                 break;
             }
+            case Chunk::OpCode::kOpCloseUpvalue: {
+                CloseUpvalues(vm_stack.stack_top - 1);
+                Pop();
+                break;
+            }
         }
     }
 }
 
 VirtualMachine::VirtualMachine() :
     strings_(std::make_shared<LoxStringMap>()),
-    frame_count(0)
+    frame_count(0),
+    open_upvalues_(nullptr)
 {
     ResetStack();
     DefineNative("clock", ClockNative);

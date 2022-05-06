@@ -110,9 +110,10 @@ void Compiler::InitCompiler(
         compiler_->function->name =
             obj::CopyString(parser_.previous.GetLexeme(), strings_);
     }
-    compiler_->locals[0].depth = 0;
-    compiler_->local_count     = 1;
-    compiler_->scope_depth     = 0;
+    compiler_->locals[0].depth       = 0;
+    compiler_->locals[0].is_captured = false;
+    compiler_->local_count           = 1;
+    compiler_->scope_depth           = 0;
 }
 
 void Compiler::ParsePrecedence(Precedence precedence)
@@ -346,7 +347,7 @@ void Compiler::AddLocal(const Token& name)
         return;
     }
 
-    Local local = {.name=name, .depth=-1};
+    Local local = {.name=name, .depth=-1, .is_captured=false};
     compiler_->locals[compiler_->local_count] = local;
     compiler_->local_count++;
 }
@@ -396,8 +397,10 @@ int Compiler::ResolveUpvalue(CompilerDataPtr compiler, const Token& name)
         return -1;
 
     int local = ResolveLocal(compiler->enclosing, name);
-    if (-1 != local)
+    if (-1 != local) {
+        compiler->enclosing->locals[local].is_captured = true;
         return AddUpvalue(compiler, static_cast<uint8_t>(local), true);
+    }
 
     int upvalue = ResolveUpvalue(compiler->enclosing, name);
     if (-1 != upvalue)
@@ -436,7 +439,11 @@ void Compiler::EndScope()
     while ((compiler_->local_count > 0) &&
            (compiler_->locals[compiler_->local_count - 1].depth >
             compiler_->scope_depth)) {
-        EmitByte(Chunk::OpCode::kOpPop);
+        if (compiler_->locals[compiler_->local_count - 1].is_captured)
+            EmitByte(Chunk::OpCode::kOpCloseUpvalue);
+        else
+            EmitByte(Chunk::OpCode::kOpPop);
+
         compiler_->local_count--;
     }
 }

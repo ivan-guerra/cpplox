@@ -49,7 +49,8 @@ public:
         kOpCall,
         kOpClosure,
         kOpGetUpvalue,
-        kOpSetUpvalue
+        kOpSetUpvalue,
+        kOpCloseUpvalue
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
