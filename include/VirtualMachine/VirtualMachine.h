@@ -188,11 +188,12 @@ private:
     /* Note, this is a stacked based virtual machine meaning values are
        stored on a stack as the User program is executed. VirtualMachine
        implements its stack and defines a handle to it in Stack.h */
-    InternedStrings strings_; /*!< Collection of interned strings. */
-    Globals         globals_; /*!< Map of global names to their associated Value. */
-    CallFrame       frames_[kFramesMax];  /*!< Stack of function call frames. */
-    int             frame_count; /*!< Number of frames currently in the #frames_ array. */
+    InternedStrings strings_;            /*!< Collection of interned strings. */
+    Globals         globals_;            /*!< Map of global names to their associated Value. */
+    CallFrame       frames_[kFramesMax]; /*!< Stack of function call frames. */
+    int             frame_count;    /*!< Number of frames currently in the #frames_ array. */
     UpvaluePtr      open_upvalues_; /*!< Singly linked list of open upvalues. */
+    LoxString       init_string_;   /*!< Interned string for class init() method. */
 }; // end VirtualMachine
 
 template <typename T>

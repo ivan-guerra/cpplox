@@ -120,9 +120,10 @@ private:
      */
     enum FunctionType
     {
-        kTypeFunction, /*!< User defined function. */
-        kTypeScript,   /*!< Indicates a pseudo function representing the top level script. */
-        kTypeMethod    /*!< Indicates a class method. */
+        kTypeFunction,   /*!< User defined function. */
+        kTypeScript,     /*!< Indicates a pseudo function representing the top level script. */
+        kTypeMethod,     /*!< Indicates a class method. */
+        kTypeInitializer /*!< Indicates a class initializer method. */
     }; // end FunctionType
 
     /*!

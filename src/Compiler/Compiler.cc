@@ -302,6 +302,9 @@ void Compiler::ReturnStatement()
     if (Match(TokenType::kSemicolon)) {
         EmitReturn();
     } else {
+        if (compiler_->type == FunctionType::kTypeInitializer)
+            Error("Can't return a value from an initializer.");
+
         Expression();
         Consume(TokenType::kSemicolon, "Expect ';' after return value.");
         EmitByte(Chunk::OpCode::kOpReturn);
@@ -375,7 +378,11 @@ void Compiler::Method()
     uint8_t constant = IdentifierConstant(parser_.previous);
 
     FunctionType type = FunctionType::kTypeMethod;
+    static const std::string kInitStr("init");
+    if (parser_.previous.GetLexeme() == kInitStr)
+        type = FunctionType::kTypeInitializer;
     Function(type);
+
     EmitBytes(Chunk::OpCode::kOpMethod, constant);
 }
 
@@ -668,7 +675,11 @@ void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
 
 void Compiler::EmitReturn()
 {
-    EmitByte(Chunk::OpCode::kOpNil);
+    if (compiler_->type == FunctionType::kTypeInitializer)
+        EmitBytes(Chunk::OpCode::kOpGetLocal, 0);
+    else
+        EmitByte(Chunk::OpCode::kOpNil);
+
     EmitByte(Chunk::OpCode::kOpReturn);
 }
 

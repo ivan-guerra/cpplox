@@ -86,6 +86,15 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
                 std::shared_ptr<obj::ObjClass> klass = obj::AsClass(callee);
                 vm_stack.stack_top[-arg_count - 1] =
                     obj::ObjVal(obj::NewInstance(klass));
+
+                if (klass->methods.find(init_string_) != klass->methods.end()) {
+                    return Call(obj::AsClosure(klass->methods[init_string_]),
+                                arg_count);
+                } else if (arg_count != 0) {
+                    RuntimeError("Expected 0 arguments but got %d.",
+                                 arg_count);
+                    return false;
+                }
                 return true;
                 break;
             }
@@ -426,9 +435,11 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 VirtualMachine::VirtualMachine() :
     strings_(std::make_shared<LoxStringMap>()),
     frame_count(0),
-    open_upvalues_(nullptr)
+    open_upvalues_(nullptr),
+    init_string_(nullptr)
 {
     ResetStack();
+    init_string_ = obj::CopyString("init", strings_);
     DefineNative("clock", ClockNative);
 }
 
