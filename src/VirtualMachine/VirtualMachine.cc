@@ -338,6 +338,12 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 Pop();
                 break;
             }
+            case Chunk::OpCode::kOpClass: {
+                std::shared_ptr<obj::ObjString> klass_name =
+                    obj::AsString(ReadConstant(frame));
+                Push(obj::ObjVal(obj::NewClass(klass_name)));
+                break;
+            }
         }
     }
 }

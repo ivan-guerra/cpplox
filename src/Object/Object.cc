@@ -29,6 +29,9 @@ NativeFn AsNative(const val::Value& value)
 std::shared_ptr<ObjClosure> AsClosure(const val::Value& value)
     { return std::static_pointer_cast<ObjClosure>(AsObj(value)); }
 
+std::shared_ptr<ObjClass> AsClass(const val::Value& value)
+    { return std::static_pointer_cast<ObjClass>(AsObj(value)); }
+
 std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
@@ -49,6 +52,9 @@ bool IsNative(const val::Value& value)
 
 bool IsClosure(const val::Value& value)
     { return IsObjType(value, ObjType::kObjClosure); }
+
+bool IsClass(const val::Value& value)
+    { return IsObjType(value, ObjType::kObjClass); }
 
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
@@ -109,6 +115,15 @@ std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot)
     upvalue->next     = nullptr;
 
     return upvalue;
+}
+
+std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name)
+{
+    std::shared_ptr<ObjClass> klass = std::make_shared<ObjClass>();
+    klass->type = ObjType::kObjClass;
+    klass->name = name;
+
+    return klass;
 }
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)

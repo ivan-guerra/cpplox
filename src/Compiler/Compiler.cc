@@ -311,6 +311,8 @@ void Compiler::Declaration()
         FunDeclaration();
     else if (Match(TokenType::kVar))
         VarDeclaration();
+    else if (Match(TokenType::kClass))
+        ClassDeclaration();
     else
         Statement();
 
@@ -338,6 +340,19 @@ void Compiler::FunDeclaration()
     MarkInitialized();
     Function(FunctionType::kTypeFunction);
     DefineVariable(global);
+}
+
+void Compiler::ClassDeclaration()
+{
+    Consume(TokenType::kIdentifier, "Expect class name.");
+    uint8_t name_constant = IdentifierConstant(parser_.previous);
+    DeclareVariable();
+
+    EmitBytes(Chunk::OpCode::kOpClass, name_constant);
+    DefineVariable(name_constant);
+
+    Consume(TokenType::kLeftBrace, "Expect '{' before class body.");
+    Consume(TokenType::kRightBrace, "Expect '}' after class body.");
 }
 
 void Compiler::AddLocal(const Token& name)

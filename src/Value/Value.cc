@@ -70,6 +70,9 @@ void PrintObject(const Value& value)
         case obj::ObjType::kObjUpvalue:
             std::printf("upvalue");
             break;
+        case obj::ObjType::kObjClass:
+            std::printf("%s", obj::AsClass(value)->name->chars.c_str());
+            break;
     }
 }
 

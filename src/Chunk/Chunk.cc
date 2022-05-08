@@ -93,6 +93,8 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleByteInstruction("OP_SET_UPVALUE", offset);
         case OpCode::kOpCloseUpvalue:
             return DisassembleSimpleInstruction("OP_CLOSE_UPVALUE", offset);
+        case OpCode::kOpClass:
+            return DisassembleConstantInstruction("OP_CLASS", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);

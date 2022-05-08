@@ -22,8 +22,9 @@ enum ObjType
     kObjString,   /*!< String type. */
     kObjFunction, /*!< Function type. */
     kObjNative,   /*!< Lox native function type. */
-    kObjClosure,
-    kObjUpvalue
+    kObjClosure,  /*!< Closure type. */
+    kObjUpvalue,  /*!< Closure upvalue type. */
+    kObjClass     /*!< Lox class type. */
 }; // end ObjType
 
 /*!
@@ -84,6 +85,16 @@ struct ObjClosure :
     int                                      upvalue_count; /*!< Number of upvalues referenced by this closure. */
 }; // end ObjClosure
 
+/*!
+ * \struct ObjClass
+ * \brief The ObjClass struct represents a class object.
+ */
+struct ObjClass :
+    public Obj
+{
+    std::shared_ptr<ObjString> name; /*!< Class name mainly for error reporting. */
+}; // end ObjClass
+
 using NativeFn = std::function<val::Value(int,val::Value*)>;
 
 /*!
@@ -132,6 +143,11 @@ NativeFn AsNative(const val::Value& value);
 std::shared_ptr<ObjClosure> AsClosure(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a ObjClass object.
+ */
+std::shared_ptr<ObjClass> AsClass(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -165,6 +181,11 @@ bool IsNative(const val::Value& value);
  * \brief Return \c true if \a value is an ObjClosure object.
  */
 bool IsClosure(const val::Value& value);
+
+/*!
+ * \brief Return \c true if \a value is an ObjClass object.
+ */
+bool IsClass(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
@@ -201,6 +222,11 @@ std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function);
  * \brief Return a pointer to a new ObjUpvalue object.
  */
 std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot);
+
+/*!
+ * \brief Return a pointer to a new ObjClass object.
+ */
+std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name);
 
 /*!
  * \brief Print the name of \a function to STDOUT.
