@@ -83,7 +83,7 @@ Compiler::rules_ =
     {TokenType::kSuper,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {TokenType::kThis,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::This, nullptr, Precedence::kPrecNone}},
     {TokenType::kTrue,
         {&Compiler::Literal, nullptr, Precedence::kPrecNone}},
     {TokenType::kVar,
@@ -112,6 +112,9 @@ void Compiler::InitCompiler(
     }
     compiler_->locals[0].depth       = 0;
     compiler_->locals[0].is_captured = false;
+    if (type != FunctionType::kTypeFunction) {
+        compiler_->locals[0].name = scanr::Token(TokenType::kThis, "this", 0);
+    }
     compiler_->local_count           = 1;
     compiler_->scope_depth           = 0;
 }
@@ -352,12 +355,18 @@ void Compiler::ClassDeclaration()
     EmitBytes(Chunk::OpCode::kOpClass, name_constant);
     DefineVariable(name_constant);
 
+    ClassCompiler class_compiler;
+    class_compiler.enclosing = current_class_;
+    current_class_           = &class_compiler;
+
     NamedVariable(class_name, false);
     Consume(TokenType::kLeftBrace, "Expect '{' before class body.");
     while (!Check(TokenType::kRightBrace) && !Check(TokenType::kEof))
         Method();
     Consume(TokenType::kRightBrace, "Expect '}' after class body.");
     EmitByte(Chunk::OpCode::kOpPop);
+
+    current_class_ = current_class_->enclosing;
 }
 
 void Compiler::Method()
@@ -365,7 +374,7 @@ void Compiler::Method()
     Consume(TokenType::kIdentifier, "Expect method name.");
     uint8_t constant = IdentifierConstant(parser_.previous);
 
-    FunctionType type = FunctionType::kTypeFunction;
+    FunctionType type = FunctionType::kTypeMethod;
     Function(type);
     EmitBytes(Chunk::OpCode::kOpMethod, constant);
 }
@@ -844,9 +853,19 @@ void Compiler::Dot(bool can_assign)
     }
 }
 
+void Compiler::This([[maybe_unused]]bool can_assign)
+{
+    if (!current_class_) {
+        Error("Can't use 'this' outside of a class.");
+        return;
+    }
+    Variable(false);
+}
+
 Compiler::Compiler() :
     scanner_(""),
-    compiler_(std::make_shared<CompilerData>())
+    compiler_(std::make_shared<CompilerData>()),
+    current_class_(nullptr)
 {
     parser_.had_error  = false;
     parser_.panic_mode = false;

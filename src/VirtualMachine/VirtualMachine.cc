@@ -92,7 +92,8 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
             case obj::ObjType::kObjBoundMethod: {
                 std::shared_ptr<obj::ObjBoundMethod> bound =
                     obj::AsBoundMethod(callee);
-                    return Call(bound->method, arg_count);
+                vm_stack.stack_top[-arg_count - 1] = bound->receiver;
+                return Call(bound->method, arg_count);
             }
             default:
                 /* Non-callable object type. */

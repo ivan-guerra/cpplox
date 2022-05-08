@@ -121,7 +121,8 @@ private:
     enum FunctionType
     {
         kTypeFunction, /*!< User defined function. */
-        kTypeScript    /*!< Indicates a pseudo function representing the top level script. */
+        kTypeScript,   /*!< Indicates a pseudo function representing the top level script. */
+        kTypeMethod    /*!< Indicates a class method. */
     }; // end FunctionType
 
     /*!
@@ -139,6 +140,15 @@ private:
         Upvalue      upvalues[UINT8_MAX + 1]; /*!< Array of closure upvalues. */
     }; // end CompilerData
     using CompilerDataPtr = std::shared_ptr<CompilerData>;
+
+    /*!
+     * \struct ClassCompiler
+     * \brief The ClassCompiler struct captures the nearest enclosing class info.
+     */
+    struct ClassCompiler
+    {
+        ClassCompiler* enclosing;
+    }; // end ClassCompiler
 
     static std::unordered_map<TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
 
@@ -491,10 +501,16 @@ private:
      */
     void Dot(bool can_assign);
 
-    lox::scanr::Scanner scanner_;  /*!< Token scanner. */
-    Parser              parser_;   /*!< Handle to the Parser. */
-    InternedStrings     strings_;  /*!< Collection of interned strings. */
-    CompilerDataPtr     compiler_; /*!< Compiler metadata list. */
+    /*!
+     * \brief Compile a 'this' expression.
+     */
+    void This([[maybe_unused]]bool can_assign);
+
+    lox::scanr::Scanner scanner_;       /*!< Token scanner. */
+    Parser              parser_;        /*!< Handle to the Parser. */
+    InternedStrings     strings_;       /*!< Collection of interned strings. */
+    CompilerDataPtr     compiler_;      /*!< Compiler metadata list. */
+    ClassCompiler*      current_class_; /*!< Current class under compilation. */
 }; // end Compiler
 } // end cl
 } // end lox
