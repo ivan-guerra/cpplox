@@ -121,6 +121,12 @@ private:
     uint16_t ReadShort(CallFrame* frame);
 
     /*!
+     * \brief Return the current constant as a ObjString object.
+     */
+    std::shared_ptr<obj::ObjString> ReadString(CallFrame* frame)
+        { return obj::AsString(ReadConstant(frame)); }
+
+    /*!
      * \brief Concatenate the two string objects at the top of the stack.
      */
     void Concatenate();

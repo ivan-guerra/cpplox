@@ -346,9 +346,41 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 break;
             }
             case Chunk::OpCode::kOpClass: {
-                std::shared_ptr<obj::ObjString> klass_name =
-                    obj::AsString(ReadConstant(frame));
+                std::shared_ptr<obj::ObjString> klass_name = ReadString(frame);
                 Push(obj::ObjVal(obj::NewClass(klass_name)));
+                break;
+            }
+            case Chunk::OpCode::kOpGetProperty: {
+                if (!obj::IsInstance(Peek(0))) {
+                    RuntimeError("Only instances have properties.");
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+
+                std::shared_ptr<obj::ObjInstance> instance =
+                    obj::AsInstance(Peek(0));
+                std::shared_ptr<obj::ObjString> name =
+                    ReadString(frame);
+                if (instance->fields.find(name) != instance->fields.end()) {
+                    Pop();
+                    Push(instance->fields[name]);
+                    break;
+                }
+                RuntimeError("Undefined property '%s'.", name->chars.c_str());
+                return InterpretResult::kInterpretRuntimeError;
+            }
+            case Chunk::OpCode::kOpSetProperty: {
+                if (!obj::IsInstance(Peek(1))) {
+                    RuntimeError("Only instances have fields.");
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+
+                std::shared_ptr<obj::ObjInstance> instance =
+                    obj::AsInstance(Peek(1));
+                instance->fields[ReadString(frame)] = Peek(0);
+
+                val::Value value = Pop();
+                Pop();
+                Push(value);
                 break;
             }
         }

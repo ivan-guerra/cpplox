@@ -478,6 +478,11 @@ private:
      */
     void Call([[maybe_unused]]bool can_assign);
 
+    /*!
+     * \brief Compile a '.' expression.
+     */
+    void Dot(bool can_assign);
+
     lox::scanr::Scanner scanner_;  /*!< Token scanner. */
     Parser              parser_;   /*!< Handle to the Parser. */
     InternedStrings     strings_;  /*!< Collection of interned strings. */

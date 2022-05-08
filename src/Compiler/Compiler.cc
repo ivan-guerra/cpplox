@@ -25,7 +25,7 @@ Compiler::rules_ =
     {TokenType::kComma,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {TokenType::kDot,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {nullptr, &Compiler::Dot, Precedence::kPrecCall}},
     {TokenType::kMinus,
         {&Compiler::Unary, &Compiler::Binary, Precedence::kPrecTerm}},
     {TokenType::kPlus,
@@ -814,6 +814,19 @@ void Compiler::Call([[maybe_unused]]bool can_assign)
 {
     uint8_t arg_count = ArgumentList();
     EmitBytes(Chunk::OpCode::kOpCall, arg_count);
+}
+
+void Compiler::Dot(bool can_assign)
+{
+    Consume(TokenType::kIdentifier, "Expect property name after '.'.");
+    uint8_t name = IdentifierConstant(parser_.previous);
+
+    if (can_assign && Match(TokenType::kEqual)) {
+        Expression();
+        EmitBytes(Chunk::OpCode::kOpSetProperty, name);
+    } else {
+        EmitBytes(Chunk::OpCode::kOpGetProperty, name);
+    }
 }
 
 Compiler::Compiler() :
