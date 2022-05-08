@@ -123,7 +123,7 @@ private:
     /*!
      * \brief Return the current constant as a ObjString object.
      */
-    std::shared_ptr<obj::ObjString> ReadString(CallFrame* frame)
+    LoxString ReadString(CallFrame* frame)
         { return obj::AsString(ReadConstant(frame)); }
 
     /*!
@@ -142,29 +142,25 @@ private:
     /*!
      * \brief Add a method definition to the class at the top of the stack.
      */
-    void DefineMethod(std::shared_ptr<obj::ObjString> name);
+    void DefineMethod(LoxString name);
 
     /*!
      * \brief Bind \a name to to \a klass placing the corresponding method on the stack.
      */
-    bool BindMethod(
-        std::shared_ptr<obj::ObjClass> klass,
-        std::shared_ptr<obj::ObjString> name);
+    bool BindMethod(std::shared_ptr<obj::ObjClass> klass, LoxString name);
 
     /*!
      * \brief Invoke a class method.
      */
     bool InvokeFromClass(
         std::shared_ptr<obj::ObjClass> klass,
-        std::shared_ptr<obj::ObjString> name,
+        LoxString name,
         int arg_count);
 
     /*!
      * \brief Method invocation helper.
      */
-    bool Invoke(
-        std::shared_ptr<obj::ObjString> name,
-        int arg_count);
+    bool Invoke(LoxString name, int arg_count);
 
     /*!
      * \brief Close on an upvalue.

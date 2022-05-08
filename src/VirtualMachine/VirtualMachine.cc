@@ -122,10 +122,10 @@ uint16_t VirtualMachine::ReadShort(CallFrame* frame)
 
 void VirtualMachine::Concatenate()
 {
-    std::shared_ptr<obj::ObjString> b = obj::AsString(Pop());
-    std::shared_ptr<obj::ObjString> a = obj::AsString(Pop());
+    LoxString b = obj::AsString(Pop());
+    LoxString a = obj::AsString(Pop());
 
-    std::shared_ptr<obj::ObjString> result = std::make_shared<obj::ObjString>();
+    LoxString result = std::make_shared<obj::ObjString>();
     result->type = obj::ObjType::kObjString;
     result->chars = a->chars + b->chars;
     Push(ObjVal(result));
@@ -142,7 +142,7 @@ void VirtualMachine::DefineNative(
     Pop();
 }
 
-void VirtualMachine::DefineMethod(std::shared_ptr<obj::ObjString> name)
+void VirtualMachine::DefineMethod(LoxString name)
 {
     val::Value method = Peek(0);
     std::shared_ptr<obj::ObjClass> klass = obj::AsClass(Peek(1));
@@ -152,7 +152,7 @@ void VirtualMachine::DefineMethod(std::shared_ptr<obj::ObjString> name)
 
 bool VirtualMachine::BindMethod(
     std::shared_ptr<obj::ObjClass> klass,
-    std::shared_ptr<obj::ObjString> name)
+    LoxString name)
 {
     if (klass->methods.find(name) == klass->methods.end()) {
         RuntimeError("Undefined property '%s'.", name->chars.c_str());
@@ -169,7 +169,7 @@ bool VirtualMachine::BindMethod(
 
 bool VirtualMachine::InvokeFromClass(
     std::shared_ptr<obj::ObjClass> klass,
-    std::shared_ptr<obj::ObjString> name,
+    LoxString name,
     int arg_count)
 {
     if (klass->methods.find(name) == klass->methods.end()) {
@@ -179,9 +179,7 @@ bool VirtualMachine::InvokeFromClass(
     return Call(obj::AsClosure(klass->methods[name]), arg_count);
 }
 
-bool VirtualMachine::Invoke(
-    std::shared_ptr<obj::ObjString> name,
-    int arg_count)
+bool VirtualMachine::Invoke(LoxString name, int arg_count)
 {
     val::Value receiver = Peek(arg_count);
     if (!obj::IsInstance(receiver)) {
@@ -416,7 +414,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 break;
             }
             case Chunk::OpCode::kOpClass: {
-                std::shared_ptr<obj::ObjString> klass_name = ReadString(frame);
+                LoxString klass_name = ReadString(frame);
                 Push(obj::ObjVal(obj::NewClass(klass_name)));
                 break;
             }
@@ -428,7 +426,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 
                 std::shared_ptr<obj::ObjInstance> instance =
                     obj::AsInstance(Peek(0));
-                std::shared_ptr<obj::ObjString> name =
+                LoxString name =
                     ReadString(frame);
                 if (instance->fields.find(name) != instance->fields.end()) {
                     Pop();
@@ -456,7 +454,7 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 break;
             }
             case Chunk::OpCode::kOpInvoke: {
-                std::shared_ptr<obj::ObjString> method = ReadString(frame);
+                LoxString method = ReadString(frame);
                 int arg_count = ReadByte(frame);
                 if (!Invoke(method, arg_count))
                     return InterpretResult::kInterpretRuntimeError;
