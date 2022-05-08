@@ -152,6 +152,21 @@ private:
         std::shared_ptr<obj::ObjString> name);
 
     /*!
+     * \brief Invoke a class method.
+     */
+    bool InvokeFromClass(
+        std::shared_ptr<obj::ObjClass> klass,
+        std::shared_ptr<obj::ObjString> name,
+        int arg_count);
+
+    /*!
+     * \brief Method invocation helper.
+     */
+    bool Invoke(
+        std::shared_ptr<obj::ObjString> name,
+        int arg_count);
+
+    /*!
      * \brief Close on an upvalue.
      */
     void CloseUpvalues(val::Value* last);

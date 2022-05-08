@@ -54,7 +54,8 @@ public:
         kOpClass,
         kOpSetProperty,
         kOpGetProperty,
-        kOpMethod
+        kOpMethod,
+        kOpInvoke
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */
@@ -169,6 +170,13 @@ private:
      */
     std::size_t DisassembleJumpInstruction(const std::string& name,
                                            int sign, int offset) const;
+
+    /*!
+     * \brief Print a invoke instruction to STDOUT.
+     */
+    std::size_t DisassembleInvokeInstruction(
+        const std::string& name,
+        int offset) const;
 
     std::vector<uint8_t>    code_;      /*!< Vector of compiled bytecode instructions. */
     std::vector<val::Value> constants_; /*!< Vector of constants parsed from the source text. */

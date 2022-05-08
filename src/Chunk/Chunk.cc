@@ -101,6 +101,8 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleConstantInstruction("OP_GET_PROPERTY", offset);
         case OpCode::kOpMethod:
             return DisassembleConstantInstruction("OP_METHOD", offset);
+        case OpCode::kOpInvoke:
+            return DisassembleInvokeInstruction("OP_INVOKE", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);
@@ -143,6 +145,19 @@ std::size_t Chunk::DisassembleJumpInstruction(const std::string& name,
     jump |= code_[offset + 2];
     std::printf("%-16s %4d -> %d\n", name.c_str(), offset,
                 offset + 3 + sign * jump);
+    return offset + 3;
+}
+
+std::size_t Chunk::DisassembleInvokeInstruction(
+    const std::string& name,
+    int offset) const
+{
+    uint8_t constant  = code_[offset + 1];
+    uint8_t arg_count = code_[offset + 2];
+
+    std::printf("%-16s (%d args) %4d '", name.c_str(), arg_count, constant);
+    val::PrintValue(constants_[constant]);
+    std::printf("'\n");
     return offset + 3;
 }
 

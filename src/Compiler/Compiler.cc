@@ -859,6 +859,10 @@ void Compiler::Dot(bool can_assign)
     if (can_assign && Match(TokenType::kEqual)) {
         Expression();
         EmitBytes(Chunk::OpCode::kOpSetProperty, name);
+    } else if (Match(TokenType::kLeftParen)) {
+        uint8_t arg_count = ArgumentList();
+        EmitBytes(Chunk::OpCode::kOpInvoke, name);
+        EmitByte(arg_count);
     } else {
         EmitBytes(Chunk::OpCode::kOpGetProperty, name);
     }

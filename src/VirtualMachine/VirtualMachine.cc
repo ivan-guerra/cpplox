@@ -167,6 +167,36 @@ bool VirtualMachine::BindMethod(
     return true;
 }
 
+bool VirtualMachine::InvokeFromClass(
+    std::shared_ptr<obj::ObjClass> klass,
+    std::shared_ptr<obj::ObjString> name,
+    int arg_count)
+{
+    if (klass->methods.find(name) == klass->methods.end()) {
+        RuntimeError("Undefined property '%s'.", name->chars.c_str());
+        return false;
+    }
+    return Call(obj::AsClosure(klass->methods[name]), arg_count);
+}
+
+bool VirtualMachine::Invoke(
+    std::shared_ptr<obj::ObjString> name,
+    int arg_count)
+{
+    val::Value receiver = Peek(arg_count);
+    if (!obj::IsInstance(receiver)) {
+        RuntimeError("Only instances have methods.");
+        return false;
+    }
+
+    std::shared_ptr<obj::ObjInstance> instance = obj::AsInstance(receiver);
+    if (instance->fields.find(name) != instance->fields.end()) {
+        vm_stack.stack_top[-arg_count - 1] = instance->fields[name];
+        return CallValue(instance->fields[name], arg_count);
+    }
+    return InvokeFromClass(instance->klass, name, arg_count);
+}
+
 void VirtualMachine::CloseUpvalues(val::Value* last)
 {
     while (open_upvalues_ && (open_upvalues_->location >= last)) {
@@ -423,6 +453,15 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 val::Value value = Pop();
                 Pop();
                 Push(value);
+                break;
+            }
+            case Chunk::OpCode::kOpInvoke: {
+                std::shared_ptr<obj::ObjString> method = ReadString(frame);
+                int arg_count = ReadByte(frame);
+                if (!Invoke(method, arg_count))
+                    return InterpretResult::kInterpretRuntimeError;
+
+                frame = &frames_[frame_count - 1];
                 break;
             }
             case Chunk::OpCode::kOpMethod:
