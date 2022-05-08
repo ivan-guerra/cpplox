@@ -99,6 +99,8 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleConstantInstruction("OP_SET_PROPERTY", offset);
         case OpCode::kOpGetProperty:
             return DisassembleConstantInstruction("OP_GET_PROPERTY", offset);
+        case OpCode::kOpMethod:
+            return DisassembleConstantInstruction("OP_METHOD", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);

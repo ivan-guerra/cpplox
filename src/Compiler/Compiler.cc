@@ -345,14 +345,29 @@ void Compiler::FunDeclaration()
 void Compiler::ClassDeclaration()
 {
     Consume(TokenType::kIdentifier, "Expect class name.");
+    Token   class_name    = parser_.previous;
     uint8_t name_constant = IdentifierConstant(parser_.previous);
     DeclareVariable();
 
     EmitBytes(Chunk::OpCode::kOpClass, name_constant);
     DefineVariable(name_constant);
 
+    NamedVariable(class_name, false);
     Consume(TokenType::kLeftBrace, "Expect '{' before class body.");
+    while (!Check(TokenType::kRightBrace) && !Check(TokenType::kEof))
+        Method();
     Consume(TokenType::kRightBrace, "Expect '}' after class body.");
+    EmitByte(Chunk::OpCode::kOpPop);
+}
+
+void Compiler::Method()
+{
+    Consume(TokenType::kIdentifier, "Expect method name.");
+    uint8_t constant = IdentifierConstant(parser_.previous);
+
+    FunctionType type = FunctionType::kTypeFunction;
+    Function(type);
+    EmitBytes(Chunk::OpCode::kOpMethod, constant);
 }
 
 void Compiler::AddLocal(const Token& name)

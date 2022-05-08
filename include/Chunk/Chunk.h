@@ -53,7 +53,8 @@ public:
         kOpCloseUpvalue,
         kOpClass,
         kOpSetProperty,
-        kOpGetProperty
+        kOpGetProperty,
+        kOpMethod
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */

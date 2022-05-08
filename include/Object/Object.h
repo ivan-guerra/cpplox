@@ -86,6 +86,7 @@ struct ObjClosure :
     int                                      upvalue_count; /*!< Number of upvalues referenced by this closure. */
 }; // end ObjClosure
 
+using Table = std::unordered_map<std::shared_ptr<ObjString>, val::Value>;
 /*!
  * \struct ObjClass
  * \brief The ObjClass struct represents a class object.
@@ -93,10 +94,10 @@ struct ObjClosure :
 struct ObjClass :
     public Obj
 {
-    std::shared_ptr<ObjString> name; /*!< Class name mainly for error reporting. */
+    std::shared_ptr<ObjString> name;    /*!< Class name mainly for error reporting. */
+    Table                      methods; /*!< Map of class methods. */
 }; // end ObjClass
 
-using Table = std::unordered_map<std::shared_ptr<ObjString>, val::Value>;
 /*!
  * \struct ObjInstance
  * \brief The ObjInstance struct represent class instances.

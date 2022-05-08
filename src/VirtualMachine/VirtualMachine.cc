@@ -127,6 +127,14 @@ void VirtualMachine::DefineNative(
     Pop();
 }
 
+void VirtualMachine::DefineMethod(std::shared_ptr<obj::ObjString> name)
+{
+    val::Value method = Peek(0);
+    std::shared_ptr<obj::ObjClass> klass = obj::AsClass(Peek(1));
+    klass->methods[name] = method;
+    Pop();
+}
+
 void VirtualMachine::CloseUpvalues(val::Value* last)
 {
     while (open_upvalues_ && (open_upvalues_->location >= last)) {
@@ -383,6 +391,9 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 Push(value);
                 break;
             }
+            case Chunk::OpCode::kOpMethod:
+                DefineMethod(ReadString(frame));
+                break;
         }
     }
 }

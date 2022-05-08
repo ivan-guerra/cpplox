@@ -245,7 +245,15 @@ private:
      */
     void FunDeclaration();
 
+    /*!
+     * \brief Parse a class declaration.
+     */
     void ClassDeclaration();
+
+    /*!
+     * \brief Parse a class method declaration.
+     */
+    void Method();
 
     /*!
      * \brief Method called by the parser to handle variables.

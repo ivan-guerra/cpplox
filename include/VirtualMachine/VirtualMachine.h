@@ -140,6 +140,11 @@ private:
     void DefineNative(const std::string& name, obj::NativeFn function);
 
     /*!
+     * \brief Add a method definition to the class at the top of the stack.
+     */
+    void DefineMethod(std::shared_ptr<obj::ObjString> name);
+
+    /*!
      * \brief Close on an upvalue.
      */
     void CloseUpvalues(val::Value* last);
