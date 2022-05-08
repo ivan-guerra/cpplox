@@ -19,13 +19,14 @@ namespace obj
  */
 enum ObjType
 {
-    kObjString,   /*!< String type. */
-    kObjFunction, /*!< Function type. */
-    kObjNative,   /*!< Lox native function type. */
-    kObjClosure,  /*!< Closure type. */
-    kObjUpvalue,  /*!< Closure upvalue type. */
-    kObjClass,    /*!< Lox class type. */
-    kObjInstance  /*!< Lox class instance type. */
+    kObjString,      /*!< String type. */
+    kObjFunction,    /*!< Function type. */
+    kObjNative,      /*!< Lox native function type. */
+    kObjClosure,     /*!< Closure type. */
+    kObjUpvalue,     /*!< Closure upvalue type. */
+    kObjClass,       /*!< Lox class type. */
+    kObjInstance,    /*!< Lox class instance type. */
+    kObjBoundMethod, /*!< Lox class method type. */
 }; // end ObjType
 
 /*!
@@ -109,6 +110,17 @@ struct ObjInstance :
     Table                     fields; /*!< Instance state data. */
 }; // end ObjInstance
 
+/*!
+ * \struct ObjBoundMethod
+ * \brief The ObjBoundMethod struct represents a method bound to the instance of a class.
+ */
+struct ObjBoundMethod :
+    public Obj
+{
+    val::Value                  receiver; /*!< Representation of 'this'. */
+    std::shared_ptr<ObjClosure> method;   /*!< Method bound to #receiver. */
+}; // end ObjBoundMethod
+
 using NativeFn = std::function<val::Value(int,val::Value*)>;
 
 /*!
@@ -167,6 +179,11 @@ std::shared_ptr<ObjClass> AsClass(const val::Value& value);
 std::shared_ptr<ObjInstance> AsInstance(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a ObjBoundMethod object.
+ */
+std::shared_ptr<ObjBoundMethod> AsBoundMethod(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -210,6 +227,11 @@ bool IsClass(const val::Value& value);
  * \brief Return \c true if \a value is an ObjInstance object.
  */
 bool IsInstance(const val::Value& value);
+
+/*!
+ * \brief Return \c true if \a value is an ObjBoundMethod object.
+ */
+bool IsBoundMethod(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
@@ -256,6 +278,13 @@ std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name);
  * \brief Return a pointer to a new ObjInstance object.
  */
 std::shared_ptr<ObjInstance> NewInstance(std::shared_ptr<ObjClass> klass);
+
+/*!
+ * \brief Return a pointer to a new ObjBoundMethod object.
+ */
+std::shared_ptr<ObjBoundMethod> NewBoundMethod(
+    const val::Value& receiver,
+    std::shared_ptr<ObjClosure> method);
 
 /*!
  * \brief Print the name of \a function to STDOUT.

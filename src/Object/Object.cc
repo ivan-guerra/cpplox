@@ -35,6 +35,9 @@ std::shared_ptr<ObjClass> AsClass(const val::Value& value)
 std::shared_ptr<ObjInstance> AsInstance(const val::Value& value)
     { return std::static_pointer_cast<ObjInstance>(AsObj(value)); }
 
+std::shared_ptr<ObjBoundMethod> AsBoundMethod(const val::Value& value)
+    { return std::static_pointer_cast<ObjBoundMethod>(AsObj(value)); }
+
 std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
@@ -61,6 +64,9 @@ bool IsClass(const val::Value& value)
 
 bool IsInstance(const val::Value& value)
     { return IsObjType(value, ObjType::kObjInstance); }
+
+bool IsBoundMethod(const val::Value& value)
+    { return IsObjType(value, ObjType::kObjBoundMethod); }
 
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
@@ -139,6 +145,18 @@ std::shared_ptr<ObjInstance> NewInstance(std::shared_ptr<ObjClass> klass)
     instance->klass = klass;
 
     return instance;
+}
+
+std::shared_ptr<ObjBoundMethod> NewBoundMethod(
+    const val::Value& receiver,
+    std::shared_ptr<ObjClosure> method)
+{
+    std::shared_ptr<ObjBoundMethod> bound = std::make_shared<ObjBoundMethod>();
+    bound->type     = ObjType::kObjBoundMethod;
+    bound->receiver = receiver;
+    bound->method   = method;
+
+    return bound;
 }
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)

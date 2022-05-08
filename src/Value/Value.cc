@@ -77,6 +77,9 @@ void PrintObject(const Value& value)
             std::printf("%s instance",
                         obj::AsInstance(value)->klass->name->chars.c_str());
             break;
+        case obj::ObjType::kObjBoundMethod:
+            obj::PrintFunction(obj::AsBoundMethod(value)->method->function);
+            break;
     }
 }
 

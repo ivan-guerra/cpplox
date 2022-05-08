@@ -89,6 +89,11 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
                 return true;
                 break;
             }
+            case obj::ObjType::kObjBoundMethod: {
+                std::shared_ptr<obj::ObjBoundMethod> bound =
+                    obj::AsBoundMethod(callee);
+                    return Call(bound->method, arg_count);
+            }
             default:
                 /* Non-callable object type. */
                 break;
@@ -133,6 +138,23 @@ void VirtualMachine::DefineMethod(std::shared_ptr<obj::ObjString> name)
     std::shared_ptr<obj::ObjClass> klass = obj::AsClass(Peek(1));
     klass->methods[name] = method;
     Pop();
+}
+
+bool VirtualMachine::BindMethod(
+    std::shared_ptr<obj::ObjClass> klass,
+    std::shared_ptr<obj::ObjString> name)
+{
+    if (klass->methods.find(name) == klass->methods.end()) {
+        RuntimeError("Undefined property '%s'.", name->chars.c_str());
+        return false;
+    }
+
+    std::shared_ptr<obj::ObjBoundMethod> bound =
+        obj::NewBoundMethod(Peek(0), obj::AsClosure(klass->methods[name]));
+
+    Pop();
+    Push(obj::ObjVal(bound));
+    return true;
 }
 
 void VirtualMachine::CloseUpvalues(val::Value* last)
@@ -373,8 +395,10 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                     Push(instance->fields[name]);
                     break;
                 }
-                RuntimeError("Undefined property '%s'.", name->chars.c_str());
-                return InterpretResult::kInterpretRuntimeError;
+
+                if (!BindMethod(instance->klass, name))
+                    return InterpretResult::kInterpretRuntimeError;
+                break;
             }
             case Chunk::OpCode::kOpSetProperty: {
                 if (!obj::IsInstance(Peek(1))) {

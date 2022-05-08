@@ -145,6 +145,13 @@ private:
     void DefineMethod(std::shared_ptr<obj::ObjString> name);
 
     /*!
+     * \brief Bind \a name to to \a klass placing the corresponding method on the stack.
+     */
+    bool BindMethod(
+        std::shared_ptr<obj::ObjClass> klass,
+        std::shared_ptr<obj::ObjString> name);
+
+    /*!
      * \brief Close on an upvalue.
      */
     void CloseUpvalues(val::Value* last);
