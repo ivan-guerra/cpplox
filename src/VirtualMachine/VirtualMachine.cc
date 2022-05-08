@@ -82,6 +82,13 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
                 return true;
                 break;
             }
+            case obj::ObjType::kObjClass: {
+                std::shared_ptr<obj::ObjClass> klass = obj::AsClass(callee);
+                vm_stack.stack_top[-arg_count - 1] =
+                    obj::ObjVal(obj::NewInstance(klass));
+                return true;
+                break;
+            }
             default:
                 /* Non-callable object type. */
                 break;

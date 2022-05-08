@@ -32,6 +32,9 @@ std::shared_ptr<ObjClosure> AsClosure(const val::Value& value)
 std::shared_ptr<ObjClass> AsClass(const val::Value& value)
     { return std::static_pointer_cast<ObjClass>(AsObj(value)); }
 
+std::shared_ptr<ObjInstance> AsInstance(const val::Value& value)
+    { return std::static_pointer_cast<ObjInstance>(AsObj(value)); }
+
 std::string AsStdString(const val::Value& value)
     { return std::static_pointer_cast<ObjString>(AsObj(value))->chars; }
 
@@ -55,6 +58,9 @@ bool IsClosure(const val::Value& value)
 
 bool IsClass(const val::Value& value)
     { return IsObjType(value, ObjType::kObjClass); }
+
+bool IsInstance(const val::Value& value)
+    { return IsObjType(value, ObjType::kObjInstance); }
 
 std::shared_ptr<ObjString> CopyString(
     const std::string& str,
@@ -124,6 +130,15 @@ std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name)
     klass->name = name;
 
     return klass;
+}
+
+std::shared_ptr<ObjInstance> NewInstance(std::shared_ptr<ObjClass> klass)
+{
+    std::shared_ptr<ObjInstance> instance = std::make_shared<ObjInstance>();
+    instance->type  = ObjType::kObjInstance;
+    instance->klass = klass;
+
+    return instance;
 }
 
 void PrintFunction(std::shared_ptr<ObjFunction> function)

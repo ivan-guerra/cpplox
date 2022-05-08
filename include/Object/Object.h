@@ -24,7 +24,8 @@ enum ObjType
     kObjNative,   /*!< Lox native function type. */
     kObjClosure,  /*!< Closure type. */
     kObjUpvalue,  /*!< Closure upvalue type. */
-    kObjClass     /*!< Lox class type. */
+    kObjClass,    /*!< Lox class type. */
+    kObjInstance  /*!< Lox class instance type. */
 }; // end ObjType
 
 /*!
@@ -95,6 +96,18 @@ struct ObjClass :
     std::shared_ptr<ObjString> name; /*!< Class name mainly for error reporting. */
 }; // end ObjClass
 
+using Table = std::unordered_map<std::shared_ptr<ObjString>, val::Value>;
+/*!
+ * \struct ObjInstance
+ * \brief The ObjInstance struct represent class instances.
+ */
+struct ObjInstance :
+    public Obj
+{
+    std::shared_ptr<ObjClass> klass;  /*!< Name of the class. */
+    Table                     fields; /*!< Instance state data. */
+}; // end ObjInstance
+
 using NativeFn = std::function<val::Value(int,val::Value*)>;
 
 /*!
@@ -148,6 +161,11 @@ std::shared_ptr<ObjClosure> AsClosure(const val::Value& value);
 std::shared_ptr<ObjClass> AsClass(const val::Value& value);
 
 /*!
+ * \brief Convert \a value to a ObjInstance object.
+ */
+std::shared_ptr<ObjInstance> AsInstance(const val::Value& value);
+
+/*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
 std::string AsStdString(const val::Value& value);
@@ -186,6 +204,11 @@ bool IsClosure(const val::Value& value);
  * \brief Return \c true if \a value is an ObjClass object.
  */
 bool IsClass(const val::Value& value);
+
+/*!
+ * \brief Return \c true if \a value is an ObjInstance object.
+ */
+bool IsInstance(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
@@ -227,6 +250,11 @@ std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot);
  * \brief Return a pointer to a new ObjClass object.
  */
 std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name);
+
+/*!
+ * \brief Return a pointer to a new ObjInstance object.
+ */
+std::shared_ptr<ObjInstance> NewInstance(std::shared_ptr<ObjClass> klass);
 
 /*!
  * \brief Print the name of \a function to STDOUT.

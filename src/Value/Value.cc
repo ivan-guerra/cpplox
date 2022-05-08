@@ -73,6 +73,10 @@ void PrintObject(const Value& value)
         case obj::ObjType::kObjClass:
             std::printf("%s", obj::AsClass(value)->name->chars.c_str());
             break;
+        case obj::ObjType::kObjInstance:
+            std::printf("%s instance",
+                        obj::AsInstance(value)->klass->name->chars.c_str());
+            break;
     }
 }
 
