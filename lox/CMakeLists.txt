@@ -11,7 +11,7 @@ target_compile_options(${PROJECT_NAME}
         -Wall
         -Werror
         -Wextra
-        -g
+        "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
 )
 
 target_compile_features(${PROJECT_NAME}

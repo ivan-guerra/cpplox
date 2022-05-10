@@ -16,6 +16,7 @@ Help()
 }
 
 BUILD_DOC="OFF"
+BUILD_TYPE="RELEASE"
 DEBUG_PRINT_CODE="OFF"
 DEBUG_TRACE_EXECUTION="OFF"
 
@@ -23,7 +24,8 @@ while getopts ":hdg" flag
 do
     case "${flag}" in
         d) BUILD_DOC="ON";;
-        g) DEBUG_PRINT_CODE="ON"
+        g) BUILD_TYPE="DEBUG"
+           DEBUG_PRINT_CODE="ON"
            DEBUG_TRACE_EXECUTION="ON";;
         h) Help
            exit;;
@@ -46,6 +48,7 @@ fi
 pushd $LOX_BUILD_DIR
     cmake ../                                                 \
           -DBUILD_DOC=${BUILD_DOC}                            \
+          -DCMAKE_BUILD_TYPE=${BUILD_TYPE}                    \
           -DDEBUG_PRINT_CODE=${DEBUG_PRINT_CODE}              \
           -DDEBUG_TRACE_EXECUTION=${DEBUG_TRACE_EXECUTION} && \
     make -j$(nproc) all                                    && \

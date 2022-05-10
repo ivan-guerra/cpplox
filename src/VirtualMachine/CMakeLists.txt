@@ -24,7 +24,7 @@ target_compile_options(${PROJECT_NAME}
         -Werror
         -Wextra
         -Wno-int-in-bool-context
-        -g
+        "$<$<CONFIG:DEBUG>:-O0;-g3;-ggdb>"
 )
 
 target_compile_features(${PROJECT_NAME}
