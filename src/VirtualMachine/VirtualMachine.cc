@@ -480,6 +480,26 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
                 Pop();
                 break;
             }
+            case Chunk::OpCode::kOpGetSuper: {
+                LoxString name = ReadString(frame);
+                std::shared_ptr<obj::ObjClass> superclass =
+                    obj::AsClass(Pop());
+
+                if (!BindMethod(superclass, name))
+                    return InterpretResult::kInterpretRuntimeError;
+                break;
+            }
+            case Chunk::OpCode::kOpSuperInvoke: {
+                LoxString method = ReadString(frame);
+                int arg_count = ReadByte(frame);
+                std::shared_ptr<obj::ObjClass> superclass =
+                    obj::AsClass(Pop());
+                if (!InvokeFromClass(superclass, method, arg_count))
+                    return InterpretResult::kInterpretRuntimeError;
+
+                frame = &frames_[frame_count - 1];
+                break;
+            }
         }
     }
 }

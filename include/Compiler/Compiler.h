@@ -149,6 +149,7 @@ private:
     struct ClassCompiler
     {
         ClassCompiler* enclosing;
+        bool           has_superclass;
     }; // end ClassCompiler
 
     static std::unordered_map<TokenType, ParseRule> rules_; /*!< Lookup table mapping TokenType to a corresponding ParseRule. */
@@ -506,6 +507,11 @@ private:
      * \brief Compile a 'this' expression.
      */
     void This([[maybe_unused]]bool can_assign);
+
+    /*!
+     * \brief Compile a 'super' expression.
+     */
+    void Super([[maybe_unused]]bool can_assign);
 
     lox::scanr::Scanner scanner_;       /*!< Token scanner. */
     Parser              parser_;        /*!< Handle to the Parser. */

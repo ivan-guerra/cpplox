@@ -81,7 +81,7 @@ Compiler::rules_ =
     {TokenType::kReturn,
         {nullptr, nullptr, Precedence::kPrecNone}},
     {TokenType::kSuper,
-        {nullptr, nullptr, Precedence::kPrecNone}},
+        {&Compiler::Super, nullptr, Precedence::kPrecNone}},
     {TokenType::kThis,
         {&Compiler::This, nullptr, Precedence::kPrecNone}},
     {TokenType::kTrue,
@@ -359,8 +359,9 @@ void Compiler::ClassDeclaration()
     DefineVariable(name_constant);
 
     ClassCompiler class_compiler;
-    class_compiler.enclosing = current_class_;
-    current_class_           = &class_compiler;
+    class_compiler.enclosing      = current_class_;
+    class_compiler.has_superclass = false;
+    current_class_                = &class_compiler;
 
     if (Match(TokenType::kLess)) {
         Consume(TokenType::kIdentifier, "Expect superclass name.");
@@ -368,8 +369,13 @@ void Compiler::ClassDeclaration()
         if (IdentifiersEqual(class_name, parser_.previous))
             Error("A class can't inherit from itself.");
 
+        BeginScope();
+        AddLocal(scanr::Token(TokenType::kSuper, "super", 0));
+        DefineVariable(0);
+
         NamedVariable(class_name, false);
         EmitByte(Chunk::OpCode::kOpInherit);
+        class_compiler.has_superclass = true;
     }
 
     NamedVariable(class_name, false);
@@ -378,6 +384,9 @@ void Compiler::ClassDeclaration()
         Method();
     Consume(TokenType::kRightBrace, "Expect '}' after class body.");
     EmitByte(Chunk::OpCode::kOpPop);
+
+    if (class_compiler.has_superclass)
+        EndScope();
 
     current_class_ = current_class_->enclosing;
 }
@@ -885,6 +894,29 @@ void Compiler::This([[maybe_unused]]bool can_assign)
         return;
     }
     Variable(false);
+}
+
+void Compiler::Super([[maybe_unused]]bool can_assign)
+{
+    if (!current_class_)
+        Error("Can't use 'super' outside of a class.");
+    else if (!current_class_->has_superclass)
+        Error("Can't use 'super' in a class with no superclass.");
+
+    Consume(TokenType::kDot, "Expect '.' after 'super'.");
+    Consume(TokenType::kIdentifier, "Expect superclass method name.");
+    uint8_t name = IdentifierConstant(parser_.previous);
+
+    NamedVariable(scanr::Token(TokenType::kThis, "this", 0), false);
+    if (Match(TokenType::kLeftParen)) {
+        uint8_t arg_count = ArgumentList();
+        NamedVariable(scanr::Token(TokenType::kSuper, "super", 0), false);
+        EmitBytes(Chunk::OpCode::kOpSuperInvoke, name);
+        EmitByte(arg_count);
+    } else {
+        NamedVariable(scanr::Token(TokenType::kSuper, "super", 0), false);
+        EmitBytes(Chunk::OpCode::kOpGetSuper, name);
+    }
 }
 
 Compiler::Compiler() :

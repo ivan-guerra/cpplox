@@ -56,7 +56,9 @@ public:
         kOpGetProperty,
         kOpMethod,
         kOpInvoke,
-        kOpInherit
+        kOpInherit,
+        kOpGetSuper,
+        kOpSuperInvoke
     }; // end OpCode
 
     /* The defaults for compiler generated methods are appropriate. */

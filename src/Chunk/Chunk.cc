@@ -105,6 +105,10 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
             return DisassembleInvokeInstruction("OP_INVOKE", offset);
         case OpCode::kOpInherit:
             return DisassembleSimpleInstruction("OP_INHERIT", offset);
+        case OpCode::kOpGetSuper:
+            return DisassembleConstantInstruction("OP_GET_SUPER", offset);
+        case OpCode::kOpSuperInvoke:
+            return DisassembleInvokeInstruction("OP_SUPER_INVOKE", offset);
         default:
             std::fprintf(stderr, "unknown opcode %d\n", instruction);
             return (offset + 1);
