@@ -194,5 +194,6 @@ void Chunk::Disassemble(const std::string& name) const
     std::printf("== %s ==\n", name.c_str());
     for (std::size_t offset = 0; offset < code_.size();)
         offset = DisassembleInstruction(offset);
+    std::printf("\n");
 }
 } // end lox
