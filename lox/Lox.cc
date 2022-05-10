@@ -13,15 +13,15 @@
  */
 enum LoxExitCode
 {
-    kSuccess           = 0,  /*!< Indicates the interpreter exists gracefully. */
+    kSuccess           = 0,  /*!< Indicates the interpreter exited gracefully. */
     kInvalidUsage      = 64, /*!< Indicates the interpreter was called with invalid arguments. */
     kInvalidScriptPath = 74, /*!< Indicates a nonexistent/invalid script path was specified by the User. */
     kCompileError      = 65, /*!< Indicates a compile time error. */
     kRuntimeError      = 70  /*!< Indicates a runtime error. */
 };
 
-static lox::vm::VirtualMachine::InterpretResult Interpret(
-    const std::string& source)
+static lox::vm::VirtualMachine::InterpretResult
+Interpret(const std::string& source)
 {
     /* The VM is a static object meaning its state persists throughout the life
        of the interpreter program. The latter is intentional and useful
@@ -29,11 +29,11 @@ static lox::vm::VirtualMachine::InterpretResult Interpret(
        code one at a time (i.e., call Interpret() repeatedly with the
        expectation the VM 'remembers' the code last executed). */
     static lox::vm::VirtualMachine vm;
-
     return vm.Interpret(source);
 }
 
-static void Repl()
+static void
+Repl()
 {
     const std::string kPrompt = "lox >>> ";
     std::printf("%s", kPrompt.c_str());
@@ -45,7 +45,8 @@ static void Repl()
     }
 }
 
-static void RunFile(const std::string& script)
+static void
+RunFile(const std::string& script)
 {
     std::ifstream script_fd(script);
     if (!script_fd.is_open()) {

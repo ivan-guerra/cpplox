@@ -22,7 +22,9 @@ struct ValueStack
     val::Value* stack_top;        /*!< Pointer to the item at the stack top. */
 }; // end ValueStack
 
-extern struct ValueStack vm_stack; /*!< Global var representing the VM value stack. */
+/* Global val::Value stack utilized by the VM. Why global? Just to keep it
+   simple and in-line with the text. */
+extern struct ValueStack vm_stack;
 
 /*!
  * \brief Reset the stack.
@@ -31,31 +33,36 @@ extern struct ValueStack vm_stack; /*!< Global var representing the VM value sta
  * actual deallocation/destruction of the Value objects stored in the stack
  * at the time ResetStack() is called.
  */
-void ResetStack();
+void
+ResetStack();
 
 /*!
- * \brief Push \a value into the stack.
+ * \brief Push \a value onto the stack.
  */
-void Push(const val::Value& value);
+void
+Push(const val::Value& value);
 
 /*!
  * \brief Pop the Value at the top of the stack.
  *
- * Popping from an empty #vm_stack objects produces undefined behavior.
+ * Popping from an empty stack leads to undefined behavior.
  */
-val::Value Pop();
+val::Value
+Pop();
 
 /*!
  * \brief Return the value \a distance slots back from the stack top.
  *
- * Calling Peek() with an invalid \a distance argument produces undefined
+ * Calling Peek() with an invalid \a distance argument leads to undefined
  * behavior.
  */
-val::Value Peek(int distance);
+val::Value
+Peek(int distance);
 
 /*!
  * \brief Print stack contents to STDOUT.
  */
-void PrintStack();
+void
+PrintStack();
 } // end vm
 } // end lox

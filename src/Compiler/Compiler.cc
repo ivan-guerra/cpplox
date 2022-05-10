@@ -96,30 +96,32 @@ Compiler::rules_ =
         {nullptr, nullptr, Precedence::kPrecNone}}
 };
 
-void Compiler::InitCompiler(
-        CompilerDataPtr enclosing,
-        CompilerDataPtr compiler,
-        FunctionType type)
+void
+Compiler::InitCompiler(CompilerDataPtr enclosing,
+                       CompilerDataPtr compiler,
+                       FunctionType type)
 {
-    compiler_ = compiler;
+    current_ = compiler;
+    current_->enclosing = enclosing;
+    current_->function  = obj::NewFunction();
+    current_->type      = type;
 
-    compiler_->enclosing = enclosing;
-    compiler_->function  = obj::NewFunction();
-    compiler_->type      = type;
     if (type != FunctionType::kTypeScript) {
-        compiler_->function->name =
-            obj::CopyString(parser_.previous.GetLexeme(), strings_);
+        current_->function->name =
+            obj::CopyString(parser_.previous.GetLexeme(), interned_strs_);
     }
-    compiler_->locals[0].depth       = 0;
-    compiler_->locals[0].is_captured = false;
+    current_->locals[0].depth       = 0;
+    current_->locals[0].is_captured = false;
+
     if (type != FunctionType::kTypeFunction) {
-        compiler_->locals[0].name = scanr::Token(TokenType::kThis, "this", 0);
+        current_->locals[0].name = scanr::Token(TokenType::kThis, "this", 0);
     }
-    compiler_->local_count           = 1;
-    compiler_->scope_depth           = 0;
+    current_->local_count = 1;
+    current_->scope_depth = 0;
 }
 
-void Compiler::ParsePrecedence(Precedence precedence)
+void
+Compiler::ParsePrecedence(Precedence precedence)
 {
     Advance();
 
@@ -128,6 +130,7 @@ void Compiler::ParsePrecedence(Precedence precedence)
         Error("Expect expression.");
         return;
     }
+
     bool can_assign = precedence <= Precedence::kPrecAssignment;
     prefix_rule(this, can_assign);
 
@@ -141,20 +144,22 @@ void Compiler::ParsePrecedence(Precedence precedence)
         Error("Invalid assignment target.");
 }
 
-uint8_t Compiler::ParseVariable(const std::string& error_message)
+uint8_t
+Compiler::ParseVariable(const std::string& error_message)
 {
     Consume(TokenType::kIdentifier, error_message);
 
     DeclareVariable();
-    if (compiler_->scope_depth > 0)
+    if (current_->scope_depth > 0)
         return 0;
 
     return IdentifierConstant(parser_.previous);
 }
 
-void Compiler::DefineVariable(uint8_t global)
+void
+Compiler::DefineVariable(uint8_t global)
 {
-    if (compiler_->scope_depth > 0) {
+    if (current_->scope_depth > 0) {
         MarkInitialized();
         return;
     }
@@ -162,7 +167,8 @@ void Compiler::DefineVariable(uint8_t global)
     EmitBytes(Chunk::OpCode::kOpDefineGlobal, global);
 }
 
-void Compiler::Statement()
+void
+Compiler::Statement()
 {
     if (Match(TokenType::kPrint)) {
         PrintStatement();
@@ -183,7 +189,8 @@ void Compiler::Statement()
     }
 }
 
-void Compiler::IfStatement()
+void
+Compiler::IfStatement()
 {
     Consume(TokenType::kLeftParen, "Expect '(' after if.");
     Expression();
@@ -205,7 +212,8 @@ void Compiler::IfStatement()
     PatchJump(else_jump);
 }
 
-void Compiler::WhileStatement()
+void
+Compiler::WhileStatement()
 {
     int loop_start = CurrentChunk().GetCode().size();
     Consume(TokenType::kLeftParen, "Expect '(' after 'while'.");
@@ -221,7 +229,8 @@ void Compiler::WhileStatement()
     EmitByte(Chunk::OpCode::kOpPop);
 }
 
-void Compiler::ForStatement()
+void
+Compiler::ForStatement()
 {
     BeginScope();
     Consume(TokenType::kLeftParen, "Expect '(' after 'for'.");
@@ -268,7 +277,8 @@ void Compiler::ForStatement()
     EndScope();
 }
 
-void Compiler::PatchJump(int offset)
+void
+Compiler::PatchJump(int offset)
 {
     int jump = static_cast<int>(CurrentChunk().GetCode().size()) - offset - 2;
     if (jump > UINT16_MAX)
@@ -278,7 +288,8 @@ void Compiler::PatchJump(int offset)
     CurrentChunk().SetInstruction(offset + 1, jump & 0xff);
 }
 
-void Compiler::PrintStatement()
+void
+Compiler::PrintStatement()
 {
     Expression();
     Consume(TokenType::kSemicolon,
@@ -286,7 +297,8 @@ void Compiler::PrintStatement()
     EmitByte(Chunk::OpCode::kOpPrint);
 }
 
-void Compiler::ExpressionStatement()
+void
+Compiler::ExpressionStatement()
 {
     Expression();
     Consume(TokenType::kSemicolon,
@@ -294,15 +306,16 @@ void Compiler::ExpressionStatement()
     EmitByte(Chunk::OpCode::kOpPop);
 }
 
-void Compiler::ReturnStatement()
+void
+Compiler::ReturnStatement()
 {
-    if (compiler_->type == FunctionType::kTypeScript)
+    if (current_->type == FunctionType::kTypeScript)
         Error("Can't return from top-level code.");
 
     if (Match(TokenType::kSemicolon)) {
         EmitReturn();
     } else {
-        if (compiler_->type == FunctionType::kTypeInitializer)
+        if (current_->type == FunctionType::kTypeInitializer)
             Error("Can't return a value from an initializer.");
 
         Expression();
@@ -311,7 +324,8 @@ void Compiler::ReturnStatement()
     }
 }
 
-void Compiler::Declaration()
+void
+Compiler::Declaration()
 {
     if (Match(TokenType::kFun))
         FunDeclaration();
@@ -326,7 +340,8 @@ void Compiler::Declaration()
         Synchronize();
 }
 
-void Compiler::VarDeclaration()
+void
+Compiler::VarDeclaration()
 {
     uint8_t global = ParseVariable("Expect variable name.");
     if (Match(TokenType::kEqual))
@@ -340,7 +355,8 @@ void Compiler::VarDeclaration()
     DefineVariable(global);
 }
 
-void Compiler::FunDeclaration()
+void
+Compiler::FunDeclaration()
 {
     uint8_t global = ParseVariable("Expect function name.");
     MarkInitialized();
@@ -348,7 +364,8 @@ void Compiler::FunDeclaration()
     DefineVariable(global);
 }
 
-void Compiler::ClassDeclaration()
+void
+Compiler::ClassDeclaration()
 {
     Consume(TokenType::kIdentifier, "Expect class name.");
     Token   class_name    = parser_.previous;
@@ -391,7 +408,8 @@ void Compiler::ClassDeclaration()
     current_class_ = current_class_->enclosing;
 }
 
-void Compiler::Method()
+void
+Compiler::Method()
 {
     Consume(TokenType::kIdentifier, "Expect method name.");
     uint8_t constant = IdentifierConstant(parser_.previous);
@@ -405,36 +423,39 @@ void Compiler::Method()
     EmitBytes(Chunk::OpCode::kOpMethod, constant);
 }
 
-void Compiler::AddLocal(const Token& name)
+void
+Compiler::AddLocal(const Token& name)
 {
-    if (compiler_->local_count == (UINT8_MAX + 1)) {
+    if (current_->local_count == (UINT8_MAX + 1)) {
         Error("Too many local variables in function.");
         return;
     }
 
     Local local = {.name=name, .depth=-1, .is_captured=false};
-    compiler_->locals[compiler_->local_count] = local;
-    compiler_->local_count++;
+    current_->locals[current_->local_count] = local;
+    current_->local_count++;
 }
 
-void Compiler::MarkInitialized()
+void
+Compiler::MarkInitialized()
 {
-    if (0 == compiler_->scope_depth)
+    if (0 == current_->scope_depth)
         return;
 
-    compiler_->locals[compiler_->local_count - 1].depth =
-        compiler_->scope_depth;
+    current_->locals[current_->local_count - 1].depth =
+        current_->scope_depth;
 }
 
-void Compiler::DeclareVariable()
+void
+Compiler::DeclareVariable()
 {
-    if (compiler_->scope_depth == 0)
+    if (0 == current_->scope_depth)
         return;
 
     Token name = parser_.previous;
-    for (int i = compiler_->local_count - 1; i >= 0; --i) {
-        Local local = compiler_->locals[i];
-        if ((local.depth != -1) && (local.depth < compiler_->scope_depth))
+    for (int i = current_->local_count - 1; i >= 0; --i) {
+        Local local = current_->locals[i];
+        if ((local.depth != -1) && (local.depth < current_->scope_depth))
             break;
 
         if (IdentifiersEqual(name, local.name))
@@ -443,7 +464,8 @@ void Compiler::DeclareVariable()
     AddLocal(name);
 }
 
-int Compiler::ResolveLocal(CompilerDataPtr compiler, const Token& name)
+int
+Compiler::ResolveLocal(CompilerDataPtr compiler, const Token& name)
 {
     for (int i = compiler->local_count - 1; i >= 0; --i) {
         Local local = compiler->locals[i];
@@ -456,7 +478,8 @@ int Compiler::ResolveLocal(CompilerDataPtr compiler, const Token& name)
     return -1;
 }
 
-int Compiler::ResolveUpvalue(CompilerDataPtr compiler, const Token& name)
+int
+Compiler::ResolveUpvalue(CompilerDataPtr compiler, const Token& name)
 {
     if (!compiler->enclosing)
         return -1;
@@ -474,10 +497,10 @@ int Compiler::ResolveUpvalue(CompilerDataPtr compiler, const Token& name)
     return -1;
 }
 
-int Compiler::AddUpvalue(
-    CompilerDataPtr compiler,
-    uint8_t index,
-    bool is_local)
+int
+Compiler::AddUpvalue(CompilerDataPtr compiler,
+                     uint8_t index,
+                     bool is_local)
 {
     int upvalue_count = compiler->function->upvalue_count;
     for (int i = 0; i < upvalue_count; ++i) {
@@ -497,23 +520,25 @@ int Compiler::AddUpvalue(
     return compiler->function->upvalue_count++;
 }
 
-void Compiler::EndScope()
+void
+Compiler::EndScope()
 {
-    compiler_->scope_depth--;
+    current_->scope_depth--;
 
-    while ((compiler_->local_count > 0) &&
-           (compiler_->locals[compiler_->local_count - 1].depth >
-            compiler_->scope_depth)) {
-        if (compiler_->locals[compiler_->local_count - 1].is_captured)
+    while ((current_->local_count > 0) &&
+           (current_->locals[current_->local_count - 1].depth >
+            current_->scope_depth)) {
+        if (current_->locals[current_->local_count - 1].is_captured)
             EmitByte(Chunk::OpCode::kOpCloseUpvalue);
         else
             EmitByte(Chunk::OpCode::kOpPop);
 
-        compiler_->local_count--;
+        current_->local_count--;
     }
 }
 
-void Compiler::Block()
+void
+Compiler::Block()
 {
     while (!Check(TokenType::kRightBrace) &&
            !Check(TokenType::kEof)) {
@@ -522,17 +547,18 @@ void Compiler::Block()
     Consume(TokenType::kRightBrace, "Expect '}' after block.");
 }
 
-void Compiler::Function(FunctionType type)
+void
+Compiler::Function(FunctionType type)
 {
     CompilerDataPtr compiler = std::make_shared<CompilerData>();
-    InitCompiler(compiler_, compiler, type);
+    InitCompiler(current_, compiler, type);
     BeginScope();
 
     Consume(TokenType::kLeftParen, "Expect '(' after function name.");
     if (!Check(TokenType::kRightParen)) {
         do {
-            compiler_->function->arity++;
-            if (compiler_->function->arity > 255)
+            current_->function->arity++;
+            if (current_->function->arity > 255)
                 ErrorAtCurrent("Can't have more than 255 parameters.");
 
             uint8_t constant = ParseVariable("Expect paramater name.");
@@ -552,7 +578,8 @@ void Compiler::Function(FunctionType type)
     }
 }
 
-uint8_t Compiler::ArgumentList()
+uint8_t
+Compiler::ArgumentList()
 {
     uint8_t arg_count = 0;
     if (!Check(TokenType::kRightParen)) {
@@ -568,7 +595,8 @@ uint8_t Compiler::ArgumentList()
     return arg_count;
 }
 
-void Compiler::Advance()
+void
+Compiler::Advance()
 {
     parser_.previous = parser_.current;
     while (true) {
@@ -580,7 +608,8 @@ void Compiler::Advance()
     }
 }
 
-bool Compiler::Match(TokenType type)
+bool
+Compiler::Match(TokenType type)
 {
     if (!Check(type))
         return false;
@@ -589,21 +618,23 @@ bool Compiler::Match(TokenType type)
     return true;
 }
 
-uint8_t Compiler::IdentifierConstant(const Token& name)
+uint8_t
+Compiler::IdentifierConstant(const Token& name)
 {
     return MakeConstant(obj::ObjVal(
-                obj::CopyString(name.GetLexeme(), strings_)));
+                obj::CopyString(name.GetLexeme(), interned_strs_)));
 }
 
-void Compiler::NamedVariable(const Token& name, bool can_assign)
+void
+Compiler::NamedVariable(const Token& name, bool can_assign)
 {
     uint8_t get_op = 0;
     uint8_t set_op = 0;
-    int arg = ResolveLocal(compiler_, name);
+    int arg = ResolveLocal(current_, name);
     if (arg != -1) {
         get_op = Chunk::OpCode::kOpGetLocal;
         set_op = Chunk::OpCode::kOpSetLocal;
-    } else if (-1 != (arg = ResolveUpvalue(compiler_, name))) {
+    } else if (-1 != (arg = ResolveUpvalue(current_, name))) {
         get_op = Chunk::OpCode::kOpGetUpvalue;
         set_op = Chunk::OpCode::kOpSetUpvalue;
     } else {
@@ -620,7 +651,8 @@ void Compiler::NamedVariable(const Token& name, bool can_assign)
     }
 }
 
-void Compiler::Consume(TokenType type, const std::string& message)
+void
+Compiler::Consume(TokenType type, const std::string& message)
 {
     if (parser_.current.GetType() == type) {
         Advance();
@@ -629,7 +661,8 @@ void Compiler::Consume(TokenType type, const std::string& message)
     ErrorAtCurrent(message);
 }
 
-uint8_t Compiler::MakeConstant(const val::Value& value)
+uint8_t
+Compiler::MakeConstant(const val::Value& value)
 {
     int constant = CurrentChunk().AddConstant(value);
     if (constant > UINT8_MAX) {
@@ -639,7 +672,8 @@ uint8_t Compiler::MakeConstant(const val::Value& value)
     return static_cast<uint8_t>(constant);
 }
 
-void Compiler::ErrorAt(const Token& error, const std::string& message)
+void
+Compiler::ErrorAt(const Token& error, const std::string& message)
 {
     if (parser_.panic_mode)
         return;
@@ -660,10 +694,10 @@ void Compiler::ErrorAt(const Token& error, const std::string& message)
     parser_.had_error = true;
 }
 
-void Compiler::Synchronize()
+void
+Compiler::Synchronize()
 {
     parser_.panic_mode = false;
-
     while (parser_.current.GetType() != TokenType::kEof) {
         if (parser_.previous.GetType() ==
             TokenType::kSemicolon)
@@ -686,15 +720,17 @@ void Compiler::Synchronize()
     }
 }
 
-void Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
+void
+Compiler::EmitBytes(uint8_t byte1, uint8_t byte2)
 {
     EmitByte(byte1);
     EmitByte(byte2);
 }
 
-void Compiler::EmitReturn()
+void
+Compiler::EmitReturn()
 {
-    if (compiler_->type == FunctionType::kTypeInitializer)
+    if (current_->type == FunctionType::kTypeInitializer)
         EmitBytes(Chunk::OpCode::kOpGetLocal, 0);
     else
         EmitByte(Chunk::OpCode::kOpNil);
@@ -702,7 +738,8 @@ void Compiler::EmitReturn()
     EmitByte(Chunk::OpCode::kOpReturn);
 }
 
-int Compiler::EmitJump(uint8_t instruction)
+int
+Compiler::EmitJump(uint8_t instruction)
 {
     EmitByte(instruction);
     EmitByte(0xFF);
@@ -711,7 +748,8 @@ int Compiler::EmitJump(uint8_t instruction)
     return (static_cast<int>(CurrentChunk().GetCode().size()) - 2);
 }
 
-void Compiler::EmitLoop(int loop_start)
+void
+Compiler::EmitLoop(int loop_start)
 {
     EmitByte(Chunk::OpCode::kOpLoop);
 
@@ -724,33 +762,37 @@ void Compiler::EmitLoop(int loop_start)
     EmitByte(offset & 0xFF);
 }
 
-std::shared_ptr<obj::ObjFunction> Compiler::EndCompiler()
+std::shared_ptr<obj::ObjFunction>
+Compiler::EndCompiler()
 {
     EmitReturn();
-    std::shared_ptr<obj::ObjFunction> function = compiler_->function;
+    std::shared_ptr<obj::ObjFunction> function = current_->function;
 #ifdef DEBUG_PRINT_CODE
     if (!parser_.had_error) {
         CurrentChunk().Disassemble(
             function->name ? function->name->chars : "<script>");
     }
 #endif
-    compiler_ = compiler_->enclosing;
+    current_ = current_->enclosing;
     return function;
 }
 
-void Compiler::Number([[maybe_unused]]bool can_assign)
+void
+Compiler::Number([[maybe_unused]]bool can_assign)
 {
     double value = std::stod(parser_.previous.GetLexeme());
     EmitConstant(val::NumberVal(value));
 }
 
-void Compiler::Grouping([[maybe_unused]]bool can_assign)
+void
+Compiler::Grouping([[maybe_unused]]bool can_assign)
 {
     Expression();
     Consume(TokenType::kRightParen, "Expect ')' after expression.");
 }
 
-void Compiler::Unary([[maybe_unused]]bool can_assign)
+void
+Compiler::Unary([[maybe_unused]]bool can_assign)
 {
     TokenType operator_type = parser_.previous.GetType();
 
@@ -771,7 +813,8 @@ void Compiler::Unary([[maybe_unused]]bool can_assign)
     }
 }
 
-void Compiler::Binary([[maybe_unused]]bool can_assign)
+void
+Compiler::Binary([[maybe_unused]]bool can_assign)
 {
     TokenType operator_type = parser_.previous.GetType();
     ParsePrecedence(
@@ -814,7 +857,8 @@ void Compiler::Binary([[maybe_unused]]bool can_assign)
     }
 }
 
-void Compiler::Literal([[maybe_unused]]bool can_assign)
+void
+Compiler::Literal([[maybe_unused]]bool can_assign)
 {
     switch (parser_.previous.GetType()) {
         case TokenType::kFalse:
@@ -831,18 +875,20 @@ void Compiler::Literal([[maybe_unused]]bool can_assign)
     }
 }
 
-void Compiler::String([[maybe_unused]]bool can_assign)
+void
+Compiler::String([[maybe_unused]]bool can_assign)
 {
     std::string lexeme = parser_.previous.GetLexeme();
 
     /* Trim off the '"' marks on either end of the lexeme before copying. */
     std::shared_ptr<obj::Obj> str_obj =
-        obj::CopyString(lexeme.substr(1, lexeme.size() - 2), strings_);
+        obj::CopyString(lexeme.substr(1, lexeme.size() - 2), interned_strs_);
 
     EmitConstant(obj::ObjVal(str_obj));
 }
 
-void Compiler::And([[maybe_unused]]bool can_assign)
+void
+Compiler::And([[maybe_unused]]bool can_assign)
 {
     int end_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
 
@@ -852,7 +898,8 @@ void Compiler::And([[maybe_unused]]bool can_assign)
     PatchJump(end_jump);
 }
 
-void Compiler::Or([[maybe_unused]]bool can_assign)
+void
+Compiler::Or([[maybe_unused]]bool can_assign)
 {
     int else_jump = EmitJump(Chunk::OpCode::kOpJumpIfFalse);
     int end_jump  = EmitJump(Chunk::OpCode::kOpJump);
@@ -864,13 +911,15 @@ void Compiler::Or([[maybe_unused]]bool can_assign)
     PatchJump(end_jump);
 }
 
-void Compiler::Call([[maybe_unused]]bool can_assign)
+void
+Compiler::Call([[maybe_unused]]bool can_assign)
 {
     uint8_t arg_count = ArgumentList();
     EmitBytes(Chunk::OpCode::kOpCall, arg_count);
 }
 
-void Compiler::Dot(bool can_assign)
+void
+Compiler::Dot(bool can_assign)
 {
     Consume(TokenType::kIdentifier, "Expect property name after '.'.");
     uint8_t name = IdentifierConstant(parser_.previous);
@@ -887,7 +936,8 @@ void Compiler::Dot(bool can_assign)
     }
 }
 
-void Compiler::This([[maybe_unused]]bool can_assign)
+void
+Compiler::This([[maybe_unused]]bool can_assign)
 {
     if (!current_class_) {
         Error("Can't use 'this' outside of a class.");
@@ -896,7 +946,8 @@ void Compiler::This([[maybe_unused]]bool can_assign)
     Variable(false);
 }
 
-void Compiler::Super([[maybe_unused]]bool can_assign)
+void
+Compiler::Super([[maybe_unused]]bool can_assign)
 {
     if (!current_class_)
         Error("Can't use 'super' outside of a class.");
@@ -921,21 +972,21 @@ void Compiler::Super([[maybe_unused]]bool can_assign)
 
 Compiler::Compiler() :
     scanner_(""),
-    compiler_(std::make_shared<CompilerData>()),
+    current_(std::make_shared<CompilerData>()),
     current_class_(nullptr)
 {
     parser_.had_error  = false;
     parser_.panic_mode = false;
 
-    InitCompiler(nullptr, compiler_, FunctionType::kTypeScript);
+    InitCompiler(nullptr, current_, FunctionType::kTypeScript);
 }
 
-std::shared_ptr<obj::ObjFunction> Compiler::Compile(
-    const std::string& source,
-    InternedStrings strings)
+std::shared_ptr<obj::ObjFunction>
+Compiler::Compile(const std::string& source,
+                  InternedStrings strings)
 {
-    scanner_ = lox::scanr::Scanner(source);
-    strings_ = strings;
+    scanner_       = lox::scanr::Scanner(source);
+    interned_strs_ = strings;
 
     Advance();
     while (!Match(TokenType::kEof))

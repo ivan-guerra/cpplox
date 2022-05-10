@@ -1,4 +1,5 @@
 #include <new>
+#include <memory>
 #include <string>
 #include <cstdio>
 #include <cstdlib>
@@ -10,7 +11,8 @@
 
 namespace lox
 {
-std::size_t Chunk::DisassembleInstruction(int offset) const
+std::size_t
+Chunk::DisassembleInstruction(int offset) const
 {
     std::printf("%04d ", offset);
     if ((offset > 0) && (lines_[offset] == lines_[offset - 1]))
@@ -115,15 +117,16 @@ std::size_t Chunk::DisassembleInstruction(int offset) const
     }
 }
 
-std::size_t Chunk::DisassembleSimpleInstruction(const std::string& name,
-                                                int offset) const
+std::size_t
+Chunk::DisassembleSimpleInstruction(const std::string& name, int offset) const
 {
     std::printf("%s\n", name.c_str());
     return (offset + 1);
 }
 
-std::size_t Chunk::DisassembleConstantInstruction(const std::string& name,
-                                                  int offset) const
+std::size_t
+Chunk::DisassembleConstantInstruction(const std::string& name,
+                                      int offset) const
 {
     uint8_t constant = code_[offset + 1];
     std::printf("%-16s %4d '", name.c_str(), constant);
@@ -135,8 +138,8 @@ std::size_t Chunk::DisassembleConstantInstruction(const std::string& name,
     return (offset + 2);
 }
 
-std::size_t Chunk::DisassembleByteInstruction(const std::string& name,
-                                              int offset) const
+std::size_t
+Chunk::DisassembleByteInstruction(const std::string& name, int offset) const
 {
     uint8_t slot = code_[offset + 1];
     std::printf("%-16s %4d\n", name.c_str(), slot);
@@ -144,8 +147,10 @@ std::size_t Chunk::DisassembleByteInstruction(const std::string& name,
     return (offset + 2);
 }
 
-std::size_t Chunk::DisassembleJumpInstruction(const std::string& name,
-                                              int sign, int offset) const
+std::size_t
+Chunk::DisassembleJumpInstruction(const std::string& name,
+                                  int sign,
+                                  int offset) const
 {
     uint16_t jump = static_cast<uint16_t>(code_[offset + 1] << 8);
     jump |= code_[offset + 2];
@@ -154,9 +159,8 @@ std::size_t Chunk::DisassembleJumpInstruction(const std::string& name,
     return offset + 3;
 }
 
-std::size_t Chunk::DisassembleInvokeInstruction(
-    const std::string& name,
-    int offset) const
+std::size_t
+Chunk::DisassembleInvokeInstruction(const std::string& name, int offset) const
 {
     uint8_t constant  = code_[offset + 1];
     uint8_t arg_count = code_[offset + 2];
@@ -167,7 +171,8 @@ std::size_t Chunk::DisassembleInvokeInstruction(
     return offset + 3;
 }
 
-void Chunk::Write(uint8_t byte, int line)
+void
+Chunk::Write(uint8_t byte, int line)
 {
     try {
         code_.push_back(byte);
@@ -178,7 +183,8 @@ void Chunk::Write(uint8_t byte, int line)
     }
 }
 
-int Chunk::AddConstant(const val::Value& value)
+int
+Chunk::AddConstant(const val::Value& value)
 {
     try {
         constants_.push_back(value);
@@ -189,7 +195,8 @@ int Chunk::AddConstant(const val::Value& value)
     }
 }
 
-void Chunk::Disassemble(const std::string& name) const
+void
+Chunk::Disassemble(const std::string& name) const
 {
     std::printf("== %s ==\n", name.c_str());
     for (std::size_t offset = 0; offset < code_.size();)

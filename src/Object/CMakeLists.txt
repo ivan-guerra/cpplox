@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(Object DESCRIPTION "Representation of a lox objects"
+project(Object DESCRIPTION "Representation of a Lox objects"
                LANGUAGES   CXX
 )
 

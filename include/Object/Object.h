@@ -19,14 +19,14 @@ namespace obj
  */
 enum ObjType
 {
-    kObjString,      /*!< String type. */
-    kObjFunction,    /*!< Function type. */
-    kObjNative,      /*!< Lox native function type. */
-    kObjClosure,     /*!< Closure type. */
-    kObjUpvalue,     /*!< Closure upvalue type. */
-    kObjClass,       /*!< Lox class type. */
-    kObjInstance,    /*!< Lox class instance type. */
-    kObjBoundMethod, /*!< Lox class method type. */
+    kObjString,      /*!< String. */
+    kObjFunction,    /*!< Function. */
+    kObjNative,      /*!< Lox native function. */
+    kObjClosure,     /*!< Closure. */
+    kObjUpvalue,     /*!< Closure upvalue. */
+    kObjClass,       /*!< Class. */
+    kObjInstance,    /*!< Class instance. */
+    kObjBoundMethod, /*!< Class method. */
 }; // end ObjType
 
 /*!
@@ -47,12 +47,12 @@ struct Obj
 struct ObjString :
     public Obj
 {
-    std::string chars; /*!< Character string wrapped by this ObjString. */
+    std::string chars;
 }; // end ObjString
 
 /*!
  * \struct ObjFunction
- * \brief The ObjFunction struct represents Lox functions.
+ * \brief The ObjFunction struct represents a User defined function.
  */
 struct ObjFunction :
     public Obj
@@ -60,7 +60,7 @@ struct ObjFunction :
     int        arity;         /*!< Number of arguments expected by the function. */
     int        upvalue_count; /*!< Number of upvalues referenced. */
     lox::Chunk chunk;         /*!< Chunk of bytecode representing the function body. */
-    std::shared_ptr<ObjString> name; /*!< Source name of the function. */
+    std::shared_ptr<ObjString> name; /*!< Name of the function. */
 }; // end ObjFunction
 
 /*!
@@ -70,9 +70,9 @@ struct ObjFunction :
 struct ObjUpvalue :
     public Obj
 {
-    val::Value* location; /*!< Location of upvalue on the stack. */
+    val::Value* location; /*!< Pointer to location of upvalue on the stack. */
     val::Value  closed;   /*!< Copy of a closed upvalue. */
-    std::shared_ptr<ObjUpvalue> next; /*!< Pointer to the next closed upvalue on the head. */
+    std::shared_ptr<ObjUpvalue> next; /*!< Pointer to the next closed upvalue. */
 }; // end ObjUpvalue
 
 /*!
@@ -118,11 +118,10 @@ struct ObjBoundMethod :
     public Obj
 {
     val::Value                  receiver; /*!< Representation of 'this'. */
-    std::shared_ptr<ObjClosure> method;   /*!< Method bound to #receiver. */
+    std::shared_ptr<ObjClosure> method;   /*!< Method bound to receiver. */
 }; // end ObjBoundMethod
 
 using NativeFn = std::function<val::Value(int,val::Value*)>;
-
 /*!
  * \struct ObjNative
  * \brief The ObjNative struct represent Lox native functions.
@@ -136,102 +135,122 @@ struct ObjNative :
 /*!
  * \brief Return the ObjType of the object contained within \a value.
  */
-ObjType GetType(const val::Value& value);
+ObjType
+GetType(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a Value with obj type info and data.
  */
-val::Value ObjVal(std::shared_ptr<Obj> value);
+val::Value
+ObjVal(std::shared_ptr<Obj> value);
 
 /*!
  * \brief Convert \a value to a Lox object pointer.
  */
-std::shared_ptr<Obj> AsObj(const val::Value& value);
+std::shared_ptr<Obj>
+AsObj(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a Lox ObjString.
  */
-std::shared_ptr<ObjString> AsString(const val::Value& value);
+std::shared_ptr<ObjString>
+AsString(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a Lox ObjFunction.
  */
-std::shared_ptr<ObjFunction> AsFunction(const val::Value& value);
+std::shared_ptr<ObjFunction>
+AsFunction(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a NativeFn function object.
  */
-NativeFn AsNative(const val::Value& value);
+NativeFn
+AsNative(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a ObjClosure object.
  */
-std::shared_ptr<ObjClosure> AsClosure(const val::Value& value);
+std::shared_ptr<ObjClosure>
+AsClosure(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a ObjClass object.
  */
-std::shared_ptr<ObjClass> AsClass(const val::Value& value);
+std::shared_ptr<ObjClass>
+AsClass(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a ObjInstance object.
  */
-std::shared_ptr<ObjInstance> AsInstance(const val::Value& value);
+std::shared_ptr<ObjInstance>
+AsInstance(const val::Value& value);
 
 /*!
  * \brief Convert \a value to a ObjBoundMethod object.
  */
-std::shared_ptr<ObjBoundMethod> AsBoundMethod(const val::Value& value);
+std::shared_ptr<ObjBoundMethod>
+AsBoundMethod(const val::Value& value);
 
 /*!
  * \brief Convert \a value to Lox ObjString and return the underlying std::string.
  */
-std::string AsStdString(const val::Value& value);
+std::string
+AsStdString(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value represents a Lox object.
  */
-bool IsObject(const val::Value& value);
+bool
+IsObject(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an Object with type \a type.
  */
-bool IsObjType(const val::Value& value, ObjType type);
+bool
+IsObjType(const val::Value& value, ObjType type);
 
 /*!
  * \brief Return \c true if \a value is an ObjString object.
  */
-bool IsString(const val::Value& value);
+bool
+IsString(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjFunction object.
  */
-bool IsFunction(const val::Value& value);
+bool
+IsFunction(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjNative object.
  */
-bool IsNative(const val::Value& value);
+bool
+IsNative(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjClosure object.
  */
-bool IsClosure(const val::Value& value);
+bool
+IsClosure(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjClass object.
  */
-bool IsClass(const val::Value& value);
+bool
+IsClass(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjInstance object.
  */
-bool IsInstance(const val::Value& value);
+bool
+IsInstance(const val::Value& value);
 
 /*!
  * \brief Return \c true if \a value is an ObjBoundMethod object.
  */
-bool IsBoundMethod(const val::Value& value);
+bool
+IsBoundMethod(const val::Value& value);
 
 /*!
  * \brief Construct an ObjString initialized with \a str data.
@@ -245,50 +264,60 @@ bool IsBoundMethod(const val::Value& value);
  *             std::shared_ptr<ObjString>. The \a strs map is used to identify
  *             whether \a str is already being tracked by the interpreter.
  */
-std::shared_ptr<ObjString> CopyString(
+std::shared_ptr<ObjString>
+CopyString(
     const std::string& str,
-    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>> strs);
+    std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<ObjString>>>
+        strs);
 
 /*!
  * \brief Return a pointer to a 'blank slate' Lox function object.
  */
-std::shared_ptr<ObjFunction> NewFunction();
+std::shared_ptr<ObjFunction>
+NewFunction();
 
 /*!
  * \brief Return a pointer to a new native function.
  */
-std::shared_ptr<ObjNative> NewNative(NativeFn function);
+std::shared_ptr<ObjNative>
+NewNative(NativeFn function);
 
 /*!
  * \brief Return a pointer to a new ObjClosure object.
  */
-std::shared_ptr<ObjClosure> NewClosure(std::shared_ptr<ObjFunction> function);
+std::shared_ptr<ObjClosure>
+NewClosure(std::shared_ptr<ObjFunction> function);
 
 /*!
  * \brief Return a pointer to a new ObjUpvalue object.
  */
-std::shared_ptr<ObjUpvalue> NewUpvalue(val::Value* slot);
+std::shared_ptr<ObjUpvalue>
+NewUpvalue(val::Value* slot);
 
 /*!
  * \brief Return a pointer to a new ObjClass object.
  */
-std::shared_ptr<ObjClass> NewClass(std::shared_ptr<ObjString> name);
+std::shared_ptr<ObjClass>
+NewClass(std::shared_ptr<ObjString> name);
 
 /*!
  * \brief Return a pointer to a new ObjInstance object.
  */
-std::shared_ptr<ObjInstance> NewInstance(std::shared_ptr<ObjClass> klass);
+std::shared_ptr<ObjInstance>
+NewInstance(std::shared_ptr<ObjClass> klass);
 
 /*!
  * \brief Return a pointer to a new ObjBoundMethod object.
  */
-std::shared_ptr<ObjBoundMethod> NewBoundMethod(
+std::shared_ptr<ObjBoundMethod>
+NewBoundMethod(
     const val::Value& receiver,
     std::shared_ptr<ObjClosure> method);
 
 /*!
  * \brief Print the name of \a function to STDOUT.
  */
-void PrintFunction(std::shared_ptr<ObjFunction> function);
+void
+PrintFunction(std::shared_ptr<ObjFunction> function);
 } // end obj
 } // end lox

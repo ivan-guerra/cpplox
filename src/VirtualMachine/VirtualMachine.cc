@@ -13,20 +13,22 @@ namespace lox
 {
 namespace vm
 {
-static val::Value ClockNative(
+static val::Value
+ClockNative(
     [[maybe_unused]]int arg_count,
     [[maybe_unused]]val::Value* args)
 {
     return val::NumberVal(static_cast<double>(clock()) / CLOCKS_PER_SEC);
 }
 
-void VirtualMachine::RuntimeError(const char* format, ...)
+void
+VirtualMachine::RuntimeError(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
     std::vfprintf(stderr, format, args);
     va_end(args);
-    fputs("\n", stderr);
+    std::fputs("\n", stderr);
 
     for (int i = frame_count - 1; i >= 0; --i) {
         CallFrame* frame = &frames_[i];
@@ -43,9 +45,8 @@ void VirtualMachine::RuntimeError(const char* format, ...)
     ResetStack();
 }
 
-bool VirtualMachine::Call(
-    std::shared_ptr<obj::ObjClosure> closure,
-    int arg_count)
+bool
+VirtualMachine::Call(std::shared_ptr<obj::ObjClosure> closure, int arg_count)
 {
     if (arg_count != closure->function->arity) {
         RuntimeError("Expected %d arguments but got %d.",
@@ -66,7 +67,8 @@ bool VirtualMachine::Call(
     return true;
 }
 
-bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
+bool
+VirtualMachine::CallValue(const val::Value& callee, int arg_count)
 {
     if (obj::IsObject(callee)) {
         switch (obj::GetType(callee)) {
@@ -113,36 +115,38 @@ bool VirtualMachine::CallValue(const val::Value& callee, int arg_count)
     return false;
 }
 
-uint16_t VirtualMachine::ReadShort(CallFrame* frame)
+uint16_t
+VirtualMachine::ReadShort(CallFrame* frame)
 {
     frame->ip += 2;
     return ((frame->closure->function->chunk.GetInstruction(frame->ip - 2) << 8) |
              frame->closure->function->chunk.GetInstruction(frame->ip - 1));
 }
 
-void VirtualMachine::Concatenate()
+void
+VirtualMachine::Concatenate()
 {
     LoxString b = obj::AsString(Pop());
     LoxString a = obj::AsString(Pop());
 
     LoxString result = std::make_shared<obj::ObjString>();
-    result->type = obj::ObjType::kObjString;
+    result->type  = obj::ObjType::kObjString;
     result->chars = a->chars + b->chars;
     Push(ObjVal(result));
 }
 
-void VirtualMachine::DefineNative(
-    const std::string& name,
-    obj::NativeFn function)
+void
+VirtualMachine::DefineNative(const std::string& name, obj::NativeFn function)
 {
-    Push(obj::ObjVal(obj::CopyString(name, strings_)));
+    Push(obj::ObjVal(obj::CopyString(name, interned_strs_)));
     Push(obj::ObjVal(obj::NewNative(function)));
     globals_[obj::AsString(vm_stack.stack[0])] = vm_stack.stack[1];
     Pop();
     Pop();
 }
 
-void VirtualMachine::DefineMethod(LoxString name)
+void
+VirtualMachine::DefineMethod(LoxString name)
 {
     val::Value method = Peek(0);
     std::shared_ptr<obj::ObjClass> klass = obj::AsClass(Peek(1));
@@ -150,7 +154,8 @@ void VirtualMachine::DefineMethod(LoxString name)
     Pop();
 }
 
-bool VirtualMachine::BindMethod(
+bool
+VirtualMachine::BindMethod(
     std::shared_ptr<obj::ObjClass> klass,
     LoxString name)
 {
@@ -167,7 +172,8 @@ bool VirtualMachine::BindMethod(
     return true;
 }
 
-bool VirtualMachine::InvokeFromClass(
+bool
+VirtualMachine::InvokeFromClass(
     std::shared_ptr<obj::ObjClass> klass,
     LoxString name,
     int arg_count)
@@ -179,7 +185,8 @@ bool VirtualMachine::InvokeFromClass(
     return Call(obj::AsClosure(klass->methods[name]), arg_count);
 }
 
-bool VirtualMachine::Invoke(LoxString name, int arg_count)
+bool
+VirtualMachine::Invoke(LoxString name, int arg_count)
 {
     val::Value receiver = Peek(arg_count);
     if (!obj::IsInstance(receiver)) {
@@ -195,7 +202,8 @@ bool VirtualMachine::Invoke(LoxString name, int arg_count)
     return InvokeFromClass(instance->klass, name, arg_count);
 }
 
-void VirtualMachine::CloseUpvalues(val::Value* last)
+void
+VirtualMachine::CloseUpvalues(val::Value* last)
 {
     while (open_upvalues_ && (open_upvalues_->location >= last)) {
         UpvaluePtr upvalue = open_upvalues_;
@@ -205,8 +213,8 @@ void VirtualMachine::CloseUpvalues(val::Value* last)
     }
 }
 
-std::shared_ptr<obj::ObjUpvalue> VirtualMachine::CaptureUpvalue(
-    val::Value* local)
+std::shared_ptr<obj::ObjUpvalue>
+VirtualMachine::CaptureUpvalue(val::Value* local)
 {
     UpvaluePtr prev_upvalue = nullptr;
     UpvaluePtr upvalue = open_upvalues_;
@@ -228,7 +236,8 @@ std::shared_ptr<obj::ObjUpvalue> VirtualMachine::CaptureUpvalue(
     return created_upvalue;
 }
 
-VirtualMachine::InterpretResult VirtualMachine::Run()
+VirtualMachine::InterpretResult
+VirtualMachine::Run()
 {
     CallFrame* frame = &frames_[frame_count - 1];
 
@@ -505,22 +514,23 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
 }
 
 VirtualMachine::VirtualMachine() :
-    strings_(std::make_shared<LoxStringMap>()),
+    interned_strs_(std::make_shared<LoxStringMap>()),
     frame_count(0),
     open_upvalues_(nullptr),
     init_string_(nullptr)
 {
     ResetStack();
-    init_string_ = obj::CopyString("init", strings_);
+    init_string_ = obj::CopyString("init", interned_strs_);
     DefineNative("clock", ClockNative);
 }
 
-VirtualMachine::InterpretResult VirtualMachine::Interpret(
+VirtualMachine::InterpretResult
+VirtualMachine::Interpret(
     const std::string& source)
 {
     lox::cl::Compiler compiler;
     std::shared_ptr<obj::ObjFunction> function =
-        compiler.Compile(source, strings_);
+        compiler.Compile(source, interned_strs_);
 
     if (!function)
         return InterpretResult::kInterpretCompileError;

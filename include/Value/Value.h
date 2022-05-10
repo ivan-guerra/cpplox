@@ -22,7 +22,7 @@ namespace val
     enum ValueType
     {
         kBool,   /*!< Boolean. */
-        kNil,    /*!< nil (i.e., NULL). */
+        kNil,    /*!< Nil (i.e., NULL). */
         kNumber, /*!< Numerical. */
         kObj     /*!< Lox objects (e.g., strings, functions, etc.) */
     }; // end ValueType
@@ -40,56 +40,67 @@ namespace val
     /*!
      * \brief Convert \a value to a Value with boolean type info and data.
      */
-    Value BoolVal(bool value);
+    Value
+    BoolVal(bool value);
 
     /*!
      * \brief Convert \a value to a Value with nil type info and data.
      */
-    Value NilVal();
+    Value
+    NilVal();
 
     /*!
      * \brief Convert \a value to a Value with number type info and data.
      */
-    Value NumberVal(double value);
+    Value
+    NumberVal(double value);
 
     /*!
-     * \brief Return \c true if \a equals \a b.
+     * \brief Return \c true if \a a equals \a b.
      */
-    bool ValuesEqual(const Value& a, const Value& b);
+    bool
+    ValuesEqual(const Value& a, const Value& b);
 
     /*!
-     * \brief Convert \a value a to a C++ boolean type.
+     * \brief Convert \a value to a C++ boolean type.
      */
-    bool AsBool(const Value& value);
+    bool
+    AsBool(const Value& value);
 
     /*!
-     * \brief Convert \a value a to a C++ number type.
+     * \brief Convert \a value to a C++ double.
      */
-    double AsNumber(const Value& value);
+    double
+    AsNumber(const Value& value);
 
     /*!
      * \brief Return \c true if \a value represents a Lox boolean.
      */
-    bool IsBool(const Value& value);
+    bool
+    IsBool(const Value& value);
 
     /*!
-     * \brief Return \c true if \a value represents a Lox's nil.
+     * \brief Return \c true if \a value represents Lox's nil.
      */
-    bool IsNil(const Value& value);
+    bool
+    IsNil(const Value& value);
 
     /*!
      * \brief Return \c true if \a value represents a Lox number.
      */
-    bool IsNumber(const Value& value);
+    bool
+    IsNumber(const Value& value);
 
     /*!
      * \brief Print the Lox object stored in \a value to STDOUT.
      */
-    void PrintObject(const Value& value);
+    void
+    PrintObject(const Value& value);
 
     /*!
      * \brief Print \a val to STDOUT.
      */
-    void PrintValue(const Value& value);
+    void
+    PrintValue(const Value& value);
 } // end val
 } // end lox

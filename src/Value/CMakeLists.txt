@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(Value DESCRIPTION "Representation of a lox value"
+project(Value DESCRIPTION "Representation of Lox value types"
               LANGUAGES   CXX
 )
 

@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <variant>
 
 #include "Value.h"
 #include "Object.h"
@@ -8,16 +7,17 @@ namespace lox
 {
 namespace val
 {
-Value BoolVal(bool value)
-    { return {ValueType::kBool, value}; }
+Value
+BoolVal(bool value) { return {ValueType::kBool, value}; }
 
-Value NilVal()
-    { return {ValueType::kNil, 0.0}; }
+Value
+NilVal() { return {ValueType::kNil, 0.0}; }
 
-Value NumberVal(double value)
-    { return {ValueType::kNumber, value}; }
+Value
+NumberVal(double value) { return {ValueType::kNumber, value}; }
 
-bool ValuesEqual(const Value& a, const Value& b)
+bool
+ValuesEqual(const Value& a, const Value& b)
 {
     if (a.type != b.type)
         return false;
@@ -37,22 +37,23 @@ bool ValuesEqual(const Value& a, const Value& b)
     }
 }
 
-bool AsBool(const Value& value)
-    { return std::get<bool>(value.as); }
+bool
+AsBool(const Value& value) { return std::get<bool>(value.as); }
 
-double AsNumber(const Value& value)
-    { return std::get<double>(value.as); }
+double
+AsNumber(const Value& value) { return std::get<double>(value.as); }
 
-bool IsBool(const Value& value)
-    { return (value.type == ValueType::kBool); }
+bool
+IsBool(const Value& value) { return (value.type == ValueType::kBool); }
 
-bool IsNil(const Value& value)
-    { return (value.type == ValueType::kNil); }
+bool
+IsNil(const Value& value) { return (value.type == ValueType::kNil); }
 
-bool IsNumber(const Value& value)
-    { return (value.type == ValueType::kNumber); }
+bool
+IsNumber(const Value& value) { return (value.type == ValueType::kNumber); }
 
-void PrintObject(const Value& value)
+void
+PrintObject(const Value& value)
 {
     switch (obj::GetType(value)) {
         case obj::ObjType::kObjString:
@@ -83,7 +84,8 @@ void PrintObject(const Value& value)
     }
 }
 
-void PrintValue(const Value& value)
+void
+PrintValue(const Value& value)
 {
     switch (value.type) {
         case ValueType::kBool:

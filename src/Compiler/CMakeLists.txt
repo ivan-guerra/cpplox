@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(Compiler DESCRIPTION "Bytecode compiler"
+project(Compiler DESCRIPTION "Lox bytecode compiler"
                  LANGUAGES   CXX
 )
 

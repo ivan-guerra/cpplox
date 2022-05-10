@@ -90,7 +90,8 @@ Scanner::kKeywords_ =
     {"while",  Token::TokenType::kWhile}
 };
 
-char Scanner::Peek() const
+char
+Scanner::Peek() const
 {
     if (IsAtEnd())
         return '\0';
@@ -98,7 +99,8 @@ char Scanner::Peek() const
     return source_.at(current_);
 }
 
-char Scanner::PeekNext() const
+char
+Scanner::PeekNext() const
 {
     if ((current_ + 1) >= source_.size())
         return '\0';
@@ -106,7 +108,8 @@ char Scanner::PeekNext() const
     return source_.at(current_ + 1);
 }
 
-bool Scanner::Match(char expected)
+bool
+Scanner::Match(char expected)
 {
     if (IsAtEnd())
         return false;
@@ -118,7 +121,8 @@ bool Scanner::Match(char expected)
     return true;
 }
 
-void Scanner::SkipWhitespace()
+void
+Scanner::SkipWhitespace()
 {
     while (true) {
         char c = Peek();
@@ -146,7 +150,8 @@ void Scanner::SkipWhitespace()
     }
 }
 
-Token Scanner::String()
+Token
+Scanner::String()
 {
     while (!IsAtEnd() && Peek() != '"') {
         if (Peek() == '\n')
@@ -161,7 +166,8 @@ Token Scanner::String()
     return MakeToken(Token::TokenType::kString);
 }
 
-Token Scanner::Number()
+Token
+Scanner::Number()
 {
     while (IsDigit(Peek()))
         Advance();
@@ -177,7 +183,8 @@ Token Scanner::Number()
     return MakeToken(Token::TokenType::kNumber);
 }
 
-Token Scanner::Identifier()
+Token
+Scanner::Identifier()
 {
     while (IsAlpha(Peek()) || IsDigit(Peek()))
         Advance();
@@ -198,7 +205,8 @@ Scanner::Scanner(const std::string& source) :
 
 }
 
-Token Scanner::ScanToken()
+Token
+Scanner::ScanToken()
 {
     SkipWhitespace();
 

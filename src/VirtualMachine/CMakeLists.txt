@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13...3.22)
 
-project(VirtualMachine DESCRIPTION "Virtual machine executing lox bytecode"
+project(VirtualMachine DESCRIPTION "Virtual machine executing Lox bytecode"
                        LANGUAGES   CXX
 )
 

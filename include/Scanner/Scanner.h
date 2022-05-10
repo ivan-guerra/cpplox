@@ -18,7 +18,7 @@ class Token
 public:
     /*!
      * \enum TokenType
-     * \brief Lox token type.
+     * \brief The TokenType enum defines the Lox token types.
      */
     enum class TokenType
     {
@@ -84,35 +84,38 @@ public:
     Token(TokenType type, const std::string& lexeme, int line);
 
     ~Token() = default;
-
     Token(const Token&) = default;
     Token& operator=(const Token&) = default;
-
     Token(Token&&) = default;
     Token& operator=(Token&&) = default;
 
     /*!
      * \brief Return the type of this Token.
      */
-    TokenType GetType() const { return type_; }
+    TokenType
+    GetType() const { return type_; }
 
     /*!
      * \brief Return the type of this Token in string format.
      */
-    std::string GetTypeStr() const { return kTokenToStr_.at(type_); }
+    std::string
+    GetTypeStr() const { return kTokenToStr_.at(type_); }
 
     /*!
      * \brief Return the Token lexeme.
      */
-    std::string GetLexeme() const { return lexeme_; }
+    std::string
+    GetLexeme() const { return lexeme_; }
 
     /*!
      * \brief Return the Token line number.
      */
-    int GetLine() const { return line_; }
+    int
+    GetLine() const { return line_; }
 
 private:
-    static const std::unordered_map<TokenType, std::string> kTokenToStr_; /*!< Map of TokenTypes to their corresponding string representation. */
+    static const std::unordered_map<TokenType, std::string>
+    kTokenToStr_; /*!< Map of TokenTypes to their corresponding string representation. */
 
     TokenType   type_;    /*!< Token type. */
     std::string lexeme_;  /*!< Token lexeme. */
@@ -139,7 +142,6 @@ public:
     explicit Scanner(const std::string& source);
 
     ~Scanner() = default;
-
     Scanner(const Scanner&) = default;
     Scanner& operator=(const Scanner&) = default;
     Scanner(Scanner&&) = default;
@@ -151,30 +153,34 @@ public:
      *         source code has been reached, a Token with TokenType EOF is
      *         returned.
      */
-    Token ScanToken();
+    Token
+    ScanToken();
 
 private:
-    static const std::unordered_map<std::string, Token::TokenType> kKeywords_; /*!< Map of keyword strings to their Token::TokenType. */
+    static const std::unordered_map<std::string, Token::TokenType>
+    kKeywords_; /*!< Map of keyword strings to their Token::TokenType. */
 
-    std::string SourceSubstring(int begin, int end) const
+    std::string
+    SourceSubstring(int begin, int end) const
         { return source_.substr(begin, end - begin); }
 
     /*!
      * \brief Return \c true if the entire source text has been scanned.
      */
-    bool IsAtEnd() const
-        { return (current_ >= source_.size()); }
+    bool
+    IsAtEnd() const { return (current_ >= source_.size()); }
 
     /*!
      * \brief Return \c true if \a c is a digit.
      */
-    bool IsDigit(char c) const
-        { return ((c >= '0') && (c <='9')); }
+    bool
+    IsDigit(char c) const { return ((c >= '0') && (c <='9')); }
 
     /*!
      * \brief Return \c true if \a c is alphabet character or underscore.
      */
-    bool IsAlpha(char c) const
+    bool
+    IsAlpha(char c) const
         {
             return (c >= 'a' && c <= 'z') ||
                    (c >= 'A' && c <= 'Z') ||
@@ -184,13 +190,15 @@ private:
     /*!
      * \brief Return a Token with TokenType \a type.
      */
-    Token MakeToken(Token::TokenType type) const
+    Token
+    MakeToken(Token::TokenType type) const
         { return Token(type, SourceSubstring(start_, current_), line_); }
 
     /*!
-     * \brief Return a Token whose lexeme contains the error message \a message.
+     * \brief Return a Token with error message \a message as the lexeme.
      */
-    Token ErrorToken(const std::string& message) const
+    Token
+    ErrorToken(const std::string& message) const
         { return Token(Token::TokenType::kError, message, line_); }
 
     /*!
@@ -198,45 +206,52 @@ private:
      * \return The character currently under the Scanner's cursor prior to
      *         updating the cursor.
      */
-    char Advance()
-        { return source_[current_++]; }
+    char
+    Advance() { return source_[current_++]; }
 
     /*!
-     * \brief Return the character currentl under the Scanner's cursor.
+     * \brief Return the character currently under the Scanner's cursor.
      */
-    char Peek() const;
+    char
+    Peek() const;
 
     /*!
      * \brief Return the character one index past the current cursor position.
      * \return If the the scanner is at the end of the source text, the null
      *         character is returned.
      */
-    char PeekNext() const;
+    char
+    PeekNext() const;
 
     /*!
      * \brief Return \c true if the char under the cursor matches \a expected.
      */
-    bool Match(char expected);
+    bool
+    Match(char expected);
 
     /*!
      * \brief Consume whitespace from the current cursor position.
      */
-    void SkipWhitespace();
+    void
+    SkipWhitespace();
 
     /*!
      * \brief Return a string type Token.
      */
-    Token String();
+    Token
+    String();
 
     /*!
      * \brief Return a number Token.
      */
-    Token Number();
+    Token
+    Number();
 
     /*!
      * \brief Return an identifier Token.
      */
-    Token Identifier();
+    Token
+    Identifier();
 
     uint32_t    start_;   /*!< Source code start index. */
     uint32_t    current_; /*!< Current source code index. */

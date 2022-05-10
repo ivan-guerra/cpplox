@@ -4,7 +4,6 @@
 #include <string>
 #include <functional>
 #include <unordered_map>
-#include <cstddef>
 #include <cstdint>
 
 #include "Stack.h"
@@ -26,13 +25,13 @@ class VirtualMachine
 public:
     /*!
      * \enum InterpretResult
-     * \brief The InterpretResult enum captures the bytecode interpretation result.
+     * \brief The InterpretResult enum defines the interpreter exit values.
      */
     enum class InterpretResult
     {
-        kInterpretOk,
-        kInterpretCompileError,
-        kInterpretRuntimeError
+        kInterpretOk,           /*!< Successful execution. */
+        kInterpretCompileError, /*!< Compilation error. */
+        kInterpretRuntimeError  /*!< Runtime error. */
     }; // end InterpretResult
 
     VirtualMachine();
@@ -46,7 +45,8 @@ public:
     /*!
      * \brief Compile and execute the code defined in \a source.
      */
-    InterpretResult Interpret(const std::string& source);
+    InterpretResult
+    Interpret(const std::string& source);
 
 private:
     using LoxString       = std::shared_ptr<obj::ObjString>;
@@ -65,13 +65,14 @@ private:
     {
         std::shared_ptr<obj::ObjClosure> closure; /*!< Lox closure object representation. */
         int          ip;    /*!< Instruction pointer. */
-        val::Value*  slots; /*!< Call frame starting point on the VM value stack. */
+        val::Value*  slots; /*!< Frame start point on the VM's stack. */
     }; // end CallFrame
 
     /*!
-     * \brief Print a runtime error message to STDOUT.
+     * \brief Print a runtime error message to STDERR.
      */
-    void RuntimeError(const char* format, ...);
+    void
+    RuntimeError(const char* format, ...);
 
     /*!
      * \brief Return \c true if \a value contains a \c false value.
@@ -79,22 +80,25 @@ private:
      * nil is considered to be false. The only other possibility is the \c
      * false literal.
      */
-    bool IsFalsey(const val::Value& value) const
-        { return IsNil(value) || (IsBool(value) && !AsBool(value)); }
+    bool
+    IsFalsey(const val::Value& value) const
+        { return (IsNil(value) || (IsBool(value) && !AsBool(value))); }
 
     /*!
-     * \brief Construct a new CallFrame and add it to the #frames_ stack.
+     * \brief Construct a new CallFrame and add it to the frame stack.
      */
-    bool Call(std::shared_ptr<obj::ObjClosure> closure, int arg_count);
+    bool
+    Call(std::shared_ptr<obj::ObjClosure> closure, int arg_count);
 
     /*!
      * \brief Forward the \a callee to the appropriate call handler.
      *
      * The callee can be a native function, standard function call, method,
      * etc. CallValue() executes the appropriate handler type depending
-     * on the type of callable object represented by \a callee.
+     * on the type of callable object type.
      */
-    bool CallValue(const val::Value& callee, int arg_count);
+    bool
+    CallValue(const val::Value& callee, int arg_count);
 
     /*!
      * \brief Return the next byte in \a frame's chunk.
@@ -102,34 +106,34 @@ private:
      * ReadByte() has the side effect of always incrementing the frame's ip to
      * point to the next instruction in the chunk.
      */
-    uint8_t ReadByte(CallFrame* frame)
+    uint8_t
+    ReadByte(CallFrame* frame)
         { return frame->closure->function->chunk.GetInstruction(frame->ip++); }
 
     /*!
-     * \brief Return a constant in the \a frame's chunk.
-     *
-     * ReadConstant() relies on ReadByte() to fetch the a constant. Undefined
-     * behavior can arise when ReadConstant() is called when not parsing a
-     * constant instruction's argument.
+     * \brief Return a constant out of \a frame's chunk.
      */
-    val::Value ReadConstant(CallFrame* frame)
+    val::Value
+    ReadConstant(CallFrame* frame)
         { return frame->closure->function->chunk.GetConstants()[ReadByte(frame)]; }
 
     /*!
-     * \brief Return the 16-bit operand at \a frame's IP location.
+     * \brief Return the 16-bit operand at \a frame's instruction pointer.
      */
-    uint16_t ReadShort(CallFrame* frame);
+    uint16_t
+    ReadShort(CallFrame* frame);
 
     /*!
      * \brief Return the current constant as a ObjString object.
      */
-    LoxString ReadString(CallFrame* frame)
-        { return obj::AsString(ReadConstant(frame)); }
+    LoxString
+    ReadString(CallFrame* frame) { return obj::AsString(ReadConstant(frame)); }
 
     /*!
-     * \brief Concatenate the two string objects at the top of the stack.
+     * \brief Concatenate two string objects at the top of the stack.
      */
-    void Concatenate();
+    void
+    Concatenate();
 
     /*!
      * \brief Define a new native function.
@@ -137,22 +141,26 @@ private:
      * \param name Name of the new function.
      * \param function NativeFn function object implementing the new behavior.
      */
-    void DefineNative(const std::string& name, obj::NativeFn function);
+    void
+    DefineNative(const std::string& name, obj::NativeFn function);
 
     /*!
      * \brief Add a method definition to the class at the top of the stack.
      */
-    void DefineMethod(LoxString name);
+    void
+    DefineMethod(LoxString name);
 
     /*!
-     * \brief Bind \a name to to \a klass placing the corresponding method on the stack.
+     * \brief Bind a method name to the parameter class object.
      */
-    bool BindMethod(std::shared_ptr<obj::ObjClass> klass, LoxString name);
+    bool
+    BindMethod(std::shared_ptr<obj::ObjClass> klass, LoxString name);
 
     /*!
      * \brief Invoke a class method.
      */
-    bool InvokeFromClass(
+    bool
+    InvokeFromClass(
         std::shared_ptr<obj::ObjClass> klass,
         LoxString name,
         int arg_count);
@@ -160,46 +168,51 @@ private:
     /*!
      * \brief Method invocation helper.
      */
-    bool Invoke(LoxString name, int arg_count);
+    bool
+    Invoke(LoxString name, int arg_count);
 
     /*!
      * \brief Close on an upvalue.
      */
-    void CloseUpvalues(val::Value* last);
+    void
+    CloseUpvalues(val::Value* last);
 
     /*!
      * \brief Capture an upvalue on \a local.
      */
-    std::shared_ptr<obj::ObjUpvalue> CaptureUpvalue(val::Value* local);
+    std::shared_ptr<obj::ObjUpvalue>
+    CaptureUpvalue(val::Value* local);
 
     /*!
      * \brief Helper function used to evaluate binary operations.
      *
-     * BinaryOp() pops the two values at the top of #vm_stack and applies
+     * BinaryOp() pops the two values at the top of the stack and applies
      * the binary operation specified by \a op taking care to order the
      * operands correctly. If the values at the top of the stack are invalid
      * operands, a runtime error is reported.
      *
      * \param value_type Value conversion function applied to each operand.
-     * \param op The binary operation opcode.
+     * \param op         The binary operation opcode.
      *
      * \return InterpretResult::kInterpretRuntimeError if an error occurs, else
      *         InterpretResult::kInterpretOk is returned.
      */
     template <typename T>
-    InterpretResult BinaryOp(
+    InterpretResult
+    BinaryOp(
         std::function<val::Value(T)> value_type,
         Chunk::OpCode op);
 
     /*!
      * \brief Execute the bytecode within the active CallFrame.
      */
-    InterpretResult Run();
+    InterpretResult
+    Run();
 
     /* Note, this is a stacked based virtual machine meaning values are
        stored on a stack as the User program is executed. VirtualMachine
        implements its stack and defines a handle to it in Stack.h */
-    InternedStrings strings_;            /*!< Collection of interned strings. */
+    InternedStrings interned_strs_;      /*!< Collection of interned strings. */
     Globals         globals_;            /*!< Map of global names to their associated Value. */
     CallFrame       frames_[kFramesMax]; /*!< Stack of function call frames. */
     int             frame_count;    /*!< Number of frames currently in the #frames_ array. */
@@ -208,7 +221,8 @@ private:
 }; // end VirtualMachine
 
 template <typename T>
-VirtualMachine::InterpretResult VirtualMachine::BinaryOp(
+VirtualMachine::InterpretResult
+VirtualMachine::BinaryOp(
     std::function<val::Value(T)> value_type,
     Chunk::OpCode op)
 {
