@@ -465,6 +465,21 @@ VirtualMachine::InterpretResult VirtualMachine::Run()
             case Chunk::OpCode::kOpMethod:
                 DefineMethod(ReadString(frame));
                 break;
+            case Chunk::OpCode::kOpInherit: {
+                val::Value superclass = Peek(1);
+                if (!obj::IsClass(superclass)) {
+                    RuntimeError("Superclass must be a class.");
+                    return InterpretResult::kInterpretRuntimeError;
+                }
+
+                std::shared_ptr<obj::ObjClass> subclass =
+                    obj::AsClass(Peek(0));
+                for (const auto& kv : obj::AsClass(superclass)->methods)
+                    subclass->methods[kv.first] = kv.second;
+
+                Pop();
+                break;
+            }
         }
     }
 }

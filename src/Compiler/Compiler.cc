@@ -362,6 +362,16 @@ void Compiler::ClassDeclaration()
     class_compiler.enclosing = current_class_;
     current_class_           = &class_compiler;
 
+    if (Match(TokenType::kLess)) {
+        Consume(TokenType::kIdentifier, "Expect superclass name.");
+        Variable(false);
+        if (IdentifiersEqual(class_name, parser_.previous))
+            Error("A class can't inherit from itself.");
+
+        NamedVariable(class_name, false);
+        EmitByte(Chunk::OpCode::kOpInherit);
+    }
+
     NamedVariable(class_name, false);
     Consume(TokenType::kLeftBrace, "Expect '{' before class body.");
     while (!Check(TokenType::kRightBrace) && !Check(TokenType::kEof))
