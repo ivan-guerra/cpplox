@@ -2,10 +2,11 @@
 
 Lox is a C-style, interpreted programming language. The lox language definition
 and implementation follows directly from Robert Nystrom's
-[Crafting Interpreters](https://craftinginterpreters.com/) text. Our current
-release implements lox as a
-[tree walk interpreter](https://craftinginterpreters.com/a-tree-walk-interpreter.html)
-using C++ as the implementation language.
+[Crafting Interpreters](https://craftinginterpreters.com/) text. Release v1.0
+implements lox as a
+[tree walk interpreter](https://craftinginterpreters.com/a-tree-walk-interpreter.htAml).
+Release v2.0 implements lox using a [bytecode virtual machine](https://craftinginterpreters.com/a-bytecode-virtual-machine.html).
+Both versions of lox were written in C++.
 
 ### Running the lox Interpreter
 
@@ -16,15 +17,14 @@ To build and run lox directly on your PC, you  will need:
 * A C++ compiler supporting C++17 features
 * CMake3.13+
 
-Supposing your system meets the above requirements, you can build the
-interpreter with the following command:
+You can build the interpreter with the following command:
 
 ```
 cd cpplox/scripts && ./build_lox.sh
 ```
 
-If the above command succeeds, the `lox` interpreter will be installed under
-`cpplox/bin/lox`. You can run the `lox` executable directly to get a REPL or
+The `lox` interpreter will be installed under `cpplox/bin/lox`.
+You can run the `lox` executable directly to get a REPL or
 you can pass the interpreter a lox script (i.e., `lox <SCRIPT_NAME>`).
 
 #### Docker Image
